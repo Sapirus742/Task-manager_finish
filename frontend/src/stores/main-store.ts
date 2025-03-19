@@ -2,7 +2,6 @@ import { defineStore } from 'pinia';
 import { reactive, toRefs } from 'vue';
 // import { useQuasar } from 'quasar';
 import {
-  Competence,
   LoginResponseDto,
   Role,
   SecuredUser,
@@ -19,9 +18,6 @@ export const useMainStore = defineStore('main', () => {
     lastname: 'unknown',
     roles: [] as Role[],
     userStatus: UserAccountStatus,
-    group: 'unknown',
-    telephone: 'unknown',
-    competence: [] as Competence[],
   });
 
   const initAppState = (appState: LoginResponseDto) => {
@@ -38,11 +34,8 @@ export const useMainStore = defineStore('main', () => {
       email: state.username,
       firstname: state.firstname,
       lastname: state.lastname,
-      group: state.group,
-      telephone: state.telephone,
       roles: state.roles,
       status: UserAccountStatus.active,
-      competence: state.competence,
     };
   };
 

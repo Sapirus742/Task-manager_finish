@@ -87,11 +87,8 @@ export type SecuredUser = {
   email: string;
   firstname: string;
   lastname: string;
-  group: string;
-  telephone: string;
   roles: Role[];
   status: UserAccountStatus;
-  competence: Competence[];
 };
 
 export type TaskDto = {
