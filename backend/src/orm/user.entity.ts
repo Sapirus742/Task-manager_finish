@@ -94,8 +94,11 @@ export class User {
       email: this.email,
       firstname: this.firstname,
       lastname: this.lastname,
+      group: this.group,
+      telephone: this.telephone,
       roles: this.roles,
       status: this.status,
+      competence: this.competence,  
     };
   }
 }
