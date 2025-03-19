@@ -59,5 +59,15 @@ export class Project {
     
     @ManyToOne(() => User, (user) => user.project_initiator, { onDelete: 'CASCADE' })
     initiator: User;
-      
+
+    getDto(): TaskDto {
+        return {
+          id: this.id,
+          title: this.title,
+          status: this.status,
+          assignee: this.author.getSecuredDto(), // +++
+          author: this.author.getSecuredDto(),
+          createdAt: this.createdAt,
+        };
+      }      
 }
