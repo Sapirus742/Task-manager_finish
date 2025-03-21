@@ -37,7 +37,7 @@ export class ProjectService {
     startProject: Date,
     stopProject: Date,
     maxUsers: string,
-    customer: number,
+    customer: string,
     initiator: number,
   ): Promise<Project> {
     const project = new Project();
@@ -51,16 +51,12 @@ export class ProjectService {
     project.startProject = startProject;
     project.stopProject = stopProject;
     project.maxUsers = maxUsers;
-    const customerEntity = await this.userRepository.findOne({ where: { id: customer } });
+    project.customer = customer;
     const initiatorEntity = await this.userRepository.findOne({ where: { id: initiator } });
 
-    if (!customerEntity) {
-        throw new NotFoundException(`Customer with id ${customer} not found`);
-    }
     if (!initiatorEntity) {
         throw new NotFoundException(`Initiator with id ${initiator} not found`);
     }
-    project.customer = customerEntity;
     project.initiator = initiatorEntity;
     return this.projectRepository.save(project);
   }

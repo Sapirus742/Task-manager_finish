@@ -93,7 +93,7 @@ export interface CreateProjectDto {
   startProject: Date;
   stopProject: Date;
   maxUsers: string;
-  customer: number;
+  customer: string;
   initiator: number;
 }
 
@@ -108,7 +108,7 @@ export interface UpdateProjectDto {
   startProject: Date;
   stopProject: Date;
   maxUsers: string;
-  customer: number;
+  customer: string;
   initiator: number;
 }
 
@@ -147,7 +147,7 @@ export type ProjectDto = {
   stopProject: Date;
   maxUsers: string;
   teams: TeamDto[];
-  customer: SecuredUser; 
+  customer: string; 
   initiator: SecuredUser; 
 };
 

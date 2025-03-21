@@ -50,13 +50,13 @@ export class Project {
 
     @Column()
     maxUsers: string;
+
+    @Column()
+    customer: string;
     
     @OneToMany(() => Team, (team) => team.project)
     teams: Team[];
 
-    @ManyToOne(() => User, (user) => user.project_customer, { onDelete: 'CASCADE' })
-    customer: User;
-    
     @ManyToOne(() => User, (user) => user.project_initiator, { onDelete: 'CASCADE' })
     initiator: User;
     
@@ -74,7 +74,7 @@ export class Project {
             stopProject: this.stopProject,
             maxUsers: this.maxUsers,
             teams: this.teams.map(team => team.getTeamDto()), // Предполагается, что у Team есть метод getDto
-            customer: this.customer.getSecuredDto(), // Предполагается, что у User есть метод getSecuredDto
+            customer: this.customer, // Предполагается, что у User есть метод getSecuredDto
             initiator: this.initiator.getSecuredDto(),
         };
     }

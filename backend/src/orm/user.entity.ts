@@ -73,15 +73,9 @@ export class User {
   @OneToMany(() => Idea, (idea) => idea.initiator)
   idea_initiator: Idea[];
 
-  @OneToMany(() => Idea, (idea) => idea.customer)
-  idea_customer: Idea[];
-
   @OneToMany(() => Project, (project) => project.initiator)
   project_initiator: Project[];
-
-  @OneToMany(() => Project, (project) => project.customer)
-  project_customer: Project[];
-
+  
   @OneToMany(() => Comments, (comment) => comment.users)
   comment: Comments[];
 
