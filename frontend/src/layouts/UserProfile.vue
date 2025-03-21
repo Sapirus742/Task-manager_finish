@@ -2,7 +2,7 @@
 <!-- eslint-disable vue/valid-v-on -->
 <template>
   <!-- Модальное окно с профилем пользователя -->
-  <q-dialog v-model="isOpen" class = "custom dialog">
+  <q-dialog v-model="isOpen" class = "custom dialog" position="top" transition-hide="none">
     <q-card class="profile-card">
       <!-- Заголовок профиля -->
       <q-card-section class="bg-primary text-white text-center">
@@ -151,7 +151,6 @@
   </q-dialog>
 </template>
 
-Рауш Кирилл, [21.03.2025 13:37]
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useMainStore } from 'src/stores/main-store';
