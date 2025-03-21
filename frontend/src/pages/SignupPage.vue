@@ -197,7 +197,7 @@ const onSignUp = async () => {
 
 .custom-font1 {
   position: relative;
-  top: 8px;
+  top: 9px;
 }
 
 /* Убираем отступы после подсказок */
