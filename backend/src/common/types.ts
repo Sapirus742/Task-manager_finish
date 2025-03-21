@@ -112,6 +112,28 @@ export interface UpdateProjectDto {
   initiator: number;
 }
 
+export interface CreateTeamDto {
+  name: string,        
+  description: string,        
+  privacy: PrivacyTeam.open,    
+  status: StatusTeam.searchProject,
+  user_leader: number,
+  user: number[],
+  project: number,
+  user_owner: number,
+}
+
+export interface UpdateTeamDto {
+  name: string,        
+  description: string,        
+  privacy: PrivacyTeam.open,    
+  status: StatusTeam.searchProject,
+  user_leader: number,
+  user: number[],
+  project: number,
+  user_owner: number,
+}
+
 export type SecuredUser = {
   id: number;
   email: string;

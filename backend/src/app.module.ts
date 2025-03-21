@@ -13,11 +13,13 @@ import { Portfolio } from './orm/portfolio.entity';
 import { Project } from './orm/project.entity';
 import { Comments } from './orm/comment.entity';
 import { ProjectModule } from './project/project.module';
+import { TeamModule } from './team/team.module';
  
 
 @Module({
 
   imports: [
+    TeamModule,
     ProjectModule,
     AuthModule,
     UsersModule,
