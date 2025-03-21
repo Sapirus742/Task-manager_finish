@@ -63,7 +63,7 @@
           label="Подтверждение пароля"
           dense
           outlined
-          class="q-mb-sm custom-font"
+          class="q-mb-sm custom-font1"
           placeholder="**********"
           :rules="[val => val === password || 'Пароли не совпадают']"
           no-error-icon
@@ -192,7 +192,12 @@ const onSignUp = async () => {
 }
 
 .custom-font {
-  /* font-family: 'Roboto', sans-serif; */
+  font-family: 'Roboto', sans-serif; 
+}
+
+.custom-font1 {
+  position: relative;
+  top: 8px;
 }
 
 /* Убираем отступы после подсказок */

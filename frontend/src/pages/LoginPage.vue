@@ -15,7 +15,7 @@
           dense
           outlined
           class="q-mb-md"
-          placeholder="almamun_uxui@std.tyulu.ru"
+          placeholder="example_mail@std.tyulu.ru"
         />
         <q-input
           type="password"
