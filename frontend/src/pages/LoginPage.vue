@@ -85,7 +85,7 @@ const onLogin = async () => {
   } else {
     $q.notify({
       message: 'Войти не удалось',
-      caption: 'Удостоверьтесь в правильности введеного Вами логина и пароля.',
+      caption: 'Удостоверьтесь в правильности введеного ВАМИ логина и пароля.',
       color: 'red',
       icon: 'error',
     });
@@ -98,6 +98,11 @@ const onSignUp = () => {
 
 const onForgotPassword = () => {
   console.log('Забыли пароль?');
+  $q.notify({
+    message: 'Проверьте ваш уровень интиллекта',
+    color: 'red',
+    icon: 'error',
+  })
 };
 </script>
 
