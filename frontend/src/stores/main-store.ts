@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import { reactive, toRefs } from 'vue';
-// import { useQuasar } from 'quasar';
 import {
   Competence,
   LoginResponseDto,
@@ -9,10 +8,8 @@ import {
   SecuredUser,
   UserAccountStatus,
 } from '../../../backend/src/common/types';
-// import * as authApi from '../api/auth.api';
 
 export const useMainStore = defineStore('main', () => {
-  // const $q = useQuasar();
   const state = reactive({
     userId: 0,
     username: 'unknown',
@@ -49,14 +46,26 @@ export const useMainStore = defineStore('main', () => {
     };
   };
 
-  const isAdmin = () => state.roles.some((r) => r == Role.admin);
-  const isUser = () => state.roles.some((r) => r == Role.user);
+  const isAdmin = () => state.roles.some((r) => r === Role.admin);
+  const isCustomer = () => state.roles.some((r) => r === Role.customer);
+  const isDirectorate = () => state.roles.some((r) => r === Role.directorate);
+  const isExpert = () => state.roles.some((r) => r === Role.expert); // Добавляем проверку для эксперта
+  const isUser = () => state.roles.some((r) => r === Role.user); // Добавляем проверку для пользователя
+
+  // Метод для проверки, может ли пользователь создавать проекты
+  const canCreateProject = () => {
+    return isAdmin() || isCustomer() || isDirectorate();
+  };
 
   return {
     ...toRefs(state),
     initAppState,
     isAdmin,
-    isUser,
+    isCustomer,
+    isDirectorate,
+    isExpert, // Экспортируем метод isExpert
+    isUser,   // Экспортируем метод isUser
+    canCreateProject,
     getCurrentUser,
   };
 });
