@@ -82,6 +82,36 @@ export interface CreateUserDto {
   status: UserAccountStatus;
 }
 
+export interface CreateProjectDto {
+  name: string;
+  problem: string;
+  solution: string;
+  result: string;
+  resource: string;
+  stack: Competence[];
+  status: StatusProject.searchTeam;
+  startProject: Date;
+  stopProject: Date;
+  maxUsers: string;
+  customer: number;
+  initiator: number;
+}
+
+export interface UpdateProjectDto {
+  name: string;
+  problem: string;
+  solution: string;
+  result: string;
+  resource: string;
+  stack: Competence[];
+  status: StatusProject.searchTeam;
+  startProject: Date;
+  stopProject: Date;
+  maxUsers: string;
+  customer: number;
+  initiator: number;
+}
+
 export type SecuredUser = {
   id: number;
   email: string;
@@ -92,6 +122,7 @@ export type SecuredUser = {
   roles: Role[];
   status: UserAccountStatus;
   competence: Competence[];
+  portfolio: PortfolioDto[];
 };
 
 export type TaskDto = {
@@ -102,6 +133,45 @@ export type TaskDto = {
   author: SecuredUser;
   assignee?: any;
 };
+
+export type ProjectDto = {
+  id: number;
+  name: string;
+  problem: string;
+  solution: string;
+  result: string;
+  resource: string;
+  stack: Competence[]; 
+  status: StatusProject; 
+  startProject: Date;
+  stopProject: Date;
+  maxUsers: string;
+  teams: TeamDto[];
+  customer: SecuredUser; 
+  initiator: SecuredUser; 
+};
+
+export type TeamDto = {
+  id: number;
+  name: string;
+  description: string;
+  privacy: PrivacyTeam;
+  status: StatusTeam;
+  user_leader: SecuredUser;
+  user: SecuredUser[];
+  portfolio: PortfolioDto[];
+  project: ProjectDto;
+  user_owner: SecuredUser;
+}
+
+export type PortfolioDto = {
+  id: number;
+  entryDate: Date;
+  exclusionDate: Date;
+  status: UserCommandStatus;
+  team: TeamDto;
+  user: SecuredUser;
+}
 
 export type UpdateUserDto = Omit<CreateUserDto, 'password'>;
 

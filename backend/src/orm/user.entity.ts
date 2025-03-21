@@ -98,7 +98,8 @@ export class User {
       telephone: this.telephone,
       roles: this.roles,
       status: this.status,
-      competence: this.competence,  
+      competence: this.competence,
+      portfolio: this.portfolio.map(portfolio => portfolio.getPortfolioDto()),
     };
   }
 }

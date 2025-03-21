@@ -4,6 +4,7 @@ import { reactive, toRefs } from 'vue';
 import {
   Competence,
   LoginResponseDto,
+  PortfolioDto,
   Role,
   SecuredUser,
   UserAccountStatus,
@@ -22,6 +23,7 @@ export const useMainStore = defineStore('main', () => {
     group: 'unknown',
     telephone: 'unknown',
     competence: [] as Competence[],
+    portfolio: [] as PortfolioDto[],
   });
 
   const initAppState = (appState: LoginResponseDto) => {
@@ -43,6 +45,7 @@ export const useMainStore = defineStore('main', () => {
       roles: state.roles,
       status: UserAccountStatus.active,
       competence: state.competence,
+      portfolio: state.portfolio,
     };
   };
 

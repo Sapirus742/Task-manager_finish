@@ -13,11 +13,17 @@ export class UsersService {
   ) {}
 
   async findOne(username: string): Promise<User | null> {
-    return this.userRepository.findOneBy({ email: username });
+    return this.userRepository.findOne({ 
+      where: { email: username },
+      relations: ['portfolio'],
+    });
   }
 
   async findOneById(id: number): Promise<User | any> {
-    return this.userRepository.findOneBy({ id });
+    return this.userRepository.findOne({ 
+      where: { id },
+      relations: ['portfolio'],
+    });
   }
 
   async create(
@@ -48,7 +54,7 @@ export class UsersService {
   }
 
   async findAll() {
-    return (await this.userRepository.find()).map((u) => u.getSecuredDto());
+    return await this.userRepository.find();
   }
 
   async update(id: number, updatedUserData: UpdateUserDto) {
