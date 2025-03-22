@@ -6,7 +6,6 @@ import {
   ManyToOne,
   OneToMany,
   OneToOne,
-  JoinColumn,
 } from 'typeorm';   
 
 import { Team } from './team.entity';
@@ -93,7 +92,11 @@ export class User {
       roles: this.roles,
       status: this.status,
       competence: this.competence,
+      team_leader: this.team_leader.getTeamDto(),
+      team_owner: this.team_owner.map(team_owner => team_owner.getTeamDto()),
       portfolio: this.portfolio.map(portfolio => portfolio.getPortfolioDto()),
+      project_initiator: this.project_initiator.map(project_initiator => project_initiator.getProjectDto()),
+      team: this.team.getTeamDto(),
     };
   }
 }

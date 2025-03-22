@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/orm/user.entity';
@@ -57,17 +57,15 @@ export class UsersService {
     return await this.userRepository.find();
   }
 
-  async update(id: number, updatedUserData: UpdateUserDto) {
-    const user = await this.findOneById(id);
-    if (user) {
-      user.name = updatedUserData.name;
-      user.firstname = updatedUserData.firstname;
-      user.lastname = updatedUserData.lastname;
-      user.roles = updatedUserData.roles;
-      user.status = updatedUserData.status;
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id } });
 
-      return await this.userRepository.save(user);
+    if (!user) {
+        throw new NotFoundException(`Project with id ${id} not found`);
     }
-    return;
+
+    Object.assign(user, updateUserDto);
+
+    return this.userRepository.save(user);
   }
 }

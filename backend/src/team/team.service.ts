@@ -14,7 +14,7 @@ export class TeamService {
     private readonly teamRepository: Repository<Team>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(User)
+    @InjectRepository(Project)
     private readonly projectRepository: Repository<Project>,
   ) {}
 

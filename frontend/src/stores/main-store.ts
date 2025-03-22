@@ -4,8 +4,10 @@ import {
   Competence,
   LoginResponseDto,
   PortfolioDto,
+  ProjectDto,
   Role,
   SecuredUser,
+  TeamDto,
   UserAccountStatus,
 } from '../../../backend/src/common/types';
 
@@ -21,6 +23,10 @@ export const useMainStore = defineStore('main', () => {
     telephone: 'unknown',
     competence: [] as Competence[],
     portfolio: [] as PortfolioDto[],
+      team_leader: null as TeamDto | null,
+      team_owner: [] as TeamDto[],
+      project_initiator: [] as ProjectDto[],
+      team: null as TeamDto | null,
   });
 
   const initAppState = (appState: LoginResponseDto) => {
@@ -43,6 +49,10 @@ export const useMainStore = defineStore('main', () => {
       status: UserAccountStatus.active,
       competence: state.competence,
       portfolio: state.portfolio,
+      team_leader: state.team_leader,
+      team_owner: state.team_owner,
+      project_initiator: state.project_initiator,
+      team: state.team,
     };
   };
 

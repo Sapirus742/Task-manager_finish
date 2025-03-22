@@ -82,6 +82,23 @@ export interface CreateUserDto {
   status: UserAccountStatus;
 }
 
+export interface UpdateUserDto {
+  id: number;
+  email: string;
+  firstname: string;
+  lastname: string;
+  group: string;
+  telephone: string;
+  roles: Role[];
+  status: UserAccountStatus;
+  competence: Competence[];
+  team_leader: number;
+  team_owner: number[];
+  portfolio: number[];
+  project_initiator: number[];
+  team: number;
+}
+
 export interface CreateProjectDto {
   name: string;
   problem: string;
@@ -134,6 +151,18 @@ export interface UpdateTeamDto {
   user_owner: number,
 }
 
+export interface CreatePortfolioDto {
+  status: UserCommandStatus;
+  team: number;
+  user: number;
+}
+
+export interface UpdatePortfolioDto {
+  status: UserCommandStatus;
+  team: number;
+  user: number;
+}
+
 export type SecuredUser = {
   id: number;
   email: string;
@@ -144,7 +173,11 @@ export type SecuredUser = {
   roles: Role[];
   status: UserAccountStatus;
   competence: Competence[];
+  team_leader: TeamDto | null;
+  team_owner: TeamDto[];
   portfolio: PortfolioDto[];
+  project_initiator: ProjectDto[];
+  team: TeamDto | null;
 };
 
 export type TaskDto = {
@@ -194,7 +227,5 @@ export type PortfolioDto = {
   team: TeamDto;
   user: SecuredUser;
 }
-
-export type UpdateUserDto = Omit<CreateUserDto, 'password'>;
 
 export type CreateUpdateTaskDto = Omit<TaskDto, 'id' | 'createdAt' | 'author'>;
