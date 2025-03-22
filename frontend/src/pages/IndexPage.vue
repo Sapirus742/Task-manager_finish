@@ -239,6 +239,7 @@ const confirmDelete = (id: number) => {
 const handleDelete = () => {
   if (projectIdToDelete.value !== null) {
     deleteProject(projectIdToDelete.value);
+    window.location.reload();
   }
 };
 

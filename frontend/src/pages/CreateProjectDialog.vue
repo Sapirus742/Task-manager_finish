@@ -162,7 +162,7 @@ const openDialog = () => {
 
 // Закрытие диалога
 const closeDialog = () => {
-  showDialog.value = false;
+  window.location.reload();
 };
 
 // Отправка формы

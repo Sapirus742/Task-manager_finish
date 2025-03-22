@@ -99,9 +99,7 @@ const onSignUp = () => {
 const onForgotPassword = () => {
   console.log('Забыли пароль?');
   $q.notify({
-    message: 'Проверьте ваш уровень интиллекта',
-    color: 'red',
-    icon: 'error',
+    message: 'Попробуйте вспомнить пароль',
   })
 };
 </script>
