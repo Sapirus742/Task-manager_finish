@@ -4,6 +4,7 @@
       <div class="header">
         <h1 class="project-title">Проекты</h1>
         <q-btn
+          v-if="mainStore.canCreateProject()"
           label="Создать проект"
           color="primary"
           @click="openCreateProjectDialog"
@@ -141,6 +142,9 @@
 import { ref, computed, onMounted } from 'vue';
 import { getAll, remove } from 'src/api/project.api';
 import CreateProjectDialog from './CreateProjectDialog.vue';
+import { useMainStore } from 'src/stores/main-store';
+
+const mainStore = useMainStore();
 
 interface Project {
   id: number;
