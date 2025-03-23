@@ -46,7 +46,7 @@ export class TeamService {
     team.privacy = privacy;
     team.status = status;
     const user_leaderEntity = await this.userRepository.findOne({ where: { id: user_leader } });
-    const userEntities = await this.userRepository.find({where: {id: In(user)}},);
+    const userEntities = await this.userRepository.find({where: {id: In(user)}});
     const projectEntity = await this.projectRepository.findOne({ where: { id: project } });
     const user_ownerEntity = await this.userRepository.findOne({ where: { id: user_owner } });
 
@@ -73,7 +73,7 @@ export class TeamService {
 
     // Обработка обновления пользователей
     if (updateTeamDto.user) {
-        const users = await this.userRepository.findByIds(updateTeamDto.user);
+        const users = await this.userRepository.find({where: {id: In(updateTeamDto.user)}});
         team.user = users; // Установите связь с пользователями
     }
 

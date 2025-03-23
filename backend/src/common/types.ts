@@ -33,6 +33,7 @@ export enum StatusIdea {
 export enum StatusTeam {
   searchProject = 'Search for a project',
   inProgress = 'In progress',
+  delete = 'Delete',
 }
     
 export enum PrivacyTeam {

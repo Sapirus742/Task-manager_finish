@@ -13,6 +13,7 @@ import { UsersService } from './users.service';
 import { Roles } from 'src/auth/roles.decorator';
 import { CreateUserDto, Role, UpdateUserDto } from 'src/common/types';
 import { RolesGuard } from 'src/auth/roles.guard';
+import { User } from 'src/orm/user.entity';
 
 @Controller('users')
 
@@ -27,18 +28,11 @@ export class UsersController {
     return this.usersService.findAll();
   }
   
-  @Post(':id/status')
-  @Roles(Role.admin)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  async setUserStatus(@Param('id') id, @Body() body) {
-    return this.usersService.setStatus(id, body.value);
-  }
-  
   @Post()
   @Roles(Role.admin)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async create(@Body() body: CreateUserDto) {
-    const createdUser = await this.usersService.create(
+  async create(@Body() body: CreateUserDto): Promise<User> {
+    return this.usersService.create(
       body.name,
       body.password,
       body.firstname,
@@ -46,14 +40,13 @@ export class UsersController {
       body.roles,
       body.status,
     );
-    return createdUser.getSecuredDto();
   }
   
   @Get(':id')
-    @UseGuards(JwtAuthGuard)
-    async findOne(@Param('id') id: number): Promise<Project> {
-      return this.projectService.findOne(id);
-    }
+  @UseGuards(JwtAuthGuard)
+  async findOne(@Param('id') id: number): Promise<User> {
+    return this.usersService.findOneById(id);
+  }
   
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
