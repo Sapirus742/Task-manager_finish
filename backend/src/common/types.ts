@@ -207,16 +207,17 @@ export type ProjectDto = {
 };
 
 export type TeamDto = {
-  id: number;
+  id: number;  
   name: string;
-  description: string;
+  description: string; //описание
   privacy: PrivacyTeam;
   status: StatusTeam;
   user_leader: SecuredUser;
   user: SecuredUser[];
   portfolio: PortfolioDto[];
   project: ProjectDto;
-  user_owner: SecuredUser;
+  user_owner: SecuredUser; //владелец
+  //markedForDel: boolean; //Нужно добавить в бд
 }
 
 export type PortfolioDto = {
