@@ -62,14 +62,20 @@ export class TeamService {
   }
 
   async update(id: number, updateTeamDto: UpdateTeamDto): Promise<Team> {
-    const team = await this.teamRepository.findOne({ where: { id } });
+    const team = await this.teamRepository.findOne({ where: { id }, relations: ['user'] });
 
     if (!team) {
-        throw new NotFoundException(`Project with id ${id} not found`);
+        throw new NotFoundException(`Команда с id ${id} не найдена`);
     }
 
-    // Обновите поля проекта
+    // Обновите другие поля
     Object.assign(team, updateTeamDto);
+
+    // Обработка обновления пользователей
+    if (updateTeamDto.user) {
+        const users = await this.userRepository.findByIds(updateTeamDto.user);
+        team.user = users; // Установите связь с пользователями
+    }
 
     return this.teamRepository.save(team);
   }
