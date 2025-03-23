@@ -50,11 +50,10 @@ export class UsersController {
   }
   
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  async getUser(@Param('id') id: number) {
-    const user = await this.usersService.findOneById(id);
-    if (user) return user.getSecuredDto();
-  }
+    @UseGuards(JwtAuthGuard)
+    async findOne(@Param('id') id: number): Promise<Project> {
+      return this.projectService.findOne(id);
+    }
   
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
