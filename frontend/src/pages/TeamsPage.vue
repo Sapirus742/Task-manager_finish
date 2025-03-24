@@ -1,325 +1,358 @@
 <template>
   <q-page class="flex flex-column">
     <div class="projects-container">
-      <div class="header">
-        <h1 class="project-title">Команды</h1>
+      <!-- Заголовок и кнопка создания -->
+      <div class="header-section">
+        <h2 class="project-title">Команды</h2>
         <q-btn
-          color="primary"
+          v-if="mainStore.canCreateTeam()"
           label="Создать команду"
-          @click="showCreateDialog = true"
-          class="q-mb-md"
+          color="primary"
+          @click="openCreateTeamDialog"
+          class="create-btn q-mb-md"
         />
       </div>
 
-      <!-- Поиск и фильтры -->
-      <div class="search-and-filters q-mb-md">
-        <q-input
-          v-model="searchQuery"
-          placeholder="Поиск по названию"
-          outlined
-          dense
-          class="q-mb-md"
-          clearable
-        >
-          <template v-slot:append>
-            <q-icon name="search" />
-          </template>
-        </q-input>
-
-        <div class="filters">
-          <q-chip
-            v-for="filter in filters"
-            :key="filter.label"
-            :label="filter.label"
-            :color="filter.active ? 'primary' : 'grey-5'"
-            text-color="white"
-            clickable
-            @click="toggleFilter(filter)"
-          />
-        </div>
+      <!-- Фильтры -->
+      <div class="filters q-mb-md">
+        <q-btn-toggle
+          v-model="activeFilter"
+          spread
+          no-caps
+          toggle-color="primary"
+          :options="[
+            { label: 'Все', value: 'all' },
+            { label: 'Открытые', value: PrivacyTeam.open },
+            { label: 'Закрытые', value: PrivacyTeam.close }
+          ]"
+        />
       </div>
 
       <!-- Список команд -->
       <div class="teams-list">
         <q-card
-          v-for="(team, index) in filteredTeams"
+          v-for="(team, index) in paginatedTeams"
           :key="team.id"
-          class="q-mb-sm"
-          flat
-          bordered
-          :style="{ borderRadius: '10px', border: '1px solid #ddd' }"
+          class="q-mb-sm team-card"
         >
           <q-card-section>
             <div class="flex justify-between items-center">
-              <div>
-                <div class="text-h6">#{{ index + 1 }} {{ team.title }}</div>
+              <div class="flex items-center">
+                <div class="text-h6">#{{ (currentPage - 1) * itemsPerPage + index + 1 }} {{ team.name }}</div>
               </div>
               <div class="flex items-center">
-                <!-- Иконка с количеством участников (увеличена) -->
-                <q-icon name="people" class="q-icon--large q-mr-sm" />
-                <span class="q-mr-md text-h6">{{ team.membersCount }}</span>
-
-                <!-- Статус приватности -->
+                <q-icon name="people" class="q-mr-sm" />
+                <span class="q-mr-md">{{ team.user.length }} участников</span>
                 <q-chip
-                  :color="team.isPrivate ? 'negative' : 'positive'"
+                  :color="team.privacy === PrivacyTeam.close ? 'negative' : 'positive'"
                   text-color="white"
-                  size="sm"
                 >
-                  {{ team.isPrivate ? 'Закрытая' : 'Открытая' }}
+                  {{ team.privacy === PrivacyTeam.close ? 'Закрытая' : 'Открытая' }}
                 </q-chip>
-
-                <!-- Кнопка "Открыть" -->
                 <q-btn
                   color="primary"
                   label="Открыть"
-                  @click="toggleTeamDetails(team.id)"
+                  @click="openTeamDetails(team)"
                   class="q-ml-sm"
                 />
               </div>
             </div>
           </q-card-section>
-
-          <!-- Подробная информация о команде -->
-          <q-slide-transition>
-            <div v-if="openedTeams.includes(team.id)">
-              <q-separator />
-              <q-card-section>
-                <div class="text-subtitle2 q-mb-sm">
-                  <strong>Создал:</strong> {{ team.createdBy }}
-                </div>
-                <div class="text-subtitle2 q-mb-sm">
-                  <strong>Дата создания:</strong> {{ formatDate(team.createdAt) }}
-                </div>
-                <div class="text-subtitle2 q-mb-sm">
-                  <strong>Описание:</strong> {{ team.description }}
-                </div>
-                <div class="text-subtitle2 q-mb-sm">
-                  <strong>Количество участников:</strong> {{ team.membersCount }}
-                </div>
-                <div class="text-subtitle2 q-mb-sm">
-                  <strong>Приватность:</strong> {{ team.isPrivate ? 'Закрытая' : 'Открытая' }}
-                </div>
-                <div class="text-subtitle2">
-                  <strong>Статус:</strong> {{ team.status }}
-                </div>
-              </q-card-section>
-            </div>
-          </q-slide-transition>
         </q-card>
       </div>
+
+      <!-- Пустое состояние -->
+      <div v-if="teams.length === 0" class="empty-state">
+        <q-icon name="info" size="xl" />
+        <p>Нет команд.</p>
+      </div>
+
+      <!-- Пагинация -->
+      <q-pagination
+        v-if="teams.length > 0"
+        v-model="currentPage"
+        :max="totalPages"
+        :input="true"
+        class="q-mt-md"
+        :max-pages="10"
+      />
     </div>
 
-    <!-- Модальное окно для создания команды -->
-    <q-dialog v-model="showCreateDialog">
-      <q-card style="min-width: 400px">
-        <q-card-section>
-          <div class="text-h6">Создать новую команду</div>
-        </q-card-section>
+    <!-- Диалог с деталями команды -->
+    <q-dialog v-model="showTeamDetails">
+    <q-card v-if="selectedTeam" class="team-details-card">
+      <q-card-section>
+        <h2 class="team-heading"><strong>{{ selectedTeam?.name }}</strong></h2>
+        <p class="team-description">{{ selectedTeam?.description }}</p>
 
-        <q-card-section>
-          <q-form @submit="createTeam">
-            <q-input
-              v-model="newTeam.title"
-              label="Название команды"
-              class="q-mb-md"
-              outlined
-              required
-            />
-            <q-input
-              v-model="newTeam.description"
-              label="Описание команды"
-              type="textarea"
-              class="q-mb-md"
-              outlined
-              required
-            />
-            <q-input
-              v-model="newTeam.membersCount"
-              label="Количество участников"
-              type="number"
-              class="q-mb-md"
-              outlined
-              required
-            />
-            <q-toggle
-              v-model="newTeam.isPrivate"
-              label="Приватная команда"
-              class="q-mb-md"
-            />
-          </q-form>
-        </q-card-section>
+        <!-- Владелец команды -->
+        <div class="team-owner q-mb-md" v-if="selectedTeam?.user_owner">
+          <q-icon name="person" class="q-mr-sm" />
+          <strong>Создал: </strong> 
+          <span class="user-info">
+            {{ selectedTeam.user_owner?.firstname }} {{ selectedTeam.user_owner?.lastname }}
+            <template v-if="selectedTeam.user_owner?.email">
+              ({{ selectedTeam.user_owner.email }})
+            </template>
+          </span>
+        </div>
 
-        <q-card-actions align="right">
-          <q-btn flat label="Отмена" color="primary" v-close-popup />
-          <q-btn type="submit" label="Создать" color="primary" @click="createTeam" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+        <!-- Участники команды -->
+        <div class="team-members" v-if="selectedTeam?.user">
+          <q-icon name="people" class="q-mr-sm" />
+          <strong>Команда:</strong>
+          <ul class="member-list">
+            <!-- Владелец -->
+            <li class="member-item owner" v-if="selectedTeam.user_owner">
+              <div class="member-info">
+                <span class="member-name">
+                  {{ selectedTeam.user_owner?.firstname }} {{ selectedTeam.user_owner?.lastname }}
+                  <q-badge color="teal" class="q-ml-sm">Владелец</q-badge>
+                  <q-badge 
+                    v-if="selectedTeam.user_leader?.id === selectedTeam.user_owner?.id" 
+                    color="primary" 
+                    class="q-ml-sm"
+                  >
+                    Тимлид
+                  </q-badge>
+                </span>
+                <span class="member-email" v-if="selectedTeam.user_owner?.email">
+                  <strong style = "color: black">email: </strong> {{ selectedTeam.user_owner.email }}
+                </span>
+              </div>
+            </li>
+
+            <!-- Остальные участники -->
+            <template v-if="selectedTeam.user?.length">
+              <li 
+                v-for="user in getRegularMembers(selectedTeam)" 
+                :key="user.id" 
+                class="member-item"
+              >
+                <div class="member-info">
+                  <span class="member-name">
+                    {{ user?.firstname }} {{ user?.lastname }}
+                    <q-badge 
+                      v-if="selectedTeam.user_leader?.id === user?.id" 
+                      color="primary" 
+                      class="q-ml-sm"
+                    >
+                      Тимлид
+                    </q-badge>
+                  </span>
+                  <span class="member-email" v-if="user?.email">
+                    <strong style = "color: black">email: </strong> {{ user.email }}
+                  </span>
+                </div>
+              </li>
+            </template>
+          </ul>
+        </div>
+
+        <!-- Статус команды -->
+        <div class="team-status q-mt-md">
+          <q-icon name="info" class="q-mr-sm" />
+          <strong>Статус:</strong> {{ selectedTeam?.status }}
+        </div>
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn 
+          v-if="canDeleteTeam(selectedTeam)"
+          flat 
+          label="Удалить" 
+          color="negative" 
+          @click="confirmDeleteTeam(selectedTeam)" 
+        />
+        <q-btn flat label="Закрыть" color="primary" v-close-popup />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+
+    <!-- Диалог создания команды -->
+    <CreateTeamDialog ref="createTeamDialog" @create="addTeam" />
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useMainStore } from 'src/stores/main-store';
-import { storeToRefs } from 'pinia';
-
-// Типы
-interface Filter {
-  label: string;
-  active: boolean;
-}
-
-interface Team {
-  id: number;
-  title: string;
-  description: string;
-  createdBy: string; // Имя пользователя
-  createdAt: string; // Дата создания
-  membersCount: number;
-  isPrivate: boolean; // Приватность команды
-  status: string; // Статус команды
-}
+import { getAll, remove } from 'src/api/team.api';
+import CreateTeamDialog from './CreateTeamDialog.vue';
+import { TeamDto, PrivacyTeam } from '../../../backend/src/common/types';
+import { useQuasar } from 'quasar';
 
 // Хранилище
 const mainStore = useMainStore();
-const { firstname, lastname } = storeToRefs(mainStore);
 
-// Поиск
-const searchQuery = ref('');
+// Инициализируем Quasar
+const $q = useQuasar();
 
-// Фильтры
-const filters = ref<Filter[]>([
-  { label: 'Все категории', active: true },
-  { label: 'Открыта', active: false },
-  { label: 'Закрыта', active: false },
-]);
+// Команды
+const teams = ref<TeamDto[]>([]);
 
-// Команды (пример данных)
-const teams = ref<Team[]>([
-  {
-    id: 1,
-    title: 'DreamTeam',
-    description: 'Команда для разработки инновационных решений в области медицины.',
-    createdBy: 'Иван Иванов',
-    createdAt: '2023-10-01',
-    membersCount: 3,
-    isPrivate: false,
-    status: 'Открыта',
-  },
-  {
-    id: 2,
-    title: 'Умники',
-    description: 'Команда для разработки интеллектуальных систем и платформ.',
-    createdBy: 'Петр Петров',
-    createdAt: '2023-10-05',
-    membersCount: 5,
-    isPrivate: true,
-    status: 'Закрыта',
-  },
-  // Остальные команды...
-]);
+// Объявляем activeFilter с типом
+const activeFilter = ref<string | PrivacyTeam>('all');
 
-// Переключение фильтров
-const toggleFilter = (filter: Filter) => {
-  filters.value.forEach((f) => (f.active = f === filter));
-};
-
-// Фильтрация команд по статусу и поиску
+// Фильтрация команд
 const filteredTeams = computed(() => {
-  const activeFilter = filters.value.find((f) => f.active);
-  let filtered = teams.value;
-
-  // Фильтрация по статусу
-  if (activeFilter?.label !== 'Все категории') {
-    filtered = filtered.filter((team) => team.status === activeFilter?.label);
-  }
-
-  // Фильтрация по поиску
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter((team) =>
-      team.title.toLowerCase().includes(query)
-    );
-  }
-
-  return filtered;
+  if (activeFilter.value === 'all') return teams.value;
+  return teams.value.filter(team => team.privacy === activeFilter.value);
 });
 
-// Логика для открытия/закрытия деталей команды
-const openedTeams = ref<number[]>([]);
+const getRegularMembers = (team: TeamDto) => {
+  if (!team?.user || !team?.user_owner) return [];
+  return team.user.filter(u => u?.id !== team.user_owner?.id);
+};
 
-const toggleTeamDetails = (teamId: number) => {
-  if (openedTeams.value.includes(teamId)) {
-    openedTeams.value = openedTeams.value.filter((id) => id !== teamId);
-  } else {
-    openedTeams.value.push(teamId);
+// Загрузка команд из базы данных
+const loadTeams = async () => {
+  try {
+    const data = await getAll(); // Загружаем команды из API
+    if (data) {
+      teams.value = data;
+    }
+  } catch (error) {
+    console.error('Ошибка при загрузке команд:', error);
   }
 };
 
-// Форматирование даты
-const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('ru-RU', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+// Загружаем команды при монтировании компонента
+onMounted(() => {
+  loadTeams();
+});
+
+// Пагинация
+const itemsPerPage = 4;
+const currentPage = ref(1);
+const totalPages = computed(() => Math.ceil(teams.value.length / itemsPerPage));
+const paginatedTeams = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage;
+  return filteredTeams.value.slice(start, start + itemsPerPage);
+});
+
+// Логика для открытия деталей команды
+const showTeamDetails = ref(false);
+const selectedTeam = ref<TeamDto | null>(null);
+
+const openTeamDetails = (team: TeamDto) => {
+  selectedTeam.value = team;
+  showTeamDetails.value = true;
+};
+
+// Функция проверки прав на удаление
+const canDeleteTeam = (team: TeamDto) => {
+  return mainStore.isAdmin() || team.user_owner.id === mainStore.userId;
+};
+
+// Функция подтверждения удаления
+const confirmDeleteTeam = (team: TeamDto) => {
+  $q.dialog({
+    title: 'Подтверждение удаления',
+    message: `Вы уверены, что хотите удалить команду "${team.name}"?`,
+    persistent: true,
+    ok: {
+      label: 'Удалить',
+      color: 'negative'
+    },
+    cancel: {
+      label: 'Отмена',
+      color: 'primary',
+      flat: true
+    }
+  }).onOk(async () => {
+    await deleteTeam(team.id);
   });
 };
 
-// Логика для создания команды
-const showCreateDialog = ref(false);
-const newTeam = ref<Team>({
-  id: 0,
-  title: '',
-  description: '',
-  createdBy: `${firstname.value} ${lastname.value}`, // Используем имя авторизованного пользователя
-  createdAt: new Date().toISOString().split('T')[0], // Текущая дата
-  membersCount: 0,
-  isPrivate: false, // По умолчанию команда открытая
-  status: 'Открыта', // По умолчанию статус "Открыта"
-});
-
-const createTeam = () => {
-  // Генерация уникального ID (в реальном проекте это должно быть на стороне сервера)
-  newTeam.value.id = teams.value.length + 1;
-  teams.value.push({ ...newTeam.value });
-
-  // Сброс формы
-  newTeam.value = {
-    id: 0,
-    title: '',
-    description: '',
-    createdBy: `${firstname.value} ${lastname.value}`, // Используем имя авторизованного пользователя
-    createdAt: new Date().toISOString().split('T')[0], // Текущая дата
-    membersCount: 0,
-    isPrivate: false,
-    status: 'Открыта',
-  };
-
-  // Закрытие модального окна
-  showCreateDialog.value = false;
+// Функция удаления команды
+const deleteTeam = async (teamId: number) => {
+  try {
+    const deletedTeam = await remove(teamId);
+    if (deletedTeam) {
+      // Удаляем команду из списка
+      teams.value = teams.value.filter(t => t.id !== teamId);
+      // Закрываем диалог
+      showTeamDetails.value = false;
+      $q.notify({
+        message: 'Команда успешно удалена',
+        color: 'positive',
+        position: 'top'
+      });
+    }
+  } catch (error) {
+    console.error('Ошибка при удалении команды:', error);
+    $q.notify({
+      message: 'Ошибка при удалении команды',
+      color: 'negative',
+      position: 'top'
+    });
+  }
+  window.location.reload();
 };
+
+// Логика для создания команды
+const createTeamDialog = ref();
+
+const openCreateTeamDialog = () => {
+  createTeamDialog.value.openDialog();
+}
+
+const addTeam = (newTeam: TeamDto) => {
+  teams.value.push(newTeam);
+}
 </script>
 
 <style scoped>
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #666;
+}
+
+.empty-state .q-icon {
+  margin-bottom: 10px;
+}
+
 .projects-container {
   width: 80%;
   margin: 10px auto 0;
 }
 
-.header {
+.owner-label::after {
+  content: " ";
+  white-space: pre;
+}
+
+.header-section {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  margin-bottom: 10px;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
 .project-title {
-  font-size: 40px;
+  font-size: 50px; /* Уменьшенный размер */
+  font-weight: 60;
   margin: 0;
-  font-family: 'Roboto', sans-serif;
-  font-weight: 500;
   color: #333;
+}
+
+.create-btn {
+  align-self: flex-start; /* Выравнивание кнопки по левому краю */
+  width: auto;
+  padding: px 16px;
+}
+
+.projects-container {
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
 .search-and-filters {
@@ -335,13 +368,100 @@ const createTeam = () => {
 }
 
 .teams-list {
-  max-width: 60vw;
-  margin: 0 auto;
-  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1200px;
+  margin-bottom: 20px;
+}
+
+.team-card {
+  border-radius: 8px;
+  transition: transform 0.2s;
+}
+
+.team-card:hover {
+  transform: translateY(-2px);
 }
 
 /* Увеличение размера иконки */
 .q-icon--large {
   font-size: 24px; /* Размер иконки */
+}
+
+/* Стили для диалога с деталями команды */
+.team-details-card {
+  width: 600px;
+  max-width: 90%;
+}
+
+.user-info {
+  margin-left: 4px;
+}
+
+.team-owner {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.team-heading {
+  font-size: 24px;
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.team-description {
+  margin: 8px 0;
+}
+
+.team-members {
+  margin: 8px 0;
+}
+
+.member-list {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 8px;
+}
+
+.member-item {
+  padding-left: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.member-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.member-name {
+  font-weight: 500;
+}
+
+.member-item.owner {
+  padding-left: 20px;
+  border-radius: 4px;
+}
+
+.member-email {
+  color: #666;
+  font-size: 0.9em;
+  margin-top: 2px;
+}
+
+.team-status {
+  display: flex;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.team-details-card .q-btn.negative {
+  margin-right: auto; /* Размещаем слева */
+}
+
+@media (max-width: 600px) {
+  .teams-list {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

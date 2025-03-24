@@ -67,6 +67,14 @@ export const useMainStore = defineStore('main', () => {
     return isAdmin() || isCustomer() || isDirectorate();
   };
 
+  const canCreateTeam = () => {
+    return isAdmin() || isCustomer() || isDirectorate();
+  };
+
+  const canJoinTeam = () => {
+    return isAdmin() || isUser()
+  }
+
   return {
     ...toRefs(state),
     initAppState,
@@ -76,6 +84,8 @@ export const useMainStore = defineStore('main', () => {
     isExpert, // Экспортируем метод isExpert
     isUser,   // Экспортируем метод isUser
     canCreateProject,
+    canCreateTeam,
+    canJoinTeam,
     getCurrentUser,
   };
 });
