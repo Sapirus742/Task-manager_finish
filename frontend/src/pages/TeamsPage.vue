@@ -340,6 +340,7 @@ const addTeam = (newTeam: TeamDto) => {
   font-weight: 60;
   margin: 0;
   color: #333;
+  padding-top: 25px;
 }
 
 .create-btn {
