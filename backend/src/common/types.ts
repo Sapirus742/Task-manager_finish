@@ -31,9 +31,9 @@ export enum StatusIdea {
 }
     
 export enum StatusTeam {
-  searchProject = 'Search for a project',
-  inProgress = 'In progress',
-  delete = 'Delete',
+  searchProject = 'Поиск проекта (Search for a project)',
+  inProgress = 'В процессе работы (In progress)',
+  delete = 'На удалении (Delete)',
 }
     
 export enum PrivacyTeam {
@@ -107,7 +107,7 @@ export interface CreateProjectDto {
   result: string;
   resource: string;
   stack: Competence[];
-  status: StatusProject.searchTeam;
+  status: StatusProject;
   startProject: Date;
   stopProject: Date;
   maxUsers: string;
@@ -116,18 +116,18 @@ export interface CreateProjectDto {
 }
 
 export interface UpdateProjectDto {
-  name: string;
-  problem: string;
-  solution: string;
-  result: string;
-  resource: string;
-  stack: Competence[];
-  status: StatusProject.searchTeam;
-  startProject: Date;
-  stopProject: Date;
-  maxUsers: string;
-  customer: string;
-  initiator: number;
+  name?: string;
+  problem?: string;
+  solution?: string;
+  result?: string;
+  resource?: string;
+  stack?: Competence[];
+  status?: StatusProject;
+  startProject?: Date;
+  stopProject?: Date;
+  maxUsers?: string;
+  customer?: string;
+  initiator?: number;
 }
 
 export interface CreateTeamDto {

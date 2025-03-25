@@ -66,7 +66,10 @@
             v-model="startProjectString"
             label="Дата начала проекта"
             type="date"
-            :rules="[(val) => !!val || 'Поле обязательно']"
+            :rules="[
+              (val) => !!val || 'Поле обязательно',
+              (val) => isValidDate(val) || 'Некорректная дата'
+            ]"
           />
 
           <!-- Дата окончания проекта -->
@@ -74,7 +77,11 @@
             v-model="stopProjectString"
             label="Дата окончания проекта"
             type="date"
-            :rules="[(val) => !!val || 'Поле обязательно']"
+            :rules="[
+              (val) => !!val || 'Поле обязательно',
+              (val) => isValidDate(val) || 'Некорректная дата',
+              (val) => isAfterStartDate(val) || 'Должна быть после даты начала'
+            ]"
           />
 
           <!-- Максимальное количество участников -->
@@ -108,6 +115,9 @@ import { ref, computed } from 'vue';
 import { Competence, CreateProjectDto, StatusProject } from '../../../backend/src/common/types';
 import { create } from 'src/api/project.api'; // Импортируем метод для создания проекта
 import { useMainStore } from 'src/stores/main-store'; // Импортируем хранилище
+import { date } from 'quasar';
+
+const { formatDate} = date;
 
 // Пропсы и эмиты
 const emit = defineEmits(['create']);
@@ -136,18 +146,29 @@ const newProject = ref<CreateProjectDto>({
 
 // Строковые представления дат для v-model
 const startProjectString = computed({
-  get: () => newProject.value.startProject.toISOString().split('T')[0],
+  get: () => formatDate(newProject.value.startProject, 'YYYY-MM-DD'),
   set: (value) => {
-    newProject.value.startProject = new Date(value);
+    const [year, month, day] = value.split('-').map(Number);
+    newProject.value.startProject = new Date(year, month - 1, day);
   },
 });
 
 const stopProjectString = computed({
-  get: () => newProject.value.stopProject.toISOString().split('T')[0],
+  get: () => formatDate(newProject.value.stopProject, 'YYYY-MM-DD'),
   set: (value) => {
-    newProject.value.stopProject = new Date(value);
+    const [year, month, day] = value.split('-').map(Number);
+    newProject.value.stopProject = new Date(year, month - 1, day);
   },
 });
+
+const isValidDate = (dateString: string) => {
+  return !isNaN(new Date(dateString).getTime());
+};
+
+const isAfterStartDate = (endDateString: string) => {
+  const endDate = new Date(endDateString);
+  return endDate >= newProject.value.startProject;
+};
 
 // Опции для стека технологий
 const competenceOptions = Object.values(Competence);
@@ -168,7 +189,13 @@ const closeDialog = () => {
 // Отправка формы
 const onSubmit = async () => {
   try {
-    // Проверяем, что все обязательные поля заполнены
+    // Проверяем, что дата окончания не раньше даты начала
+    if (newProject.value.stopProject < newProject.value.startProject) {
+      console.error('Дата окончания не может быть раньше даты начала');
+      return;
+    }
+
+    // Проверяем остальные обязательные поля
     if (
       !newProject.value.name ||
       !newProject.value.problem ||
@@ -184,16 +211,17 @@ const onSubmit = async () => {
       return;
     }
 
-    // Отправляем данные на сервер
+    // Создаем копию объекта без реактивности
     const projectData: CreateProjectDto = {
       ...newProject.value,
+      startProject: new Date(newProject.value.startProject),
+      stopProject: new Date(newProject.value.stopProject),
     };
 
     const createdProject = await create(projectData);
     if (createdProject) {
-      // Оповещаем родительский компонент о создании проекта
       emit('create', createdProject);
-      closeDialog(); // Закрываем диалог после успешного создания
+      closeDialog();
     }
   } catch (error) {
     console.error('Ошибка при создании проекта:', error);

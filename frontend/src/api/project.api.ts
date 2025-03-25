@@ -29,13 +29,21 @@ export async function create(
 
 export async function update(
   id: number,
-  payload: UpdateProjectDto
+  payload: Partial<UpdateProjectDto>
 ): Promise<ProjectDto | undefined> {
-  const response = await api.patch('/project/' + id, payload);
-  if (response.status == 200) {
-    return response.data;
+  try {
+    console.log('[API] PATCH /project/' + id, payload);
+    const response = await api.patch('/project/' + id, payload);
+    
+    if (response.status === 200) {
+      console.log('[API] Проект обновлен:', response.data);
+      return response.data;
+    }
+    console.error('[API] Ошибка обновления:', response.status, response.data);
+  } catch (error) {
+    console.error('[API] Ошибка запроса:', error);
+    throw error;
   }
-  return;
 }
 
 export async function remove(id: number): Promise<ProjectDto | undefined> {
@@ -44,4 +52,5 @@ export async function remove(id: number): Promise<ProjectDto | undefined> {
     return response.data;
   }
   return;
+  
 }

@@ -75,6 +75,8 @@ export const useMainStore = defineStore('main', () => {
     return isAdmin() || isUser()
   }
 
+  getUserId: () => state.userId // Добавьте эту строку
+
   return {
     ...toRefs(state),
     initAppState,

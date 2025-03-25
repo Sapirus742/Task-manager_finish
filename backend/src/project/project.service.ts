@@ -33,7 +33,7 @@ export class ProjectService {
     result: string,
     resource: string,
     stack: Competence[],
-    status: StatusProject.searchTeam,
+    status: StatusProject,
     startProject: Date,
     stopProject: Date,
     maxUsers: string,

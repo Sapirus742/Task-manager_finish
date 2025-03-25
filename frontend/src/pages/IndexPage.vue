@@ -26,7 +26,7 @@
             <!-- Инициатор с иконкой -->
             <div class="project-initiator">
               <q-icon name="person" class="q-mr-sm" />
-              <strong>Заказчик:</strong> {{ project.customer }}
+              <strong>Заказчик:&nbsp;</strong> {{ project.customer }}
             </div>
 
             <!-- Статус проекта (команда и заявки) -->
@@ -84,7 +84,7 @@
 
             <div class="project-initiator">
               <q-icon name="person" class="q-mr-sm" />
-              <strong>Заказчик:</strong> {{ selectedProject.customer }}
+              <strong>Заказчик:&nbsp;</strong> {{ selectedProject.customer }}
             </div>
 
             <div class="project-status">
@@ -330,6 +330,10 @@ const deleteProject = async (id: number) => {
   display: flex;
   align-items: center;
   font-weight: bold;
+}
+
+.project-initiator strong {
+  margin-right: 4px;
 }
 
 .project-status {

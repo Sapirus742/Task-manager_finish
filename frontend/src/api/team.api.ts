@@ -38,10 +38,17 @@ export async function update(
   return;
 }
 
-export async function remove(id: number): Promise<TeamDto | undefined> {
-  const response = await api.delete('/team/' + id);
-  if (response.status == 200) {
-    return response.data;
+export async function remove(id: number): Promise<void> {
+  try {
+    console.log('[API] DELETE /team/' + id);
+    const response = await api.delete('/team/' + id);
+    
+    if (response.status !== 200 && response.status !== 204) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    console.log('[API] Команда удалена');
+  } catch (error) {
+    console.error('[API] Ошибка удаления:', error);
+    throw error;
   }
-  return;
 }

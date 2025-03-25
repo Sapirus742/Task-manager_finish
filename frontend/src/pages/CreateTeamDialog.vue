@@ -75,12 +75,16 @@
           />
 
           <!-- Проект -->
-          <q-input
-            v-model.number="newTeam.project"
-            label="ID проекта"
-            :rules="[(val) => val > 0 || 'Введите корректный ID проекта']"
-            type="number"
+          <q-select
+            v-model="newTeam.project"
+            label="Проект"
+            :options="projectOptions"
+            :rules="[(val) => !!val || 'Выберите проект']"
             outlined
+            option-value="id"
+            option-label="name"
+            emit-value
+            map-options
           />
 
           <q-card-actions align="right">
@@ -96,9 +100,10 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useQuasar } from 'quasar';
-import { CreateTeamDto, PrivacyTeam, StatusTeam, Role } from '../../../backend/src/common/types';
+import { CreateTeamDto, PrivacyTeam, StatusTeam, Role, StatusProject, UpdateProjectDto } from '../../../backend/src/common/types';
 import { create } from 'src/api/team.api';
-import { getAll } from 'src/api/users.api';
+import { getAll as getAllUsers } from 'src/api/users.api';
+import { getAll as getAllProjects, update as updateProject } from 'src/api/project.api';
 import { useMainStore } from 'src/stores/main-store';
 
 const $q = useQuasar();
@@ -130,10 +135,11 @@ const statusOptions = [
 ];
 
 const userOptions = ref<Array<{id: number, fullName: string}>>([]);
+const projectOptions = ref<Array<{id: number, name: string}>>([]);
 
 const loadUsers = async () => {
   try {
-    const users = await getAll();
+    const users = await getAllUsers();
     if (users) {
       userOptions.value = users
         .filter(user => user.roles.includes(Role.user))
@@ -152,6 +158,27 @@ const loadUsers = async () => {
   }
 };
 
+const loadProjects = async () => {
+  try {
+    const projects = await getAllProjects();
+    if (projects) {
+      projectOptions.value = projects
+        .filter(project => project.status === StatusProject.searchTeam)
+        .map(project => ({
+          id: project.id,
+          name: project.name
+        }));
+    }
+  } catch (error) {
+    console.error('Ошибка загрузки проектов:', error);
+    $q.notify({
+      message: 'Ошибка загрузки проектов',
+      color: 'negative',
+      position: 'top'
+    });
+  }
+};
+
 watch(() => newTeam.value.user, (newUsers) => {
   if (newUsers.length === 0) {
     newTeam.value.user_leader = 0;
@@ -162,7 +189,7 @@ watch(() => newTeam.value.user, (newUsers) => {
 
 const openDialog = async () => {
   showDialog.value = true;
-  await loadUsers();
+  await Promise.all([loadUsers(), loadProjects()]);
   newTeam.value = {
     name: '',
     description: '',
@@ -185,7 +212,7 @@ const onSubmit = async () => {
     
     if (!newTeam.value.name || !newTeam.value.description || 
         newTeam.value.user.length === 0 || !newTeam.value.user_leader ||
-        newTeam.value.project <= 0) {
+        !newTeam.value.project) {
       $q.notify({
         message: 'Заполните все обязательные поля',
         color: 'warning',
@@ -196,13 +223,27 @@ const onSubmit = async () => {
 
     const teamData = {
       ...newTeam.value,
-      user: [...newTeam.value.user], // Копируем массив участников
+      user: [...newTeam.value.user],
       user_leader: Number(newTeam.value.user_leader),
       project: Number(newTeam.value.project),
     };
 
+    // Создаем команду
     const createdTeam = await create(teamData);
     if (createdTeam) {
+      // Получаем текущий проект
+      const currentProject = projectOptions.value.find(p => p.id === teamData.project);
+      
+      if (currentProject) {
+        // Создаем объект для обновления с текущими значениями + новым статусом
+        const updateData: UpdateProjectDto = {
+          ...currentProject, // Все текущие данные проекта
+          status: StatusProject.teamFound // Новый статус
+        };
+        
+        await updateProject(teamData.project, updateData);
+      }
+      
       $q.notify({
         message: 'Команда успешно создана',
         color: 'positive',

@@ -35,32 +35,47 @@
           :key="team.id"
           class="q-mb-sm team-card"
         >
-          <q-card-section>
-            <div class="flex justify-between items-center">
-              <div class="flex items-center">
-                <div class="text-h6">#{{ (currentPage - 1) * itemsPerPage + index + 1 }} {{ team.name }}</div>
+          <q-card-section 
+            class="team-card-content"
+            @click="toggleTeamDescription(team.id)"
+          >
+            <div class="team-name">
+              #{{ (currentPage - 1) * itemsPerPage + index + 1 }} {{ team.name }}
+            </div>
+            <div class="team-actions">
+              <div class="team-members-count">
+                <q-icon name="people" class="q-mr-xs" />
+                {{ team.user.length }} участников
               </div>
-              <div class="flex items-center">
-                <q-icon name="people" class="q-mr-sm" />
-                <span class="q-mr-md">{{ team.user.length }} участников</span>
-                <q-chip
-                  :color="team.privacy === PrivacyTeam.close ? 'negative' : 'positive'"
-                  text-color="white"
-                >
-                  {{ team.privacy === PrivacyTeam.close ? 'Закрытая' : 'Открытая' }}
-                </q-chip>
-                <q-btn
-                  color="primary"
-                  label="Открыть"
-                  @click="openTeamDetails(team)"
-                  class="q-ml-sm"
-                />
-              </div>
+              <q-chip
+                :color="team.privacy === PrivacyTeam.close ? 'negative' : 'positive'"
+                text-color="white"
+                class="privacy-chip"
+              >
+                {{ team.privacy === PrivacyTeam.close ? 'Закрытая' : 'Открытая' }}
+              </q-chip>
+              <q-btn
+                color="primary"
+                label="Открыть"
+                @click.stop="openTeamDetails(team)"
+                class="open-btn"
+              />
             </div>
           </q-card-section>
+
+          <!-- Раскрывающееся описание -->
+          <q-slide-transition>
+            <div v-show="expandedTeams.includes(team.id)">
+              <q-separator />
+              <q-card-section class="team-description-section">
+                <div class="text-body2">
+                  {{ team.description || 'Описание отсутствует' }}
+                </div>
+              </q-card-section>
+            </div>
+          </q-slide-transition>
         </q-card>
       </div>
-
       <!-- Пустое состояние -->
       <div v-if="teams.length === 0" class="empty-state">
         <q-icon name="info" size="xl" />
@@ -108,16 +123,25 @@
                 <span class="member-name">
                   {{ selectedTeam.user_owner?.firstname }} {{ selectedTeam.user_owner?.lastname }}
                   <q-badge color="teal" class="q-ml-sm">Владелец</q-badge>
-                  <q-badge 
-                    v-if="selectedTeam.user_leader?.id === selectedTeam.user_owner?.id" 
-                    color="primary" 
-                    class="q-ml-sm"
-                  >
-                    Тимлид
-                  </q-badge>
                 </span>
                 <span class="member-email" v-if="selectedTeam.user_owner?.email">
-                  <strong style = "color: black">email: </strong> {{ selectedTeam.user_owner.email }}
+                  <strong style="color: black">email: </strong> {{ selectedTeam.user_owner.email }}
+                </span>
+              </div>
+            </li>
+
+            <!-- Тимлид (если не владелец) -->
+            <li 
+              v-if="selectedTeam.user_leader && selectedTeam.user_leader.id !== selectedTeam.user_owner?.id"
+              class="member-item leader"
+            >
+              <div class="member-info">
+                <span class="member-name">
+                  {{ selectedTeam.user_leader?.firstname }} {{ selectedTeam.user_leader?.lastname }}
+                  <q-badge color="primary" class="q-ml-sm">Тимлид</q-badge>
+                </span>
+                <span class="member-email" v-if="selectedTeam.user_leader?.email">
+                  <strong style="color: black">email: </strong> {{ selectedTeam.user_leader.email }}
                 </span>
               </div>
             </li>
@@ -128,6 +152,7 @@
                 v-for="user in getRegularMembers(selectedTeam)" 
                 :key="user.id" 
                 class="member-item"
+                :class="{ leader: selectedTeam.user_leader?.id === user?.id }"
               >
                 <div class="member-info">
                   <span class="member-name">
@@ -141,7 +166,7 @@
                     </q-badge>
                   </span>
                   <span class="member-email" v-if="user?.email">
-                    <strong style = "color: black">email: </strong> {{ user.email }}
+                    <strong style="color: black">email: </strong> {{ user.email }}
                   </span>
                 </div>
               </li>
@@ -152,7 +177,7 @@
         <!-- Статус команды -->
         <div class="team-status q-mt-md">
           <q-icon name="info" class="q-mr-sm" />
-          <strong>Статус:</strong> {{ selectedTeam?.status }}
+          <strong>Статус:</strong>&nbsp;{{ selectedTeam?.status }}
         </div>
       </q-card-section>
 
@@ -178,8 +203,9 @@
 import { ref, computed, onMounted } from 'vue';
 import { useMainStore } from 'src/stores/main-store';
 import { getAll, remove } from 'src/api/team.api';
+import { update } from 'src/api/project.api'; // Добавляем импорт функции update
 import CreateTeamDialog from './CreateTeamDialog.vue';
-import { TeamDto, PrivacyTeam } from '../../../backend/src/common/types';
+import { TeamDto, PrivacyTeam, StatusProject } from '../../../backend/src/common/types'; // Добавляем StatusProject
 import { useQuasar } from 'quasar';
 
 // Хранилище
@@ -202,7 +228,23 @@ const filteredTeams = computed(() => {
 
 const getRegularMembers = (team: TeamDto) => {
   if (!team?.user || !team?.user_owner) return [];
-  return team.user.filter(u => u?.id !== team.user_owner?.id);
+  return team.user.filter(u => 
+    u?.id !== team.user_owner?.id && 
+    (!team.user_leader || u?.id !== team.user_leader?.id)
+  );
+};
+
+// Добавляем массив для хранения ID раскрытых команд
+const expandedTeams = ref<number[]>([]);
+
+// Функция для переключения отображения описания
+const toggleTeamDescription = (teamId: number) => {
+  const index = expandedTeams.value.indexOf(teamId);
+  if (index === -1) {
+    expandedTeams.value.push(teamId);
+  } else {
+    expandedTeams.value.splice(index, 1);
+  }
 };
 
 // Загрузка команд из базы данных
@@ -268,27 +310,54 @@ const confirmDeleteTeam = (team: TeamDto) => {
 // Функция удаления команды
 const deleteTeam = async (teamId: number) => {
   try {
-    const deletedTeam = await remove(teamId);
-    if (deletedTeam) {
-      // Удаляем команду из списка
-      teams.value = teams.value.filter(t => t.id !== teamId);
-      // Закрываем диалог
-      showTeamDetails.value = false;
-      $q.notify({
-        message: 'Команда успешно удалена',
-        color: 'positive',
-        position: 'top'
-      });
+    const teamToDelete = teams.value.find(t => t.id === teamId);
+    if (!teamToDelete) {
+      $q.notify({ message: 'Команда не найдена', color: 'negative' });
+      return;
     }
+
+    // Удаление команды
+    await remove(teamId);
+    teams.value = teams.value.filter(t => t.id !== teamId);
+
+    // Обновление проекта (если есть)
+    if (teamToDelete.project?.id) {
+      try {
+        const updateData = {
+          status: StatusProject.searchTeam
+        };
+        
+        console.log('Обновление проекта:', {
+          projectId: teamToDelete.project.id,
+          data: updateData
+        });
+        
+        await update(teamToDelete.project.id, updateData);
+        
+        // Локальное обновление
+        teams.value.forEach(t => {
+          if (t.project?.id === teamToDelete.project?.id) {
+            t.project.status = StatusProject.searchTeam;
+          }
+        });
+      } catch (error) {
+        console.error('Ошибка обновления проекта:', error);
+        $q.notify({
+          message: 'Команда удалена, но статус проекта не обновлен',
+          color: 'warning'
+        });
+      }
+    }
+
+    $q.notify({ message: 'Команда удалена', color: 'positive' });
+    showTeamDetails.value = false;
   } catch (error) {
-    console.error('Ошибка при удалении команды:', error);
-    $q.notify({
-      message: 'Ошибка при удалении команды',
-      color: 'negative',
-      position: 'top'
-    });
+    console.error('Ошибка удаления:', error);
+    $q.notify({ message: 'Ошибка удаления команды', color: 'negative' });
+  } finally {
+    loadTeams();
+    window.location.reload();
   }
-  window.location.reload();
 };
 
 // Логика для создания команды
@@ -304,6 +373,14 @@ const addTeam = (newTeam: TeamDto) => {
 </script>
 
 <style scoped>
+
+.member-item.leader {
+  background-color: rgba(113, 176, 240, 0.05); /* Легкий голубой фон для тимлида */
+}
+
+.member-item.owner {
+  background-color: rgba(107, 238, 225, 0.05); /* Легкий зеленый фон для владельца */
+}
 
 .empty-state {
   display: flex;
@@ -369,19 +446,78 @@ const addTeam = (newTeam: TeamDto) => {
 }
 
 .teams-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 1200px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   margin-bottom: 20px;
 }
 
 .team-card {
-  border-radius: 8px;
-  transition: transform 0.2s;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.team-card-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.team-name {
+  font-size: 1.1rem;
+  font-weight: 500;
+  flex: 1;
+}
+
+.team-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.team-members-count {
+  display: flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
+.privacy-chip {
+  margin-right: 8px;
+}
+
+/* Добавляем отступ для кнопки "Открыть" чтобы она не срабатывала при клике на карточку */
+.open-btn {
+  margin-left: 8px;
+  pointer-events: auto; /* Разрешаем события мыши для кнопки */
+}
+
+/* Запрещаем события мыши для остальных элементов при клике */
+.team-card-content > *:not(.open-btn) {
+  pointer-events: none;
+}
+
+/* Разрешаем события для всей карточки */
+.team-card-content {
+  pointer-events: auto;
+}
+
+.single-team-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
 }
 
 .team-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
+}
+
+.team-description-section {
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-radius: 0 0 8px 8px;
 }
 
 /* Увеличение размера иконки */
@@ -393,6 +529,10 @@ const addTeam = (newTeam: TeamDto) => {
 .team-details-card {
   width: 600px;
   max-width: 90%;
+}
+
+.team-status strong {
+  margin-right: 4px;
 }
 
 .user-info {
@@ -460,9 +600,21 @@ const addTeam = (newTeam: TeamDto) => {
   margin-right: auto; /* Размещаем слева */
 }
 
+/* Адаптивные стили для мобильных устройств */
 @media (max-width: 600px) {
-  .teams-list {
-    grid-template-columns: 1fr;
+  .team-card-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .team-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .team-members-count {
+    margin-right: 0;
   }
 }
 </style>
