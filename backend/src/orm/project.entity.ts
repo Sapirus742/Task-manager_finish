@@ -73,8 +73,8 @@ export class Project {
             startProject: this.startProject,
             stopProject: this.stopProject,
             maxUsers: this.maxUsers,
-            teams: this.teams.map(team => team.getTeamDto()), // Предполагается, что у Team есть метод getDto
-            customer: this.customer, // Предполагается, что у User есть метод getSecuredDto
+            teams: this.teams.map(team => team.getTeamDto()), 
+            customer: this.customer, 
             initiator: this.initiator.getSecuredDto(),
         };
     }

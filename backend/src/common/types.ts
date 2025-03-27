@@ -130,6 +130,46 @@ export interface UpdateProjectDto {
   initiator?: number;
 }
 
+export interface CreateIdeaDto {
+  name: string;
+  problem: string;
+  solution: string;
+  result: string;
+  resource: string;
+  stack: Competence[]; 
+  status: StatusIdea;
+  customer: string;
+  comment: number[]; 
+  initiator: number;
+}
+
+export interface UpdateIdeaDto {
+  name?: string;
+  problem?: string;
+  solution?: string;
+  result?: string;
+  resource?: string;
+  stack?: Competence[]; 
+  status?: StatusIdea;
+  customer?: string;
+  comment?: number[]; 
+  initiator?: number;
+}
+
+export interface CreateCommentDto {
+  comment: string;
+  grade: string;
+  users: number;
+  idea: number;
+}
+
+export interface UpdateCommentDto {
+  comment?: string;
+  grade?: string;
+  users?: number;
+  idea?: number;
+}
+
 export interface CreateTeamDto {
   name: string,        
   description: string,        
@@ -207,6 +247,30 @@ export type ProjectDto = {
   initiator: SecuredUser; 
 };
 
+export type IdeaDto = {
+  id: number;
+  name: string;
+  problem: string;
+  solution: string;
+  result: string;
+  resource: string;
+  stack: Competence[]; 
+  status: StatusIdea; 
+  createdAt: Date; 
+  customer: string;
+  comment: CommentDto[]; 
+  initiator: SecuredUser;
+};
+
+export type CommentDto = {
+  id: number;
+  createdAt: Date; 
+  comment: string;
+  grade: string;
+  users: SecuredUser;
+  idea: IdeaDto;
+};
+
 export type TeamDto = {
   id: number;  
   name: string;
@@ -218,7 +282,6 @@ export type TeamDto = {
   portfolio: PortfolioDto[];
   project: ProjectDto;
   user_owner: SecuredUser; //владелец
-  //markedForDel: boolean; //Нужно добавить в бд
 }
 
 export type PortfolioDto = {

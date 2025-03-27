@@ -10,7 +10,7 @@ import {
   
 import { User } from './user.entity';
   
-import { Competence, StatusIdea } from 'src/common/types'; 
+import { Competence, IdeaDto, StatusIdea } from 'src/common/types'; 
 import { Comments } from './comment.entity';
 
 @Entity()
@@ -51,4 +51,21 @@ export class Idea {
     
     @ManyToOne(() => User, (user) => user.idea_initiator, { onDelete: 'CASCADE' })
     initiator: User;
+
+    getIdeaDto(): IdeaDto {
+        return {
+            id: this.id,
+            name: this.name,
+            problem: this.problem,
+            solution: this.solution,
+            result: this.result,
+            resource: this.resource,
+            stack: this.stack,
+            status: this.status,
+            createdAt: this.createdAt,
+            comment: this.comment.map(comment => comment.getCommentDto()),
+            customer: this.customer,
+            initiator: this.initiator.getSecuredDto(),
+        };
+    }
 }

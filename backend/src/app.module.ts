@@ -15,11 +15,15 @@ import { Comments } from './orm/comment.entity';
 import { ProjectModule } from './project/project.module';
 import { TeamModule } from './team/team.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
+import { IdeaModule } from './idea/idea.module';
+import { CommentModule } from './comment/comment.module';
  
 
 @Module({
 
   imports: [
+    CommentModule,
+    IdeaModule,
     PortfolioModule,
     TeamModule,
     ProjectModule,

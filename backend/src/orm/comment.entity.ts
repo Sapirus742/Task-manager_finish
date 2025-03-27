@@ -8,6 +8,7 @@ import {
   
 import { User } from './user.entity';
 import { Idea } from './idea.entity';
+import { CommentDto } from 'src/common/types';
 
 @Entity()
 export class Comments {
@@ -29,4 +30,15 @@ export class Comments {
 
     @ManyToOne(() => Idea, (idea) => idea.comment, { onDelete: 'CASCADE' })
     idea: Idea;
+
+    getCommentDto(): CommentDto {
+        return {
+            id: this.id,
+            createdAt: this.createdAt,
+            comment: this.comment,
+            grade: this.grade,
+            idea: this.idea.getIdeaDto(),
+            users: this.users.getSecuredDto(),
+        };
+    }
 }
