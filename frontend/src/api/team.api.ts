@@ -17,6 +17,19 @@ export async function get(id: number): Promise<TeamDto | undefined> {
   return;
 }
 
+export async function getTeamByProjectId(projectId: number): Promise<TeamDto | undefined> {
+  try {
+    const response = await api.get(`/team/by-project/${projectId}`);
+    if (response.status === 200) {
+      return response.data;
+    }
+    return undefined;
+  } catch (error) {
+    console.error('Error fetching team by project ID:', error);
+    return undefined;
+  }
+}
+
 export async function create(
   newTeam: CreateTeamDto
 ): Promise<TeamDto | undefined> {
@@ -30,25 +43,19 @@ export async function create(
 export async function update(
   id: number,
   payload: UpdateTeamDto
-): Promise<TeamDto | undefined> {
-  const response = await api.patch('/team/' + id, payload);
-  if (response.status == 200) {
-    return response.data;
-  }
-  return;
+): Promise<TeamDto> {
+  const response = await api.patch(`/team/${id}`, payload);
+  return response.data;
 }
 
 export async function remove(id: number): Promise<void> {
   try {
-    console.log('[API] DELETE /team/' + id);
     const response = await api.delete('/team/' + id);
-    
     if (response.status !== 200 && response.status !== 204) {
-      throw new Error(`HTTP ${response.status}`);
+      throw new Error(response.data?.message || 'Ошибка удаления команды');
     }
-    console.log('[API] Команда удалена');
   } catch (error) {
-    console.error('[API] Ошибка удаления:', error);
+    console.error('[API] Ошибка удаления команды:', error);
     throw error;
   }
 }

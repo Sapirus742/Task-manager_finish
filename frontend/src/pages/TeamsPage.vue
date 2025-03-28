@@ -98,7 +98,7 @@
     <q-card v-if="selectedTeam" class="team-details-card">
       <q-card-section>
         <h2 class="team-heading"><strong>{{ selectedTeam?.name }}</strong></h2>
-        <p class="team-description">{{ selectedTeam?.description }}</p>
+        <p class="team-description"> <strong>Описание:</strong>&nbsp;{{ selectedTeam?.description }}</p>
 
         <!-- Владелец команды -->
         <div class="team-owner q-mb-md" v-if="selectedTeam?.user_owner">
@@ -183,7 +183,15 @@
 
       <q-card-actions align="right">
         <q-btn 
-          v-if="canDeleteTeam(selectedTeam)"
+          v-if="mainStore.canEditTeam(selectedTeam)"
+          flat 
+          :disable="true"
+          label="Редактировать" 
+          color="primary" 
+          @click="openEditTeamDialog(selectedTeam)" 
+        />
+        <q-btn 
+          v-if="mainStore.canDeleteTeam(selectedTeam)"
           flat 
           label="Удалить" 
           color="negative" 
@@ -197,6 +205,7 @@
     <!-- Диалог создания команды -->
     <CreateTeamDialog ref="createTeamDialog" @create="addTeam" />
   </q-page>
+  <EditTeamDialog ref="editTeamDialog" @update="updateTeam" />
 </template>
 
 <script setup lang="ts">
@@ -205,7 +214,8 @@ import { useMainStore } from 'src/stores/main-store';
 import { getAll, remove } from 'src/api/team.api';
 import { update } from 'src/api/project.api'; // Добавляем импорт функции update
 import CreateTeamDialog from './CreateTeamDialog.vue';
-import { TeamDto, PrivacyTeam, StatusProject } from '../../../backend/src/common/types'; // Добавляем StatusProject
+import EditTeamDialog from './EditTeamDialog.vue';
+import { TeamDto, PrivacyTeam, StatusProject, ProjectDto } from '../../../backend/src/common/types'; // Добавляем StatusProject
 import { useQuasar } from 'quasar';
 
 // Хранилище
@@ -282,11 +292,6 @@ const openTeamDetails = (team: TeamDto) => {
   showTeamDetails.value = true;
 };
 
-// Функция проверки прав на удаление
-const canDeleteTeam = (team: TeamDto) => {
-  return mainStore.isAdmin() || team.user_owner.id === mainStore.userId;
-};
-
 // Функция подтверждения удаления
 const confirmDeleteTeam = (team: TeamDto) => {
   $q.dialog({
@@ -334,12 +339,27 @@ const deleteTeam = async (teamId: number) => {
         
         await update(teamToDelete.project.id, updateData);
         
-        // Локальное обновление
+        // Локальное обновление - исправленная версия
         teams.value.forEach(t => {
-          if (t.project?.id === teamToDelete.project?.id) {
-            t.project.status = StatusProject.searchTeam;
-          }
-        });
+  if (t.project?.id === teamToDelete.project?.id && t.project) {
+    t.project = {
+      id: t.project.id,
+      name: t.project.name,
+      problem: t.project.problem,
+      solution: t.project.solution,
+      result: t.project.result,
+      resource: t.project.resource,
+      stack: [...t.project.stack],
+      status: StatusProject.searchTeam,
+      startProject: new Date(t.project.startProject),
+      stopProject: new Date(t.project.stopProject),
+      maxUsers: t.project.maxUsers,
+      customer: t.project.customer,
+      initiator: {...t.project.initiator},
+      teams: [...t.project.teams]
+    } as ProjectDto;
+  }
+});
       } catch (error) {
         console.error('Ошибка обновления проекта:', error);
         $q.notify({
@@ -356,7 +376,6 @@ const deleteTeam = async (teamId: number) => {
     $q.notify({ message: 'Ошибка удаления команды', color: 'negative' });
   } finally {
     loadTeams();
-    window.location.reload();
   }
 };
 
@@ -370,6 +389,48 @@ const openCreateTeamDialog = () => {
 const addTeam = (newTeam: TeamDto) => {
   teams.value.push(newTeam);
 }
+
+// Добавляем ссылку на диалог редактирования
+const editTeamDialog = ref();
+
+// Метод для открытия диалога редактирования
+const openEditTeamDialog = (team: TeamDto) => {
+  editTeamDialog.value.openDialog(team);
+  showTeamDetails.value = false;
+};
+
+// Метод для обновления списка команд после редактирования
+const updateTeam = async (updatedTeam: TeamDto) => {
+  try {
+    // Находим индекс обновляемой команды в массиве
+    const index = teams.value.findIndex(t => t.id === updatedTeam.id);
+    
+    if (index !== -1) {
+      // Создаем новый массив с обновленной командой
+      teams.value = [
+        ...teams.value.slice(0, index),
+        updatedTeam,
+        ...teams.value.slice(index + 1)
+      ];
+    }
+    
+    // Показываем уведомление об успешном обновлении
+    $q.notify({
+      message: 'Команда успешно обновлена',
+      color: 'positive'
+    });
+    
+    // Перезагружаем список команд для синхронизации
+    await loadTeams();
+  } catch (error) {
+    console.error('Ошибка обновления команды:', error);
+    $q.notify({
+      message: 'Ошибка обновления команды',
+      color: 'negative'
+    });
+  }
+};
+
 </script>
 
 <style scoped>

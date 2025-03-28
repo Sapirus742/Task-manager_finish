@@ -67,13 +67,39 @@ export const useMainStore = defineStore('main', () => {
     return isAdmin() || isCustomer() || isDirectorate();
   };
 
+  // Проверка возможности удаления проекта
+  const canDeleteProject = (project?: ProjectDto) => {
+    // Если проект не передан, возвращаем false
+    if (!project) return false;
+    
+    // Админ или директорат могут удалять любые проекты
+    if (isAdmin() || isDirectorate()) {
+      return true;
+    }
+    
+    // Customer может удалять только свои проекты
+    if (isCustomer() && project.initiator.id === state.userId) {
+      return true;
+    }
+    
+    return false;
+  };
+
   const canCreateTeam = () => {
-    return isAdmin() || isCustomer() || isDirectorate();
+    return isAdmin() || isDirectorate();
   };
 
   const canJoinTeam = () => {
     return isAdmin() || isUser()
   }
+
+  const canEditTeam = (team: TeamDto) => {
+    return isAdmin() || team.user_owner.id === state.userId;
+  };
+
+  const canDeleteTeam = (team: TeamDto) => {
+    return isAdmin() || team.user_owner.id === state.userId;
+  };
 
   getUserId: () => state.userId // Добавьте эту строку
 
@@ -89,5 +115,8 @@ export const useMainStore = defineStore('main', () => {
     canCreateTeam,
     canJoinTeam,
     getCurrentUser,
+    canEditTeam,
+    canDeleteTeam,
+    canDeleteProject,
   };
 });

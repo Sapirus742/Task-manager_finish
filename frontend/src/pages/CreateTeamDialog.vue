@@ -42,7 +42,8 @@
             :rules="[(val) => !!val || 'Поле обязательно']"
             outlined
             emit-value
-            map-options
+              map-options
+            :disable="!!newTeam.project" 
           />
 
           <!-- Участники команды -->
@@ -85,6 +86,7 @@
             option-label="name"
             emit-value
             map-options
+            @update:model-value="handleProjectChange"
           />
 
           <q-card-actions align="right">
@@ -98,7 +100,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useQuasar } from 'quasar';
 import { CreateTeamDto, PrivacyTeam, StatusTeam, Role, StatusProject, UpdateProjectDto } from '../../../backend/src/common/types';
 import { create } from 'src/api/team.api';
@@ -128,11 +130,30 @@ const privacyOptions = [
   { label: 'Закрытая', value: PrivacyTeam.close }
 ];
 
-const statusOptions = [
-  { label: 'Поиск проекта', value: StatusTeam.searchProject },
-  { label: 'В процессе', value: StatusTeam.inProgress },
-  { label: 'Удалена', value: StatusTeam.delete }
-];
+// Добавляем вычисляемое свойство для статуса
+const statusOptions = computed(() => {
+  if (newTeam.value.project) {
+    // Если проект выбран, оставляем только "В процессе"
+    return [
+      { label: 'В процессе', value: StatusTeam.inProgress }
+    ];
+  }
+  // Если проект не выбран, показываем все варианты
+  return [
+    { label: 'Поиск проекта', value: StatusTeam.searchProject },
+    { label: 'В процессе', value: StatusTeam.inProgress },
+    { label: 'Удалена', value: StatusTeam.delete }
+  ];
+});
+
+// Обработчик изменения проекта
+const handleProjectChange = (projectId: number) => {
+  if (projectId) {
+    newTeam.value.status = StatusTeam.inProgress;
+  } else {
+    newTeam.value.status = StatusTeam.searchProject;
+  }
+};
 
 const userOptions = ref<Array<{id: number, fullName: string}>>([]);
 const projectOptions = ref<Array<{id: number, name: string}>>([]);
