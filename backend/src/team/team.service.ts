@@ -32,8 +32,8 @@ export class TeamService {
   async create(
     name: string,        
     description: string,        
-    privacy: PrivacyTeam.open,    
-    status: StatusTeam.searchProject,
+    privacy: PrivacyTeam,    
+    status: StatusTeam,
     user_leader: number,
     user: number[],
     project: number,
