@@ -173,8 +173,8 @@ export interface UpdateCommentDto {
 export interface CreateTeamDto {
   name: string,        
   description: string,        
-  privacy: PrivacyTeam.open,    
-  status: StatusTeam.searchProject,
+  privacy: PrivacyTeam,    
+  status: StatusTeam,
   user_leader: number,
   user: number[],
   project: number,
@@ -184,11 +184,11 @@ export interface CreateTeamDto {
 export interface UpdateTeamDto {
   name: string,        
   description: string,        
-  privacy: PrivacyTeam.open,    
-  status: StatusTeam.searchProject,
-  user_leader: number,
+  privacy: PrivacyTeam,    
+  status: StatusTeam,
+  user_leader: number | null,
   user: number[],
-  project: number,
+  project: number | null,
   user_owner: number,
 }
 
