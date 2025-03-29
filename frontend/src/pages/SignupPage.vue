@@ -1,9 +1,9 @@
 <template>
   <q-page class="row items-center justify-evenly">
-    <q-card flat bordered class="my-card" style="width: 400px;">
+    <q-card flat bordered class="my-card" style="width: 420px;">
       <q-card-section>
-        <div class="text-h5 text-center q-mb-sm custom-font">Регистрация</div>
-        <div class="text-caption text-center q-mb-sm custom-font">
+        <div class="text-h4 text-center q-mb-sm custom-font">Регистрация</div>
+        <div class="text-h8 text-center q-mb-sm custom-font">
           Введите данные для регистрации
         </div>
       </q-card-section>
@@ -44,7 +44,7 @@
           dense
           outlined
           class="q-mb-sm custom-font"
-          placeholder="**********"
+          placeholder="********"
           :rules="[val => !!val && /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/.test(val) || 'Пароль должен содержать хотя бы одну букву, одну цифру и быть не менее 8 символов']"
           no-error-icon
         >
@@ -64,7 +64,7 @@
           dense
           outlined
           class="q-mb-sm custom-font1"
-          placeholder="**********"
+          placeholder="********"
           :rules="[val => val === password || 'Пароли не совпадают']"
           no-error-icon
         />
@@ -177,10 +177,41 @@ const onSignUp = async () => {
 </script>
 
 <style scoped>
+.q-page {
+  background: linear-gradient(135deg, rgb(255, 255, 255) 0%, rgb(148, 210, 255) 60%, rgb(1, 69, 255) 100%);
+  background-attachment: fixed;
+  min-height: 100vh;
+  width: 100%;
+  animation: gradientShift 15s ease infinite;
+  background-size: 200% 200%;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
 .my-card {
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  padding: 10px; /* Уменьшаем поля */
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 120, 255, 0.15);
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgb(255, 255, 255);
+}
+
+
+.gradient-background {
+  background: linear-gradient(135deg,rgb(0, 0, 0) 0%,rgb(227, 250, 253) 50%, #b2ebf2 100%);
+  width: 100%;
+  min-height: 100vh;
 }
 
 .full-width {
@@ -189,29 +220,66 @@ const onSignUp = async () => {
 
 .bold-button {
   font-weight: bold;
+  border-radius: 20px;
 }
 
-.custom-font {
-  font-family: 'Roboto', sans-serif; 
-}
 
-.custom-font1 {
-  position: relative;
-  top: 9px;
-}
 
-/* Убираем отступы после подсказок */
 .q-field__messages {
   margin-bottom: 0;
+}
+
+/* Стили для кнопок */
+.q-btn--primary {
+  background: linear-gradient(135deg,rgb(0, 0, 0) 0%,rgb(78, 195, 253) 100%);
+  border-radius: 8px;
+  border-color:rgb(0, 0, 0);
+  color: white;
+}
+
+.q-btn--primary:hover {
+  background: linear-gradient(135deg, #29b6f6 0%,rgb(78, 195, 253) 100%);
+}
+
+.q-btn--secondary {
+  color:rgb(6, 116, 172);
+}
+
+.q-btn--secondary:hover {
+  color: #039be5;
+  background: rgba(145, 210, 240, 0.97);
+}
+
+/* Стили для полей ввода */
+.q-field--outlined .q-field__control {
+  border-radius: 8px;
+  border-color:rgb(0, 225, 255);
+}
+
+.q-field--outlined:hover .q-field__control {
+  border-color: #4fc3f7;
+}
+
+.q-field--outlined .q-field__control:before {
+  border-color: #b2ebf2;
 }
 </style>
 
 <style>
-/* Подключаем шрифт Roboto */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;700&display=swap');
 
-/* Применяем шрифт ко всему документу */
+.custom-font {
+  font-family: 'Playfair+Display', sans-serif;
+}
+
+.custom-font1 {
+  position: relative;
+  top: 12px;
+}
 body {
-  font-family: 'Roboto', sans-serif;
+  font-family: 'Playfair+Display', sans-serif;
+  margin: 0;
+  background-attachment: fixed;
+  background: transparent !important; 
 }
 </style>

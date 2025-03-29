@@ -44,32 +44,30 @@
               </div>
             </q-tab-panel>
 
-            <!-- Вкладка с информацией о команде -->
             <q-tab-panel name="team">
-  <div class="team-section panel-content">
-    <h3 class="text-subtitle1 text-weight-bold q-mb-xs">Команда проекта</h3>
-    
-    <template v-if="currentTeam">
-      <!-- Название команды и статус -->
-      <div class="team-name q-mb-md">
-        <q-icon name="groups" class="q-mr-sm" />
-        <strong>Команда:</strong> {{ currentTeam.name }}
-        <q-chip size="sm" :color="currentTeam.privacy === 'Close' ? 'negative' : 'positive'" text-color="white">
-          {{ currentTeam.privacy === 'Close' ? 'Закрытая' : 'Открытая' }}
-        </q-chip>
-        <q-chip size="sm" color="info" text-color="white">
-          {{ currentTeam.status }}
-        </q-chip>
-      </div>
+    <div class="team-section panel-content">
+      <h3 class="text-subtitle1 text-weight-bold q-mb-xs">Команда проекта</h3>
       
-      <!-- Описание команды -->
-      <div v-if="currentTeam.description" class="q-mb-md">
-        <h4 class="text-subtitle2 text-weight-bold q-mb-xs">Описание команды:</h4>
-        <p>{{ currentTeam.description }}</p>
-      </div>
+      <template v-if="currentTeam">
+        <!-- Название команды и статус -->
+        <div class="team-name q-mb-md">
+          <q-icon name="groups" class="q-mr-sm" />
+          <strong>Команда:</strong> {{ currentTeam.name }}
+          <q-chip size="sm" :color="currentTeam.privacy === 'Close' ? 'negative' : 'positive'" text-color="white">
+            {{ currentTeam.privacy === 'Close' ? 'Закрытая' : 'Открытая' }}
+          </q-chip>
+          <q-chip size="sm" color="info" text-color="white">
+            {{ currentTeam.status }}
+          </q-chip>
+        </div>
+        
+        <!-- Описание команды -->
+        <div v-if="currentTeam.description" class="q-mb-md">
+          <h4 class="text-subtitle2 text-weight-bold q-mb-xs">Описание команды:</h4>
+          <p>{{ currentTeam.description }}</p>
+        </div>
 
-      <!-- Участники команды (показываем только если есть участники) -->
-      <template v-if="currentTeam.user?.length > 0 || currentTeam.user_leader">
+        <!-- Участники команды -->
         <div class="members-container q-pa-sm bg-grey-2 rounded-borders q-mb-md">
           <!-- Владелец команды -->
           <div class="member-item owner row items-center q-mb-xs" v-if="currentTeam.user_owner">
@@ -78,37 +76,46 @@
                 {{ currentTeam.user_owner.firstname }} {{ currentTeam.user_owner.lastname }}
               </span>
               <q-badge color="teal" class="q-ml-sm">Владелец</q-badge>
+              <q-chip v-if="currentTeam.user_owner.competence?.length" size="xs" color="grey-4" text-color="dark" class="q-ml-sm">
+                {{ currentTeam.user_owner.competence.join(', ') }}
+              </q-chip>
             </div>
             <div v-if="currentTeam.user_owner.email" class="col-auto text-caption text-grey">
               {{ currentTeam.user_owner.email }}
             </div>
           </div>
 
-          <!-- Тимлид (если не владелец) -->
+          <!-- Тимлид -->
           <div 
-            v-if="teamLeader && teamLeader.id !== currentTeam.user_owner?.id"
+            v-if="currentTeam.user_leader && currentTeam.user_leader.id !== currentTeam.user_owner?.id"
             class="member-item leader row items-center q-mb-xs"
           >
             <div class="col">
               <span class="text-weight-medium">
-                {{ teamLeader.firstname }} {{ teamLeader.lastname }}
+                {{ currentTeam.user_leader.firstname }} {{ currentTeam.user_leader.lastname }}
               </span>
               <q-badge color="primary" class="q-ml-sm">Тимлид</q-badge>
+              <q-chip v-if="currentTeam.user_leader.competence?.length" size="xs" color="grey-4" text-color="dark" class="q-ml-sm">
+                {{ currentTeam.user_leader.competence.join(', ') }}
+              </q-chip>
             </div>
-            <div v-if="teamLeader.email" class="col-auto text-caption text-grey">
-              {{ teamLeader.email }}
+            <div v-if="currentTeam.user_leader.email" class="col-auto text-caption text-grey">
+              {{ currentTeam.user_leader.email }}
             </div>
           </div>
 
           <!-- Остальные участники -->
-          <template v-if="teamMembers.length > 0">
+          <template v-if="currentTeam.user?.length">
             <div 
-              v-for="member in teamMembers" 
+              v-for="member in getRegularMembers(currentTeam)" 
               :key="member.id" 
               class="member-item row items-center q-mb-xs"
             >
               <div class="col">
                 <span>{{ member.firstname }} {{ member.lastname }}</span>
+                <q-chip v-if="member.competence?.length" size="xs" color="grey-4" text-color="dark" class="q-ml-sm">
+                  {{ member.competence.join(', ') }}
+                </q-chip>
               </div>
               <div v-if="member.email" class="col-auto text-caption text-grey">
                 {{ member.email }}
@@ -117,13 +124,13 @@
           </template>
         </div>
       </template>
-    </template>
-    
-    <div v-else class="text-grey">
-      Команда еще не сформирована
+      
+      <div v-else class="text-grey">
+        Команда еще не сформирована
+      </div>
     </div>
-  </div>
-</q-tab-panel>
+  </q-tab-panel>
+
             <!-- Вкладка с техническими деталями -->
             <q-tab-panel name="details">
               <div class="details-section panel-content">
@@ -173,30 +180,79 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue';
+import { ref, computed, nextTick, watch } from 'vue';
 import { StatusProject } from '../../../../backend/src/common/types';
-import type { ProjectDto, SecuredUser } from '../../../../backend/src/common/types';
-import { getTeamByProjectId } from 'src/api/team.api';
+import type { ProjectDto, TeamDto } from '../../../../backend/src/common/types';
+import { useTeamStore } from 'src/stores/team-store';
+import { useQuasar } from 'quasar';
 
+const $q = useQuasar();
 const showDialog = ref(false);
 const project = ref<ProjectDto>();
 const tab = ref('description');
 const maxHeight = ref(0);
+const teamStore = useTeamStore();
 
-// Вычисляемые свойства для работы с командой
-const currentTeam = computed(() => project.value?.teams?.[0]);
-const teamLeader = computed(() => currentTeam.value?.user_leader);
-const teamMembers = computed(() => {
-  if (!currentTeam.value?.user?.length) return [];
+const currentTeam = computed<TeamDto | null>(() => {
+  return teamStore.currentTeam || project.value?.teams?.[0] || null;
+});
+
+// Добавляем функцию для показа состава команды
+const showTeamMembers = () => {
+  if (!currentTeam.value) return;
   
-  // Фильтруем участников, исключая владельца и тимлида (если они есть)
-  const members = currentTeam.value.user as SecuredUser[];
-  return members.filter(member => {
-    const isOwner = member.id === currentTeam.value?.user_owner?.id;
-    const isLeader = teamLeader.value && member.id === teamLeader.value.id;
+  let message = `<strong>Состав команды "${currentTeam.value.name}":</strong><br><br>`;
+  
+  // Владелец
+  if (currentTeam.value.user_owner) {
+    message += `<b>Владелец:</b> ${currentTeam.value.user_owner.firstname} ${currentTeam.value.user_owner.lastname}<br>`;
+  }
+  
+  // Тимлид
+  if (currentTeam.value.user_leader) {
+    message += `<b>Тимлид:</b> ${currentTeam.value.user_leader.firstname} ${currentTeam.value.user_leader.lastname}<br>`;
+  }
+  
+  // Участники
+  if (currentTeam.value.user?.length) {
+    message += '<br><b>Участники:</b><br>';
+    currentTeam.value.user.forEach(member => {
+      message += `- ${member.firstname} ${member.lastname}`;
+      if (member.competence?.length) {
+        message += ` (${member.competence.join(', ')})`;
+      }
+      message += '<br>';
+    });
+  }
+  
+  $q.dialog({
+    title: 'Состав команды',
+    message,
+    html: true,
+    persistent: true,
+    ok: {
+      label: 'Закрыть',
+      color: 'primary'
+    }
+  });
+};
+
+// Добавляем автоматический показ при открытии вкладки
+watch(tab, (newTab) => {
+  if (newTab === 'team' && currentTeam.value) {
+    showTeamMembers();
+  }
+});
+
+// Функция для получения обычных участников (без владельца и тимлида)
+const getRegularMembers = (team: TeamDto) => {
+  if (!team?.user) return [];
+  return team.user.filter(member => {
+    const isOwner = member.id === team.user_owner?.id;
+    const isLeader = team.user_leader && member.id === team.user_leader.id;
     return !isOwner && !isLeader;
   });
-});
+};
 
 const getStatusColor = (status?: string) => {
   switch (status) {
@@ -226,17 +282,14 @@ const calculateMaxHeight = () => {
 const open = async (projectData: ProjectDto) => {
   project.value = projectData;
   
-  // Если команда не загружена, загружаем её отдельно
-  if (!projectData.teams || projectData.teams.length === 0) {
+  if (projectData.id) {
     try {
-      if (projectData.id) {
-        const teamData = await getTeamByProjectId(projectData.id);
-        if (teamData) {
-          project.value.teams = [teamData];
-        }
-      }
+      await teamStore.fetchTeamByProject(projectData.id);
     } catch (error) {
-      console.error('Ошибка загрузки команды:', error);
+      $q.notify({
+        type: 'negative',
+        message: 'Не удалось загрузить информацию о команде'
+      });
     }
   }
   
@@ -270,20 +323,6 @@ defineExpose({ open });
   width: 100%;
   word-break: break-word;
   hyphens: auto;
-  -webkit-hyphens: auto;
-  -ms-hyphens: auto;
-}
-
-.project-title {
-  text-align: left;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  -webkit-hyphens: auto;
-  -ms-hyphens: auto;
-  hyphens: auto;
-  line-height: 1.3;
-  display: inline;
-  padding: 0;
 }
 
 .panels-container {
@@ -298,7 +337,6 @@ defineExpose({ open });
   display: flex;
   align-items: center;
   justify-content: space-between;
-  position: relative;
 }
 
 .status-badge {
@@ -382,11 +420,6 @@ defineExpose({ open });
   .footer-actions {
     flex-wrap: wrap;
     justify-content: flex-end;
-  }
-  
-  .project-title {
-    font-size: 1.1rem;
-    line-height: 1.4;
   }
   
   .team-name {

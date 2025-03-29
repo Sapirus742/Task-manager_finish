@@ -11,6 +11,7 @@ import {
   UserAccountStatus,
 } from '../../../backend/src/common/types';
 import { useProfileStore } from './profile-store';
+import { useTeamStore } from './team-store';
 
 export const useMainStore = defineStore('main', () => {
   const state = reactive({
@@ -29,6 +30,8 @@ export const useMainStore = defineStore('main', () => {
     project_initiator: [] as ProjectDto[],
     team: null as TeamDto | null,
   });
+
+  const teamStore = useTeamStore();
 
   const initAppState = async (appState: LoginResponseDto & { 
     group?: string; 
@@ -53,6 +56,11 @@ export const useMainStore = defineStore('main', () => {
       if (profileStore.userProfile) {
         syncWithProfileStore(profileStore.userProfile);
       }
+
+      // Синхронизируем данные с team-store
+      if (teamStore.currentTeam) {
+        syncWithTeamStore();
+      }
     } catch (error) {
       console.error('Ошибка при загрузке профиля:', error);
     }
@@ -67,6 +75,28 @@ export const useMainStore = defineStore('main', () => {
     state.team_owner = profile.team_owner || state.team_owner;
     state.project_initiator = profile.project_initiator || state.project_initiator;
     state.team = profile.team || state.team;
+  };
+
+  const syncWithTeamStore = () => {
+    if (teamStore.currentTeam) {
+      // Проверяем, является ли пользователь лидером этой команды
+      if (teamStore.currentTeam.user_leader?.id === state.userId) {
+        state.team_leader = teamStore.currentTeam;
+      }
+
+      // Проверяем, является ли пользователь владельцем этой команды
+      if (teamStore.currentTeam.user_owner?.id === state.userId) {
+        const exists = state.team_owner.some(t => t.id === teamStore.currentTeam?.id);
+        if (!exists) {
+          state.team_owner.push(teamStore.currentTeam);
+        }
+      }
+
+      // Проверяем, является ли пользователь участником этой команды
+      if (teamStore.currentTeam.user?.some(u => u.id === state.userId)) {
+        state.team = teamStore.currentTeam;
+      }
+    }
   };
 
   const getCurrentUser = (): SecuredUser => {
@@ -110,15 +140,13 @@ export const useMainStore = defineStore('main', () => {
   const isAdmin = () => state.roles.some((r) => r === Role.admin);
   const isCustomer = () => state.roles.some((r) => r === Role.customer);
   const isDirectorate = () => state.roles.some((r) => r === Role.directorate);
-  const isExpert = () => state.roles.some((r) => r === Role.expert); // Добавляем проверку для эксперта
-  const isUser = () => state.roles.some((r) => r === Role.user); // Добавляем проверку для пользователя
+  const isExpert = () => state.roles.some((r) => r === Role.expert);
+  const isUser = () => state.roles.some((r) => r === Role.user);
 
-  // Метод для проверки, может ли пользователь создавать проекты
   const canCreateProject = () => {
     return isAdmin() || isCustomer() || isDirectorate();
   };
 
-  // Проверка возможности удаления проекта
   const canDeleteProject = (project?: ProjectDto) => {
     if (!project) return false;
     if (isAdmin() || isDirectorate()) return true;
@@ -131,8 +159,8 @@ export const useMainStore = defineStore('main', () => {
   };
 
   const canJoinTeam = () => {
-    return isAdmin() || isUser()
-  }
+    return isAdmin() || isUser();
+  };
 
   const canEditTeam = (team: TeamDto) => {
     return isAdmin() || team.user_owner.id === state.userId;
@@ -142,14 +170,24 @@ export const useMainStore = defineStore('main', () => {
     return isAdmin() || team.user_owner.id === state.userId;
   };
 
+  // Метод для обновления данных команды из team-store
+  const updateTeamData = async (teamId: number) => {
+    try {
+      await teamStore.fetchTeam(teamId);
+      syncWithTeamStore();
+    } catch (error) {
+      console.error('Ошибка при обновлении данных команды:', error);
+    }
+  };
+
   return {
     ...toRefs(state),
     initAppState,
     isAdmin,
     isCustomer,
     isDirectorate,
-    isExpert, // Экспортируем метод isExpert
-    isUser,   // Экспортируем метод isUser
+    isExpert,
+    isUser,
     canCreateProject,
     canCreateTeam,
     canJoinTeam,
@@ -158,5 +196,6 @@ export const useMainStore = defineStore('main', () => {
     canEditTeam,
     canDeleteTeam,
     canDeleteProject,
+    updateTeamData, // Экспортируем метод для обновления данных команды
   };
 });
