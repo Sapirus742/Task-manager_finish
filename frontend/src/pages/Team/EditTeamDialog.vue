@@ -47,51 +47,44 @@
           />
 
           <!-- Участники команды -->
-      <q-select
-        v-model="editedTeam.members"
-        label="Участники команды"
-        multiple
-        use-chips
-        :options="userOptions"
-        :rules="[(val) => val.length > 0 || 'Добавьте хотя бы одного участника']"
-        outlined
-        option-label="fullName"
-        option-value="id"
-        emit-value
-        map-options
-        @update:model-value="updateLeaderOptions"
-      />
+          <q-select
+  v-model="editedTeam.members"
+  label="Участники команды"
+  multiple
+  use-chips
+  :options="userOptions"
+  :rules="[(val) => val.length > 0 || 'Добавьте хотя бы одного участника']"
+  outlined
+  option-label="fullName"
+  emit-value
+  map-options
+  @filter="filterUsers"
+  @update:model-value="updateLeaderOptions"
+/>
 
           <!-- Тимлид -->
-      <q-select
-        v-model="editedTeam.leader"
-        label="Тимлид"
-        :options="leaderOptions"
-        :rules="[(val) => !!val || 'Необходимо выбрать тимлида']"
-        outlined
-        option-label="fullName"
-        option-value="id"
-        emit-value
-        map-options
-      >
-        <template v-slot:option="scope">
-          <q-item v-bind="scope.itemProps">
-            <q-item-section avatar>
-              <q-icon name="star" :color="scope.opt.id === editedTeam.leader?.id ? 'amber' : 'transparent'"/>
-            </q-item-section>
-            <q-item-section>
-              <q-item-label>{{ scope.opt.fullName }}</q-item-label>
-            </q-item-section>
-              </q-item>
-            </template>
-
-            <template v-slot:selected-item="scope">
-              <div class="row items-center">
-                <q-icon name="star" color="amber" class="q-mr-sm" />
-                <div>{{ scope.opt.fullName }}</div>
-              </div>
-            </template>
-          </q-select>
+          <q-select
+  v-model="editedTeam.leader"
+  label="Тимлид"
+  :options="leaderOptions"
+  :rules="[(val) => !!val || 'Необходимо выбрать тимлида']"
+  outlined
+  option-label="fullName"
+  emit-value
+  map-options
+>
+  <template v-slot:option="scope">
+    <q-item v-bind="scope.itemProps">
+      <q-item-section avatar>
+        <q-icon name="star" :color="scope.opt.id === editedTeam.leader?.id ? 'amber' : 'transparent'"/>
+      </q-item-section>
+      <q-item-section>
+        <q-item-label>{{ scope.opt.fullName }}</q-item-label>
+        <q-item-label caption>{{ scope.opt.email }}</q-item-label>
+      </q-item-section>
+    </q-item>
+  </template>
+</q-select>
 
           <!-- Проект -->
           <q-select
@@ -133,7 +126,9 @@ import {
   TeamDto,
 } from '../../../../backend/src/common/types';
 import { update as updateTeam } from 'src/api/team.api';
-import { getAll as getAllUsers } from 'src/api/users.api';
+import { 
+  getAll as getAllUsers, 
+} from 'src/api/users.api';
 import { 
   getAll as getAllProjects, 
   update as UpdateProject,
@@ -171,7 +166,7 @@ const editedTeam = ref({
 
 const leaderOptions = ref<TeamMember[]>([]);
 
-const updateLeaderOptions = () => {
+const updateLeaderOptions = (): void => {
   leaderOptions.value = [...editedTeam.value.members];
   
   // Сбрасываем тимлида, если он больше не в списке участников
@@ -201,7 +196,7 @@ const statusOptions = computed(() => {
 
 
 const allUsers = ref<TeamMember[]>([]);
-const userOptions = computed(() => allUsers.value);
+const userOptions = ref<TeamMember[]>([]);
 const allProjects = ref<ProjectOption[]>([]);
 
 const filteredProjectOptions = computed(() => {
@@ -210,6 +205,19 @@ const filteredProjectOptions = computed(() => {
     project.id === editedTeam.value.project?.id
   );
 });
+
+const filterUsers = (val: string, update: (callback: () => void) => void) => {
+  update(() => {
+    if (val === '') {
+      userOptions.value = [...allUsers.value];
+    } else {
+      const needle = val.toLowerCase();
+      userOptions.value = allUsers.value.filter(user => 
+        user.fullName.toLowerCase().includes(needle)
+      );
+    }
+  });
+};
 
 const loadUsers = async () => {
   try {
@@ -222,6 +230,8 @@ const loadUsers = async () => {
           fullName: `${user.firstname} ${user.lastname}`,
           email: user.email
         }));
+      // Инициализируем userOptions всеми пользователями при загрузке
+      userOptions.value = [...allUsers.value];
     }
   } catch (error) {
     console.error('Ошибка загрузки пользователей:', error);
