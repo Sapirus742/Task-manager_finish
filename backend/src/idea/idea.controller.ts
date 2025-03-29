@@ -36,7 +36,6 @@ export class IdeaController {
   }
   
   @Post()
-  @Roles(Role.admin, Role.customer, Role.directorate)
   @UseGuards(JwtAuthGuard, RolesGuard)
   async create(@Body() idea: CreateIdeaDto): Promise<Idea> {
     return this.ideaService.create(
@@ -54,14 +53,12 @@ export class IdeaController {
   }
   
   @Patch(':id')
-  @Roles(Role.admin, Role.customer, Role.directorate, Role.user)
   @UseGuards(JwtAuthGuard, RolesGuard)
   async update(@Param('id') id: number, @Body() updateIdeaDto: UpdateIdeaDto): Promise<Idea> {
       return this.ideaService.update(id, updateIdeaDto);
   }
  
   @Delete(':id')
-  @Roles(Role.admin, Role.customer, Role.directorate) 
   @UseGuards(JwtAuthGuard, RolesGuard)
   async remove(@Param('id') id: number): Promise<void> {
       return this.ideaService.remove(id);
