@@ -34,7 +34,7 @@ export async function update(id: number, payload: UpdateProjectDto): Promise<Pro
     }
     
     console.log('[API] PATCH /project/' + id, payload);
-    const response = await api.patch(`/project/${id}`, payload);
+    const response = await api.patch('/project/' + id, payload);
     
     if (response.status === 200) {
       console.log('[API] Проект обновлен:', response.data);

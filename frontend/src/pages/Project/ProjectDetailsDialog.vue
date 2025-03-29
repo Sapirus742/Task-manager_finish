@@ -180,7 +180,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, watch } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { StatusProject } from '../../../../backend/src/common/types';
 import type { ProjectDto, TeamDto } from '../../../../backend/src/common/types';
 import { useTeamStore } from 'src/stores/team-store';
@@ -195,53 +195,6 @@ const teamStore = useTeamStore();
 
 const currentTeam = computed<TeamDto | null>(() => {
   return teamStore.currentTeam || project.value?.teams?.[0] || null;
-});
-
-// Добавляем функцию для показа состава команды
-const showTeamMembers = () => {
-  if (!currentTeam.value) return;
-  
-  let message = `<strong>Состав команды "${currentTeam.value.name}":</strong><br><br>`;
-  
-  // Владелец
-  if (currentTeam.value.user_owner) {
-    message += `<b>Владелец:</b> ${currentTeam.value.user_owner.firstname} ${currentTeam.value.user_owner.lastname}<br>`;
-  }
-  
-  // Тимлид
-  if (currentTeam.value.user_leader) {
-    message += `<b>Тимлид:</b> ${currentTeam.value.user_leader.firstname} ${currentTeam.value.user_leader.lastname}<br>`;
-  }
-  
-  // Участники
-  if (currentTeam.value.user?.length) {
-    message += '<br><b>Участники:</b><br>';
-    currentTeam.value.user.forEach(member => {
-      message += `- ${member.firstname} ${member.lastname}`;
-      if (member.competence?.length) {
-        message += ` (${member.competence.join(', ')})`;
-      }
-      message += '<br>';
-    });
-  }
-  
-  $q.dialog({
-    title: 'Состав команды',
-    message,
-    html: true,
-    persistent: true,
-    ok: {
-      label: 'Закрыть',
-      color: 'primary'
-    }
-  });
-};
-
-// Добавляем автоматический показ при открытии вкладки
-watch(tab, (newTab) => {
-  if (newTab === 'team' && currentTeam.value) {
-    showTeamMembers();
-  }
 });
 
 // Функция для получения обычных участников (без владельца и тимлида)
