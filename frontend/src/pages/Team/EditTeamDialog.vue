@@ -126,7 +126,7 @@ import {
   StatusProject,
   Role,
   TeamDto,
-} from '../../../backend/src/common/types';
+} from '../../../../backend/src/common/types';
 import { update as updateTeam } from 'src/api/team.api';
 import { getAll as getAllUsers } from 'src/api/users.api';
 import { getAll as getAllProjects} from 'src/api/project.api';
