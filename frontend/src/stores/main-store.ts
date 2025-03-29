@@ -10,6 +10,7 @@ import {
   TeamDto,
   UserAccountStatus,
 } from '../../../backend/src/common/types';
+import { useProfileStore } from './profile-store';
 
 export const useMainStore = defineStore('main', () => {
   const state = reactive({
@@ -18,23 +19,54 @@ export const useMainStore = defineStore('main', () => {
     firstname: 'unknown',
     lastname: 'unknown',
     roles: [] as Role[],
-    userStatus: UserAccountStatus,
+    userStatus: UserAccountStatus.active,
     group: 'unknown',
     telephone: 'unknown',
     competence: [] as Competence[],
     portfolio: [] as PortfolioDto[],
-      team_leader: null as TeamDto | null,
-      team_owner: [] as TeamDto[],
-      project_initiator: [] as ProjectDto[],
-      team: null as TeamDto | null,
+    team_leader: null as TeamDto | null,
+    team_owner: [] as TeamDto[],
+    project_initiator: [] as ProjectDto[],
+    team: null as TeamDto | null,
   });
 
-  const initAppState = (appState: LoginResponseDto) => {
+  const initAppState = async (appState: LoginResponseDto & { 
+    group?: string; 
+    telephone?: string;
+    competence?: Competence[];
+  }) => {
     state.userId = appState.userId;
     state.username = appState.username;
     state.firstname = appState.firstname;
     state.lastname = appState.lastname;
     state.roles = appState.roles;
+    state.group = appState.group || 'unknown';
+    state.telephone = appState.telephone || 'unknown';
+    state.competence = appState.competence || [];
+    
+    // Загружаем полные данные пользователя через profile-store
+    const profileStore = useProfileStore();
+    try {
+      await profileStore.fetchUserProfile(appState.userId);
+      
+      // Синхронизируем данные с profile-store
+      if (profileStore.userProfile) {
+        syncWithProfileStore(profileStore.userProfile);
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке профиля:', error);
+    }
+  };
+
+  const syncWithProfileStore = (profile: SecuredUser) => {
+    state.group = profile.group || state.group;
+    state.telephone = profile.telephone || state.telephone;
+    state.competence = profile.competence || state.competence;
+    state.portfolio = profile.portfolio || state.portfolio;
+    state.team_leader = profile.team_leader || state.team_leader;
+    state.team_owner = profile.team_owner || state.team_owner;
+    state.project_initiator = profile.project_initiator || state.project_initiator;
+    state.team = profile.team || state.team;
   };
 
   const getCurrentUser = (): SecuredUser => {
@@ -46,7 +78,7 @@ export const useMainStore = defineStore('main', () => {
       group: state.group,
       telephone: state.telephone,
       roles: state.roles,
-      status: UserAccountStatus.active,
+      status: state.userStatus,
       competence: state.competence,
       portfolio: state.portfolio,
       team_leader: state.team_leader,
@@ -54,6 +86,25 @@ export const useMainStore = defineStore('main', () => {
       project_initiator: state.project_initiator,
       team: state.team,
     };
+  };
+
+  const updateUserData = (data: {
+    group?: string;
+    telephone?: string;
+    competence?: Competence[];
+  }) => {
+    if (data.group) state.group = data.group;
+    if (data.telephone) state.telephone = data.telephone;
+    if (data.competence) state.competence = data.competence;
+    
+    // Обновляем данные в profile-store
+    const profileStore = useProfileStore();
+    if (profileStore.userProfile) {
+      profileStore.userProfile = {
+        ...profileStore.userProfile,
+        ...data
+      };
+    }
   };
 
   const isAdmin = () => state.roles.some((r) => r === Role.admin);
@@ -69,19 +120,9 @@ export const useMainStore = defineStore('main', () => {
 
   // Проверка возможности удаления проекта
   const canDeleteProject = (project?: ProjectDto) => {
-    // Если проект не передан, возвращаем false
     if (!project) return false;
-    
-    // Админ или директорат могут удалять любые проекты
-    if (isAdmin() || isDirectorate()) {
-      return true;
-    }
-    
-    // Customer может удалять только свои проекты
-    if (isCustomer() && project.initiator.id === state.userId) {
-      return true;
-    }
-    
+    if (isAdmin() || isDirectorate()) return true;
+    if (isCustomer() && project.initiator.id === state.userId) return true;
     return false;
   };
 
@@ -101,8 +142,6 @@ export const useMainStore = defineStore('main', () => {
     return isAdmin() || team.user_owner.id === state.userId;
   };
 
-  getUserId: () => state.userId // Добавьте эту строку
-
   return {
     ...toRefs(state),
     initAppState,
@@ -115,6 +154,7 @@ export const useMainStore = defineStore('main', () => {
     canCreateTeam,
     canJoinTeam,
     getCurrentUser,
+    updateUserData,
     canEditTeam,
     canDeleteTeam,
     canDeleteProject,
