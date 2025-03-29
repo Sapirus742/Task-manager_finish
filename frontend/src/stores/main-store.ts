@@ -10,6 +10,8 @@ import {
   TeamDto,
   UserAccountStatus,
 } from '../../../backend/src/common/types';
+import { useProfileStore } from './profile-store';
+import { useTeamStore } from './team-store';
 
 export const useMainStore = defineStore('main', () => {
   const state = reactive({
@@ -18,23 +20,83 @@ export const useMainStore = defineStore('main', () => {
     firstname: 'unknown',
     lastname: 'unknown',
     roles: [] as Role[],
-    userStatus: UserAccountStatus,
+    userStatus: UserAccountStatus.active,
     group: 'unknown',
     telephone: 'unknown',
     competence: [] as Competence[],
     portfolio: [] as PortfolioDto[],
-      team_leader: null as TeamDto | null,
-      team_owner: [] as TeamDto[],
-      project_initiator: [] as ProjectDto[],
-      team: null as TeamDto | null,
+    team_leader: null as TeamDto | null,
+    team_owner: [] as TeamDto[],
+    project_initiator: [] as ProjectDto[],
+    team: null as TeamDto | null,
   });
 
-  const initAppState = (appState: LoginResponseDto) => {
+  const teamStore = useTeamStore();
+
+  const initAppState = async (appState: LoginResponseDto & { 
+    group?: string; 
+    telephone?: string;
+    competence?: Competence[];
+  }) => {
     state.userId = appState.userId;
     state.username = appState.username;
     state.firstname = appState.firstname;
     state.lastname = appState.lastname;
     state.roles = appState.roles;
+    state.group = appState.group || 'unknown';
+    state.telephone = appState.telephone || 'unknown';
+    state.competence = appState.competence || [];
+    
+    // Загружаем полные данные пользователя через profile-store
+    const profileStore = useProfileStore();
+    try {
+      await profileStore.fetchUserProfile(appState.userId);
+      
+      // Синхронизируем данные с profile-store
+      if (profileStore.userProfile) {
+        syncWithProfileStore(profileStore.userProfile);
+      }
+
+      // Синхронизируем данные с team-store
+      if (teamStore.currentTeam) {
+        syncWithTeamStore();
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке профиля:', error);
+    }
+  };
+
+  const syncWithProfileStore = (profile: SecuredUser) => {
+    state.group = profile.group || state.group;
+    state.telephone = profile.telephone || state.telephone;
+    state.competence = profile.competence || state.competence;
+    state.portfolio = profile.portfolio || state.portfolio;
+    state.team_leader = profile.team_leader || state.team_leader;
+    state.team_owner = profile.team_owner || state.team_owner;
+    state.project_initiator = profile.project_initiator || state.project_initiator;
+    state.team = profile.team || state.team;
+  };
+
+  const syncWithTeamStore = () => {
+    if (teamStore.currentTeam) {
+      // Проверяем, является ли пользователь лидером этой команды
+      if (teamStore.currentTeam.user_leader?.id === state.userId) {
+        state.team_leader = teamStore.currentTeam;
+      }
+
+      // Проверяем, является ли пользователь владельцем этой команды
+      if (teamStore.currentTeam.user_owner?.id === state.userId) {
+        const exists = state.team_owner.some(t => t.id === teamStore.currentTeam?.id);
+        if (!exists) {
+          state.team_owner.push(teamStore.currentTeam);
+        }
+      }
+
+      // Проверяем, является ли пользователь участником этой команды
+      if (teamStore.currentTeam.user?.some(u => u.id === state.userId)) {
+        state.team = teamStore.currentTeam;
+      }
+    }
   };
 
   const getCurrentUser = (): SecuredUser => {
@@ -46,7 +108,7 @@ export const useMainStore = defineStore('main', () => {
       group: state.group,
       telephone: state.telephone,
       roles: state.roles,
-      status: UserAccountStatus.active,
+      status: state.userStatus,
       competence: state.competence,
       portfolio: state.portfolio,
       team_leader: state.team_leader,
@@ -56,32 +118,39 @@ export const useMainStore = defineStore('main', () => {
     };
   };
 
+  const updateUserData = (data: {
+    group?: string;
+    telephone?: string;
+    competence?: Competence[];
+  }) => {
+    if (data.group) state.group = data.group;
+    if (data.telephone) state.telephone = data.telephone;
+    if (data.competence) state.competence = data.competence;
+    
+    // Обновляем данные в profile-store
+    const profileStore = useProfileStore();
+    if (profileStore.userProfile) {
+      profileStore.userProfile = {
+        ...profileStore.userProfile,
+        ...data
+      };
+    }
+  };
+
   const isAdmin = () => state.roles.some((r) => r === Role.admin);
   const isCustomer = () => state.roles.some((r) => r === Role.customer);
   const isDirectorate = () => state.roles.some((r) => r === Role.directorate);
-  const isExpert = () => state.roles.some((r) => r === Role.expert); // Добавляем проверку для эксперта
-  const isUser = () => state.roles.some((r) => r === Role.user); // Добавляем проверку для пользователя
+  const isExpert = () => state.roles.some((r) => r === Role.expert);
+  const isUser = () => state.roles.some((r) => r === Role.user);
 
-  // Метод для проверки, может ли пользователь создавать проекты
   const canCreateProject = () => {
     return isAdmin() || isCustomer() || isDirectorate();
   };
 
-  // Проверка возможности удаления проекта
   const canDeleteProject = (project?: ProjectDto) => {
-    // Если проект не передан, возвращаем false
     if (!project) return false;
-    
-    // Админ или директорат могут удалять любые проекты
-    if (isAdmin() || isDirectorate()) {
-      return true;
-    }
-    
-    // Customer может удалять только свои проекты
-    if (isCustomer() && project.initiator.id === state.userId) {
-      return true;
-    }
-    
+    if (isAdmin() || isDirectorate()) return true;
+    if (isCustomer() && project.initiator.id === state.userId) return true;
     return false;
   };
 
@@ -90,8 +159,8 @@ export const useMainStore = defineStore('main', () => {
   };
 
   const canJoinTeam = () => {
-    return isAdmin() || isUser()
-  }
+    return isAdmin() || isUser();
+  };
 
   const canEditTeam = (team: TeamDto) => {
     return isAdmin() || team.user_owner.id === state.userId;
@@ -101,7 +170,15 @@ export const useMainStore = defineStore('main', () => {
     return isAdmin() || team.user_owner.id === state.userId;
   };
 
-  getUserId: () => state.userId // Добавьте эту строку
+  // Метод для обновления данных команды из team-store
+  const updateTeamData = async (teamId: number) => {
+    try {
+      await teamStore.fetchTeam(teamId);
+      syncWithTeamStore();
+    } catch (error) {
+      console.error('Ошибка при обновлении данных команды:', error);
+    }
+  };
 
   return {
     ...toRefs(state),
@@ -109,14 +186,16 @@ export const useMainStore = defineStore('main', () => {
     isAdmin,
     isCustomer,
     isDirectorate,
-    isExpert, // Экспортируем метод isExpert
-    isUser,   // Экспортируем метод isUser
+    isExpert,
+    isUser,
     canCreateProject,
     canCreateTeam,
     canJoinTeam,
     getCurrentUser,
+    updateUserData,
     canEditTeam,
     canDeleteTeam,
     canDeleteProject,
+    updateTeamData, // Экспортируем метод для обновления данных команды
   };
 });

@@ -34,7 +34,7 @@ export class TeamController {
   async findOne(@Param('id') id: number): Promise<Team> {
     return this.teamService.findOne(id);
   }
-  
+
   @Post()
   @Roles(Role.admin, Role.customer, Role.directorate)
   @UseGuards(JwtAuthGuard, RolesGuard)

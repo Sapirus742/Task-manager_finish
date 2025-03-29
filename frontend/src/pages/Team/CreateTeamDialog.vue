@@ -102,7 +102,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import { useQuasar } from 'quasar';
-import { CreateTeamDto, PrivacyTeam, StatusTeam, Role, StatusProject, UpdateProjectDto } from '../../../backend/src/common/types';
+import { CreateTeamDto, PrivacyTeam, StatusTeam, Role, StatusProject, UpdateProjectDto } from '../../../../backend/src/common/types';
 import { create } from 'src/api/team.api';
 import { getAll as getAllUsers } from 'src/api/users.api';
 import { getAll as getAllProjects, update as updateProject } from 'src/api/project.api';

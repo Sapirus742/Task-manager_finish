@@ -185,7 +185,6 @@
         <q-btn 
           v-if="mainStore.canEditTeam(selectedTeam)"
           flat 
-          :disable="true"
           label="Редактировать" 
           color="primary" 
           @click="openEditTeamDialog(selectedTeam)" 
@@ -215,7 +214,7 @@ import { getAll, remove } from 'src/api/team.api';
 import { update } from 'src/api/project.api'; // Добавляем импорт функции update
 import CreateTeamDialog from './CreateTeamDialog.vue';
 import EditTeamDialog from './EditTeamDialog.vue';
-import { TeamDto, PrivacyTeam, StatusProject, ProjectDto } from '../../../backend/src/common/types'; // Добавляем StatusProject
+import { TeamDto, PrivacyTeam, StatusProject, ProjectDto } from '../../../../backend/src/common/types'; // Добавляем StatusProject
 import { useQuasar } from 'quasar';
 
 // Хранилище
