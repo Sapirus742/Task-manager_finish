@@ -1,5 +1,5 @@
 import { api } from './axios';
-import { CreatePortfolioDto, CreateProjectDto, PortfolioDto, ProjectDto, UpdatePortfolioDto, UpdateProjectDto} from '../../../backend/src/common/types';
+import { CreatePortfolioDto, PortfolioDto, UpdatePortfolioDto } from '../../../backend/src/common/types';
 
 export async function getAll(): Promise<PortfolioDto[]> {
   const response = await api.get('/portfolio');
