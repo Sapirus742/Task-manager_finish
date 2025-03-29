@@ -9,6 +9,8 @@ import {
   SecuredUser,
   TeamDto,
   UserAccountStatus,
+  CommentDto,
+  IdeaDto,
 } from '../../../backend/src/common/types';
 import { useProfileStore } from './profile-store';
 import { useTeamStore } from './team-store';
@@ -29,6 +31,8 @@ export const useMainStore = defineStore('main', () => {
     team_owner: [] as TeamDto[],
     project_initiator: [] as ProjectDto[],
     team: null as TeamDto | null,
+    comment: [] as CommentDto[],
+    idea_initiator: [] as IdeaDto[],
   });
 
   const teamStore = useTeamStore();
@@ -115,6 +119,9 @@ export const useMainStore = defineStore('main', () => {
       team_owner: state.team_owner,
       project_initiator: state.project_initiator,
       team: state.team,
+      comment: state.comment,
+      idea_initiator: state.idea_initiator,
+
     };
   };
 
