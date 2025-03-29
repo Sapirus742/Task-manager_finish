@@ -2,9 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { User } from 'src/orm/user.entity';
-import { Competence, PrivacyTeam, StatusIdea, StatusTeam, UpdateIdeaDto, UpdateTeamDto } from 'src/common/types';
-import { Team } from 'src/orm/team.entity';
-import { Project } from 'src/orm/project.entity';
+import { Competence, StatusIdea, UpdateIdeaDto } from 'src/common/types';
 import { Idea } from 'src/orm/idea.entity';
 import { Comments } from 'src/orm/comment.entity';
 
