@@ -6,12 +6,14 @@ import {
     CreateDateColumn,
     ManyToOne,
     OneToMany,
+    OneToOne,
 } from 'typeorm';   
   
 import { User } from './user.entity';
   
 import { Competence, IdeaDto, StatusIdea } from 'src/common/types'; 
 import { Comments } from './comment.entity';
+import { Project } from './project.entity';
 
 @Entity()
 export class Idea {
@@ -43,9 +45,12 @@ export class Idea {
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date; 
 
-    @Column()
-    customer: string;
+    @Column({ type: 'varchar', array: true, default: '{}' })
+    approved: number[];
 
+    @OneToOne(() => Project, (project) => project.idea)
+    project: Project;
+    
     @OneToMany(() => Comments, (comments) => comments.idea)
     comment: Comments[];    
     
@@ -64,7 +69,7 @@ export class Idea {
             status: this.status,
             createdAt: this.createdAt,
             comment: this.comment.map(comment => comment.getCommentDto()),
-            customer: this.customer,
+            approved: this.approved,
             initiator: this.initiator.getSecuredDto(),
         };
     }

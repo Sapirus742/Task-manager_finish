@@ -95,7 +95,9 @@ export class User {
       team_leader: this.team_leader.getTeamDto(),
       team_owner: this.team_owner.map(team_owner => team_owner.getTeamDto()),
       portfolio: this.portfolio.map(portfolio => portfolio.getPortfolioDto()),
+      idea_initiator: this.idea_initiator.map(idea_initiator => idea_initiator.getIdeaDto()),
       project_initiator: this.project_initiator.map(project_initiator => project_initiator.getProjectDto()),
+      comment: this.comment.map(comment => comment.getCommentDto()),
       team: this.team.getTeamDto(),
     };
   }

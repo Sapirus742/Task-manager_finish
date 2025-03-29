@@ -36,7 +36,7 @@ export class Team {
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
-    @OneToOne(() => User, { cascade: true })
+    @OneToOne(() => User, (user) => user.team_leader, { onDelete: 'SET NULL' })
     @JoinColumn()
     user_leader: User;
 

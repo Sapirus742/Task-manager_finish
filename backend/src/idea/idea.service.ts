@@ -2,9 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { User } from 'src/orm/user.entity';
-import { Competence, PrivacyTeam, StatusIdea, StatusTeam, UpdateIdeaDto, UpdateTeamDto } from 'src/common/types';
-import { Team } from 'src/orm/team.entity';
-import { Project } from 'src/orm/project.entity';
+import { Competence, StatusIdea, UpdateIdeaDto } from 'src/common/types';
 import { Idea } from 'src/orm/idea.entity';
 import { Comments } from 'src/orm/comment.entity';
 
@@ -20,17 +18,31 @@ export class IdeaService {
   ) {}
 
   async findAll(): Promise<Idea[]> {
-    return this.ideaRepository.find({ relations: ['comment', 'initiator'] });
+    return this.ideaRepository.find({ relations: ['comment', 'initiator', 'project'] });
   }
   
   async findOne(id: number): Promise<Idea | any> {
     const idea = await this.ideaRepository.findOne({
       where: { id },
-      relations: ['comment', 'initiator'],
+      relations: ['comment', 'initiator', 'project'],
     });
     return idea;
   }
-  
+
+  async addApproved(id: number, app: number): Promise <Idea> {
+    const idea = await this.ideaRepository.findOne({
+      where: { id },
+      relations: ['comment', 'initiator'],
+    });
+
+    if (!idea) {
+      throw new NotFoundException(`Идея с id ${id} не найдена`);
+    }
+
+    idea.approved = [...idea.approved, app];
+    return this.ideaRepository.save(idea);
+  }
+
   async create(
     name: string,
     problem: string,
@@ -39,7 +51,6 @@ export class IdeaService {
     resource: string,
     stack: Competence[], 
     status: StatusIdea,
-    customer: string,
     comment: number[], 
     initiator: number,
   ): Promise<Idea> {
@@ -52,7 +63,6 @@ export class IdeaService {
     idea.resource = resource;
     idea.stack = stack;
     idea.status = status;
-    idea.customer = customer;
     const initiatorEntity = await this.userRepository.findOne({ where: { id: initiator } });
     const commentEntities = await this.commentsRepository.find({ where: { id: In(comment) } });
 
@@ -90,7 +100,7 @@ export class IdeaService {
     if (!idea) {
         throw new NotFoundException(`Idea with id ${idea} not found`);
     }
-
+    
     await this.ideaRepository.remove(idea);
   }
 }

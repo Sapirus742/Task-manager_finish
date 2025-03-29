@@ -5,12 +5,15 @@ import {
     CreateDateColumn,
     OneToMany,
     ManyToOne,
+    OneToOne,
+    JoinColumn,
 } from 'typeorm';   
   
 import { User } from './user.entity';
   
 import { Competence, ProjectDto, StatusProject } from 'src/common/types'; 
 import { Team } from './team.entity';
+import { Idea } from './idea.entity';
 
 @Entity()
 export class Project {
@@ -53,6 +56,10 @@ export class Project {
 
     @Column()
     customer: string;
+
+    @OneToOne(() => Idea, (idea) => idea.project, { onDelete: 'SET NULL' })
+    @JoinColumn()
+    idea: Idea;
     
     @OneToMany(() => Team, (team) => team.project)
     teams: Team[];

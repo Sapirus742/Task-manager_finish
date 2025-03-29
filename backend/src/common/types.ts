@@ -28,6 +28,7 @@ export enum StatusIdea {
   underApproval = 'Under Approval',
   approved = 'Approved',
   published = 'Published',
+  implemented = 'Implemented',
 }
     
 export enum StatusTeam {
@@ -96,7 +97,9 @@ export interface UpdateUserDto {
   team_leader: number;
   team_owner: number[];
   portfolio: number[];
+  idea_initiator: number[];
   project_initiator: number[];
+  comment: number[]
   team: number;
 }
 
@@ -138,7 +141,6 @@ export interface CreateIdeaDto {
   resource: string;
   stack: Competence[]; 
   status: StatusIdea;
-  customer: string;
   comment: number[]; 
   initiator: number;
 }
@@ -151,21 +153,19 @@ export interface UpdateIdeaDto {
   resource?: string;
   stack?: Competence[]; 
   status?: StatusIdea;
-  customer?: string;
+  approved?: number[];
   comment?: number[]; 
   initiator?: number;
 }
 
 export interface CreateCommentDto {
   comment: string;
-  grade: string;
   users: number;
   idea: number;
 }
 
 export interface UpdateCommentDto {
   comment?: string;
-  grade?: string;
   users?: number;
   idea?: number;
 }
@@ -217,7 +217,9 @@ export type SecuredUser = {
   team_leader: TeamDto | null;
   team_owner: TeamDto[];
   portfolio: PortfolioDto[];
+  idea_initiator: IdeaDto[];
   project_initiator: ProjectDto[];
+  comment: CommentDto[]
   team: TeamDto | null;
 };
 
@@ -257,7 +259,7 @@ export type IdeaDto = {
   stack: Competence[]; 
   status: StatusIdea; 
   createdAt: Date; 
-  customer: string;
+  approved: number[];
   comment: CommentDto[]; 
   initiator: SecuredUser;
 };
@@ -266,7 +268,6 @@ export type CommentDto = {
   id: number;
   createdAt: Date; 
   comment: string;
-  grade: string;
   users: SecuredUser;
   idea: IdeaDto;
 };

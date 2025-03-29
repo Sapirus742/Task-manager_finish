@@ -10,11 +10,11 @@ import {
     UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { Roles } from 'src/auth/roles.decorator';
 import { CreateIdeaDto, Role, UpdateIdeaDto } from 'src/common/types';
-import { RolesGuard } from 'src/auth/roles.guard';
 import { IdeaService } from './idea.service';
 import { Idea } from 'src/orm/idea.entity';
+import { Roles } from 'src/auth/roles.decorator';
+import { RolesGuard } from 'src/auth/roles.guard';
 
 @Controller('idea')
 
@@ -34,9 +34,16 @@ export class IdeaController {
   async findOne(@Param('id') id: number): Promise<Idea> {
     return this.ideaService.findOne(id);
   }
+
+  @Get(':id/:app')
+  @Roles(Role.admin, Role.expert)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async addApproved(@Param('id') id: number, @Param('app') app: number): Promise<Idea> {
+    return this.ideaService.addApproved(id,app);
+  }
   
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   async create(@Body() idea: CreateIdeaDto): Promise<Idea> {
     return this.ideaService.create(
       idea.name,
@@ -46,20 +53,19 @@ export class IdeaController {
       idea.resource,
       idea.stack,
       idea.status,
-      idea.customer,
       idea.comment,
       idea.initiator,
     );
   }
   
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   async update(@Param('id') id: number, @Body() updateIdeaDto: UpdateIdeaDto): Promise<Idea> {
       return this.ideaService.update(id, updateIdeaDto);
   }
  
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   async remove(@Param('id') id: number): Promise<void> {
       return this.ideaService.remove(id);
   }

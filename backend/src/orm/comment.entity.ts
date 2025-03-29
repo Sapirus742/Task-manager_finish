@@ -21,9 +21,6 @@ export class Comments {
 
     @Column()
     comment: string;
-    
-    @Column()
-    grade: string;
 
     @ManyToOne(() => User, (user) => user.comment, { onDelete: 'CASCADE' })
     users: User;
@@ -36,7 +33,6 @@ export class Comments {
             id: this.id,
             createdAt: this.createdAt,
             comment: this.comment,
-            grade: this.grade,
             idea: this.idea.getIdeaDto(),
             users: this.users.getSecuredDto(),
         };

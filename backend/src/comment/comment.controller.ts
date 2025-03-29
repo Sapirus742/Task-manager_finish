@@ -39,7 +39,6 @@ export class CommentController {
   async create(@Body() comments: CreateCommentDto): Promise<Comments> {
     return this.commentService.create(
         comments.comment,
-        comments.grade,
         comments.users,
         comments.idea,
     );
