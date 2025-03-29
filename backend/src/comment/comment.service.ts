@@ -31,13 +31,11 @@ export class CommentService {
   
   async create(
     comment: string,
-    grade: string,
     users: number,
     idea: number,
   ): Promise<Comments> {
     const comments = new Comments();
     comments.comment = comment;
-    comments.grade = grade;
     const usersEntity = await this.userRepository.findOne({ where: { id: users } });
     const ideaEntity = await this.ideaRepository.findOne({ where: { id: idea } });
 

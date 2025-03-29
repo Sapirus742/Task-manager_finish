@@ -17,6 +17,14 @@ export async function get(id: number): Promise<IdeaDto | undefined> {
   return;
 }
 
+export async function addApproved(id: number, app: number): Promise<IdeaDto | undefined> {
+  const response = await api.get('/idea/' + id + '/' + app);
+  if (response.status == 200) {
+    return response.data;
+  }
+  return;
+}
+
 export async function create(
   newIdea: CreateIdeaDto
 ): Promise<IdeaDto | undefined> {
