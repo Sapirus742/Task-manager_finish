@@ -9,6 +9,11 @@ export const useTeamStore = defineStore('team', () => {
     const isLoading = ref(false);
     const error = ref<string | null>(null);
 
+    // Добавляем метод для очистки текущей команды
+    const clearCurrentTeam = () => {
+        currentTeam.value = null;
+    };
+
     const fetchTeam = async (teamId: number) => {
         try {
             isLoading.value = true;
@@ -48,5 +53,6 @@ export const useTeamStore = defineStore('team', () => {
         error,
         fetchTeam,
         fetchTeamByProject,
+        clearCurrentTeam,
     };
 });

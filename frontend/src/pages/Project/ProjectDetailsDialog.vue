@@ -53,10 +53,10 @@
         <div class="team-name q-mb-md">
           <q-icon name="groups" class="q-mr-sm" />
           <strong>Команда:</strong> {{ currentTeam.name }}
-          <q-chip size="sm" :color="currentTeam.privacy === 'Close' ? 'negative' : 'positive'" text-color="white">
+          <q-chip size="s" :color="currentTeam.privacy === 'Close' ? 'negative' : 'positive'" text-color="white" >
             {{ currentTeam.privacy === 'Close' ? 'Закрытая' : 'Открытая' }}
           </q-chip>
-          <q-chip size="sm" color="info" text-color="white">
+          <q-chip size="s" color="info" text-color="white">
             {{ currentTeam.status }}
           </q-chip>
         </div>
@@ -76,7 +76,7 @@
                 {{ currentTeam.user_owner.firstname }} {{ currentTeam.user_owner.lastname }}
               </span>
               <q-badge color="teal" class="q-ml-sm">Владелец</q-badge>
-              <q-chip v-if="currentTeam.user_owner.competence?.length" size="xs" color="grey-4" text-color="dark" class="q-ml-sm">
+              <q-chip v-if="currentTeam.user_owner.competence?.length" size="s" color="grey-4" text-color="dark" class="q-ml-sm">
                 {{ currentTeam.user_owner.competence.join(', ') }}
               </q-chip>
             </div>
@@ -95,7 +95,7 @@
                 {{ currentTeam.user_leader.firstname }} {{ currentTeam.user_leader.lastname }}
               </span>
               <q-badge color="primary" class="q-ml-sm">Тимлид</q-badge>
-              <q-chip v-if="currentTeam.user_leader.competence?.length" size="xs" color="grey-4" text-color="dark" class="q-ml-sm">
+              <q-chip v-if="currentTeam.user_leader.competence?.length" size="s" color="grey-4" text-color="dark" class="q-ml-sm">
                 {{ currentTeam.user_leader.competence.join(', ') }}
               </q-chip>
             </div>
@@ -113,7 +113,7 @@
             >
               <div class="col">
                 <span>{{ member.firstname }} {{ member.lastname }}</span>
-                <q-chip v-if="member.competence?.length" size="xs" color="grey-4" text-color="dark" class="q-ml-sm">
+                <q-chip v-if="member.competence?.length" size="s" color="grey-4" text-color="dark" class="q-ml-sm">
                   {{ member.competence.join(', ') }}
                 </q-chip>
               </div>
@@ -194,7 +194,11 @@ const maxHeight = ref(0);
 const teamStore = useTeamStore();
 
 const currentTeam = computed<TeamDto | null>(() => {
-  return teamStore.currentTeam || project.value?.teams?.[0] || null;
+  // Если есть команда в store - используем ее
+  if (teamStore.currentTeam) return teamStore.currentTeam;
+  
+  // Иначе проверяем команду проекта
+  return project.value?.teams?.[0] || null;
 });
 
 // Функция для получения обычных участников (без владельца и тимлида)
@@ -234,6 +238,11 @@ const calculateMaxHeight = () => {
 
 const open = async (projectData: ProjectDto) => {
   project.value = projectData;
+  
+  // Очищаем текущую команду перед загрузкой новой
+  if (teamStore.clearCurrentTeam) {
+    teamStore.clearCurrentTeam();
+  }
   
   if (projectData.id) {
     try {
