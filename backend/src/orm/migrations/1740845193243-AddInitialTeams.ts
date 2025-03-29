@@ -5,9 +5,6 @@ export class AddInitialTeams1740845193243 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`
-            INSERT INTO "team" ( name, description, privacy, status, created_at) VALUES 
-            ('Team Alpha', 'Description for Team Alpha', 'open', 'inProgress', NOW()),
-            ('Team Beta', 'Description for Team Beta', 'open', 'inProgress', NOW())
         `);
     }
 
