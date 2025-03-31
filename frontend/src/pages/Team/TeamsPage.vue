@@ -193,8 +193,9 @@
           v-if="mainStore.canDeleteTeam(selectedTeam)"
           flat 
           label="Удалить" 
-          color="negative" 
-          @click="confirmDeleteTeam(selectedTeam)" 
+          :color="mainStore.getCurrentUser().id === selectedTeam.user_owner?.id ? 'deep-orange' : 'negative'" 
+          @click="confirmDeleteTeam(selectedTeam)"
+          :icon="mainStore.getCurrentUser().id === selectedTeam.user_owner?.id ? 'warning' : undefined"
         />
         <q-btn flat label="Закрыть" color="primary" v-close-popup />
       </q-card-actions>
@@ -291,8 +292,37 @@ const openTeamDetails = (team: TeamDto) => {
   showTeamDetails.value = true;
 };
 
-// Функция подтверждения удаления
+// Функция подтверждения удаления с двойным подтверждением для владельца
 const confirmDeleteTeam = (team: TeamDto) => {
+  const currentUser = mainStore.getCurrentUser(); // Получаем текущего пользователя
+  const isOwner = currentUser.id === team.user_owner?.id;
+  
+  if (isOwner) {
+    // Двойное подтверждение для владельца
+    $q.dialog({
+      title: 'Важное подтверждение',
+      message: `Вы являетесь владельцем команды "${team.name}". Удаление команды приведет к удалению всех данных. <br><br>Вы точно хотите продолжить?`,
+      html: true,
+      persistent: true,
+      ok: {
+        label: 'Да, я понимаю последствия',
+        color: 'negative',
+        flat: true
+      },
+      cancel: {
+        label: 'Отмена',
+        color: 'positive',
+      }
+    }).onOk(() => {
+      showFinalConfirmation(team);
+    });
+  } else {
+    showFinalConfirmation(team);
+  }
+};
+
+// Финальное подтверждение удаления
+const showFinalConfirmation = (team: TeamDto) => {
   $q.dialog({
     title: 'Подтверждение удаления',
     message: `Вы уверены, что хотите удалить команду "${team.name}"?`,
