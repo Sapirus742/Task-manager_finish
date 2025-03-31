@@ -48,62 +48,78 @@
 
           <!-- Участники команды -->
           <q-select
-  v-model="editedTeam.members"
-  label="Участники команды"
-  multiple
-  use-chips
-  :options="userOptions"
-  :rules="[(val) => val.length > 0 || 'Добавьте хотя бы одного участника']"
-  outlined
-  option-label="fullName"
-  emit-value
-  map-options
-  @filter="filterUsers"
-  @update:model-value="updateLeaderOptions"
-/>
+            v-model="editedTeam.members"
+            label="Участники команды"
+            multiple
+            use-chips
+            :options="allUsers"
+            option-label="fullName"
+            emit-value
+            map-options
+            outlined 
+            class="members-select" 
+            @update:model-value="handleMemberSelection"
+          >
+            <template v-slot:option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section avatar v-if="isUserInOtherTeam(scope.opt)">
+                  <q-icon name="block" color="negative"/>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.fullName }}</q-item-label>
+                  <q-item-label caption>
+                    {{ scope.opt.email }}
+                    <span v-if="isUserInOtherTeam(scope.opt)" class="text-negative">
+                      (Уже в другой команде)
+                    </span>
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
 
           <!-- Тимлид -->
           <q-select
-  v-model="editedTeam.leader"
-  label="Тимлид"
-  :options="leaderOptions"
-  :rules="[(val) => !!val || 'Необходимо выбрать тимлида']"
-  outlined
-  option-label="fullName"
-  emit-value
-  map-options
->
-  <template v-slot:option="scope">
-    <q-item v-bind="scope.itemProps">
-      <q-item-section avatar>
-        <q-icon name="star" :color="scope.opt.id === editedTeam.leader?.id ? 'amber' : 'transparent'"/>
-      </q-item-section>
-      <q-item-section>
-        <q-item-label>{{ scope.opt.fullName }}</q-item-label>
-        <q-item-label caption>{{ scope.opt.email }}</q-item-label>
-      </q-item-section>
-    </q-item>
-  </template>
-</q-select>
+            v-model="editedTeam.leader"
+            label="Тимлид"
+            :options="editedTeam.members"
+            :rules="[(val) => !!val || 'Необходимо выбрать тимлида']"
+            outlined
+            option-label="fullName"
+            emit-value
+            map-options
+          >
+            <template v-slot:option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section avatar>
+                  <q-icon name="star" :color="scope.opt.id === editedTeam.leader?.id ? 'amber' : 'transparent'"/>
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label>{{ scope.opt.fullName }}</q-item-label>
+                  <q-item-label caption>{{ scope.opt.email }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
 
           <!-- Проект -->
           <q-select
-  v-model="editedTeam.project"
-  label="Проект"
-  :options="filteredProjectOptions"
-  outlined
-  option-label="name"
-  emit-value
-  map-options
-  clearable
-  @update:model-value="handleProjectChange"
-  :display-value="editedTeam.project?.name || 'Не выбран'"
->
-  <template v-slot:selected-item="scope">
-    <span v-if="scope.opt">{{ scope.opt.name }}</span>
-    <span v-else>Не выбран</span>
-  </template>
-</q-select>
+            v-model="editedTeam.project"
+            label="Проект"
+            :options="filteredProjectOptions"
+            outlined
+            option-label="name"
+            emit-value
+            map-options
+            clearable
+            @update:model-value="handleProjectChange"
+            :display-value="editedTeam.project?.name || 'Не выбран'"
+          >
+            <template v-slot:selected-item="scope">
+              <span v-if="scope.opt">{{ scope.opt.name }}</span>
+              <span v-else>Не выбран</span>
+            </template>
+          </q-select>
 
           <q-card-actions align="right">
             <q-btn flat label="Отмена" color="negative" v-close-popup />
@@ -116,7 +132,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed} from 'vue';
+import { ref, computed } from 'vue';
 import { useQuasar } from 'quasar';
 import { 
   PrivacyTeam, 
@@ -128,10 +144,11 @@ import {
 import { update as updateTeam } from 'src/api/team.api';
 import { 
   getAll as getAllUsers, 
+  get as getUser,
 } from 'src/api/users.api';
 import { 
   getAll as getAllProjects, 
-  update as UpdateProject,
+  update as updateProjectApi,
 } from 'src/api/project.api';
 
 const $q = useQuasar();
@@ -143,6 +160,7 @@ interface TeamMember {
   id: number;
   fullName: string;
   email?: string;
+  inTeam: boolean;
 }
 
 interface ProjectOption {
@@ -160,21 +178,12 @@ const editedTeam = ref({
   members: [] as TeamMember[],
   leader: null as TeamMember | null,
   project: null as ProjectOption | null,
-  originalProjectState: null as ProjectOption | null, // Добавляем поле для хранения исходного состояния
+  originalProjectState: null as ProjectOption | null,
   user_owner: 0,
 });
 
-const leaderOptions = ref<TeamMember[]>([]);
-
-const updateLeaderOptions = (): void => {
-  leaderOptions.value = [...editedTeam.value.members];
-  
-  // Сбрасываем тимлида, если он больше не в списке участников
-  if (editedTeam.value.leader && 
-      !editedTeam.value.members.some(m => m.id === editedTeam.value.leader?.id)) {
-    editedTeam.value.leader = null;
-  }
-};
+const allUsers = ref<TeamMember[]>([]);
+const allProjects = ref<ProjectOption[]>([]);
 
 const privacyOptions = [
   { label: 'Открытая', value: PrivacyTeam.open },
@@ -194,11 +203,6 @@ const statusOptions = computed(() => {
   ];
 });
 
-
-const allUsers = ref<TeamMember[]>([]);
-const userOptions = ref<TeamMember[]>([]);
-const allProjects = ref<ProjectOption[]>([]);
-
 const filteredProjectOptions = computed(() => {
   return allProjects.value.filter(project => 
     project.status === StatusProject.searchTeam || 
@@ -206,32 +210,61 @@ const filteredProjectOptions = computed(() => {
   );
 });
 
-const filterUsers = (val: string, update: (callback: () => void) => void) => {
-  update(() => {
-    if (val === '') {
-      userOptions.value = [...allUsers.value];
-    } else {
-      const needle = val.toLowerCase();
-      userOptions.value = allUsers.value.filter(user => 
-        user.fullName.toLowerCase().includes(needle)
-      );
-    }
-  });
+const isUserInOtherTeam = (user: TeamMember): boolean => {
+  return user.inTeam;
+};
+
+const handleMemberSelection = async (newMembers: TeamMember[]) => {
+  // Находим только что добавленных пользователей
+  const addedMembers = newMembers.filter(newMember => 
+    !editedTeam.value.members.some(m => m.id === newMember.id)
+  );
+
+  // Проверяем новых участников на наличие в других командах
+  const invalidMembers = addedMembers.filter(member => member.inTeam);
+
+  if (invalidMembers.length > 0) {
+    // Откатываем выбор
+    editedTeam.value.members = newMembers.filter(member => 
+      !invalidMembers.some(u => u.id === member.id)
+    );
+    
+    // Показываем сообщение об ошибке
+    $q.notify({
+      message: `Пользователь ${invalidMembers[0].fullName} уже состоит в другой команде`,
+      color: 'negative',
+      position: 'top',
+      timeout: 3000
+    });
+    return;
+  }
+
+  // Обновляем список лидеров
+  if (editedTeam.value.leader && 
+      !newMembers.some(m => m.id === editedTeam.value.leader?.id)) {
+    editedTeam.value.leader = null;
+  }
 };
 
 const loadUsers = async () => {
   try {
     const users = await getAllUsers();
     if (users) {
-      allUsers.value = users
-        .filter(user => user.roles.includes(Role.user))
-        .map(user => ({
-          id: user.id,
-          fullName: `${user.firstname} ${user.lastname}`,
-          email: user.email
-        }));
-      // Инициализируем userOptions всеми пользователями при загрузке
-      userOptions.value = [...allUsers.value];
+      allUsers.value = await Promise.all(
+        users
+          .filter(user => user.roles.includes(Role.user))
+          .map(async user => {
+            const userData = await getUser(user.id);
+            return {
+              id: user.id,
+              fullName: `${user.firstname} ${user.lastname}`,
+              email: user.email,
+              inTeam: userData?.team?.id !== undefined && 
+                     userData.team.id !== null && 
+                     userData.team.id !== editedTeam.value.id
+            };
+          })
+      );
     }
   } catch (error) {
     console.error('Ошибка загрузки пользователей:', error);
@@ -261,7 +294,6 @@ const loadProjects = async () => {
       position: 'top'
     });
   }
-  console.log('Project options:', filteredProjectOptions.value);
 };
 
 const handleProjectChange = (selectedProject: ProjectOption | null) => {
@@ -271,78 +303,97 @@ const handleProjectChange = (selectedProject: ProjectOption | null) => {
       name: selectedProject.name,
       status: selectedProject.status
     };
+    editedTeam.value.status = StatusTeam.inProgress;
   } else {
     editedTeam.value.project = null;
+    editedTeam.value.status = StatusTeam.searchProject;
   }
-  editedTeam.value.status = selectedProject ? StatusTeam.inProgress : StatusTeam.searchProject;
-  console.log('Selected project:', selectedProject);
 };
 
 const openDialog = async (team: TeamDto) => {
-  showDialog.value = true;
-  await Promise.all([loadUsers(), loadProjects()]);
-  
-  const initialProjectState = team.project ? {
-    id: team.project.id,
-    name: team.project.name,
-    status: team.project.status
-  } : null;
+  try {
+    showDialog.value = true;
+    await Promise.all([loadUsers(), loadProjects()]);
+    
+    const initialProjectState = team.project ? {
+      id: team.project.id,
+      name: team.project.name,
+      status: team.project.status
+    } : null;
 
-  editedTeam.value = {
-    id: team.id,
-    name: team.name,
-    description: team.description,
-    privacy: team.privacy,
-    status: team.status,
-    members: team.user.map(u => ({
-      id: u.id,
-      fullName: `${u.firstname} ${u.lastname}`,
-      email: u.email
-    })),
-    leader: team.user_leader ? {
-      id: team.user_leader.id,
-      fullName: `${team.user_leader.firstname} ${team.user_leader.lastname}`,
-      email: team.user_leader.email
-    } : null,
-    project: initialProjectState,
-    originalProjectState: initialProjectState, // Сохраняем исходное состояние
-    user_owner: team.user_owner.id
-  };
-
-  updateLeaderOptions();
+    editedTeam.value = {
+      id: team.id,
+      name: team.name,
+      description: team.description,
+      privacy: team.privacy,
+      status: team.status,
+      members: await Promise.all(
+        team.user.map(async u => {
+          const userData = await getUser(u.id);
+          return {
+            id: u.id,
+            fullName: `${u.firstname} ${u.lastname}`,
+            email: u.email,
+            inTeam: userData?.team?.id !== undefined && 
+                   userData.team.id !== null && 
+                   userData.team.id !== team.id
+          };
+        })
+      ),
+      leader: team.user_leader ? {
+        id: team.user_leader.id,
+        fullName: `${team.user_leader.firstname} ${team.user_leader.lastname}`,
+        email: team.user_leader.email,
+        inTeam: false
+      } : null,
+      project: initialProjectState,
+      originalProjectState: initialProjectState,
+      user_owner: team.user_owner.id
+    };
+    
+  } catch (error) {
+    console.error('Error opening dialog:', error);
+    $q.notify({
+      message: 'Ошибка загрузки данных команды',
+      color: 'negative',
+      position: 'top'
+    });
+    closeDialog();
+  }
 };
 
 const onSubmit = async () => {
   try {
+    // Проверяем участников в других командах
+    const invalidMembers = editedTeam.value.members.filter(m => m.inTeam);
+    if (invalidMembers.length > 0) {
+      $q.notify({
+        message: `Невозможно сохранить: ${invalidMembers[0].fullName} уже в другой команде`,
+        color: 'negative',
+        position: 'top'
+      });
+      return;
+    }
+
     loading.value = true;
     
-    // Сохраняем исходное состояние проекта
     const originalProjectBeforeEdit = editedTeam.value.originalProjectState;
     const currentProject = editedTeam.value.project;
     
-    console.log('Original project:', originalProjectBeforeEdit?.id);
-    console.log('Current project:', currentProject?.id);
-
-    // 1. Обновляем статусы проектов
     if (originalProjectBeforeEdit?.id !== currentProject?.id) {
-      // Если был старый проект - возвращаем ему searchTeam
       if (originalProjectBeforeEdit?.id) {
-        console.log('Returning previous project to searchTeam status');
-        await UpdateProject(originalProjectBeforeEdit.id, { 
+        await updateProjectApi(originalProjectBeforeEdit.id, { 
           status: StatusProject.searchTeam 
         });
       }
       
-      // Если есть новый проект - устанавливаем teamFound
       if (currentProject?.id) {
-        console.log('Setting new project to teamFound status');
-        await UpdateProject(currentProject.id, { 
+        await updateProjectApi(currentProject.id, { 
           status: StatusProject.teamFound 
         });
       }
     }
 
-    // 2. Обновляем саму команду
     const updateData = {
       name: editedTeam.value.name,
       description: editedTeam.value.description,
@@ -354,13 +405,15 @@ const onSubmit = async () => {
       user_owner: editedTeam.value.user_owner
     };
     
-    console.log('Saving team with:', updateData);
     const updatedTeam = await updateTeam(editedTeam.value.id, updateData);
     
-    // 3. Обновляем UI
     emit('update', updatedTeam);
     closeDialog();
-    $q.notify({ message: 'Изменения сохранены', color: 'positive' });
+    $q.notify({ 
+      message: 'Изменения сохранены', 
+      color: 'positive',
+      timeout: 2000
+    });
     
   } catch (error) {
     console.error('Save error:', error);
@@ -373,7 +426,6 @@ const onSubmit = async () => {
     loading.value = false;
   }
 };
-
 
 const closeDialog = () => {
   showDialog.value = false;
@@ -391,7 +443,27 @@ defineExpose({
   max-width: 90%;
 }
 
+/* Добавляем отступ после участников */
+.members-select {
+  margin-bottom: 20px;
+}
+
+/* Для кастомизации обводки */
+.q-select.outlined {
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+/* При фокусе */
+.q-select.outlined.q-field--focused {
+  border-color: #1976d2;
+}
+
 .q-chip {
   max-width: 200px;
+}
+
+.text-negative {
+  color: #ff5252;
 }
 </style>

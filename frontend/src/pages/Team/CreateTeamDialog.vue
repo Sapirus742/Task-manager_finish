@@ -78,15 +78,15 @@
           <!-- Проект -->
           <q-select
             v-model="newTeam.project"
-            label="Проект"
+            label="Проект (необязательно)"
             :options="projectOptions"
-            :rules="[(val) => !!val || 'Выберите проект']"
             outlined
             option-value="id"
             option-label="name"
             emit-value
             map-options
             @update:model-value="handleProjectChange"
+            clearable
           />
 
           <q-card-actions align="right">
@@ -121,7 +121,7 @@ const newTeam = ref<CreateTeamDto>({
   status: StatusTeam.searchProject,
   user_leader: 0,
   user: [],
-  project: 0,
+  project: null, // изменено с 0 на null
   user_owner: mainStore.userId,
 });
 
@@ -142,12 +142,11 @@ const statusOptions = computed(() => {
   return [
     { label: 'Поиск проекта', value: StatusTeam.searchProject },
     { label: 'В процессе', value: StatusTeam.inProgress },
-    { label: 'Удалена', value: StatusTeam.delete }
   ];
 });
 
 // Обработчик изменения проекта
-const handleProjectChange = (projectId: number) => {
+const handleProjectChange = (projectId: number | null) => {
   if (projectId) {
     newTeam.value.status = StatusTeam.inProgress;
   } else {
@@ -155,7 +154,7 @@ const handleProjectChange = (projectId: number) => {
   }
 };
 
-const userOptions = ref<Array<{id: number, fullName: string}>>([]);
+const userOptions = ref<Array<{id: number, fullName: string, inTeam: boolean;}>>([]);
 const projectOptions = ref<Array<{id: number, name: string}>>([]);
 
 const loadUsers = async () => {
@@ -166,7 +165,9 @@ const loadUsers = async () => {
         .filter(user => user.roles.includes(Role.user))
         .map(user => ({
           id: user.id,
-          fullName: `${user.firstname} ${user.lastname} (${user.email})`
+          fullName: `${user.firstname} ${user.lastname} (${user.email})`,
+          email: user.email,
+          inTeam: user.team !== null // Добавляем флаг, что пользователь уже в команде
         }));
     }
   } catch (error) {
@@ -200,13 +201,36 @@ const loadProjects = async () => {
   }
 };
 
-watch(() => newTeam.value.user, (newUsers) => {
+watch(() => newTeam.value.user, (newUsers, oldUsers) => {
+  // Находим только что добавленных пользователей
+  const addedUsers = newUsers.filter(userId => !oldUsers.includes(userId));
+  
+  if (addedUsers.length > 0) {
+    const usersInOtherTeams = userOptions.value
+      .filter(user => addedUsers.includes(user.id) && user.inTeam);
+    
+    if (usersInOtherTeams.length > 0) {
+      // Удаляем пользователей, которые уже в других командах
+      newTeam.value.user = newUsers.filter(userId => 
+        !usersInOtherTeams.some(u => u.id === userId)
+      );
+      
+      // Показываем сообщение об ошибке
+      $q.notify({
+        message: `Пользователь ${usersInOtherTeams[0].fullName} уже состоит в другой команде`,
+        color: 'negative',
+        position: 'top'
+      });
+    }
+  }
+  
+  // Обновляем лидера команды
   if (newUsers.length === 0) {
     newTeam.value.user_leader = 0;
   } else if (!newUsers.includes(newTeam.value.user_leader)) {
     newTeam.value.user_leader = newUsers[0];
   }
-});
+}, { deep: true });
 
 const openDialog = async () => {
   showDialog.value = true;
@@ -231,9 +255,9 @@ const onSubmit = async () => {
   try {
     loading.value = true;
     
+    // Обновленная валидация (без проверки проекта)
     if (!newTeam.value.name || !newTeam.value.description || 
-        newTeam.value.user.length === 0 || !newTeam.value.user_leader ||
-        !newTeam.value.project) {
+        newTeam.value.user.length === 0 || !newTeam.value.user_leader) {
       $q.notify({
         message: 'Заполните все обязательные поля',
         color: 'warning',
@@ -246,23 +270,22 @@ const onSubmit = async () => {
       ...newTeam.value,
       user: [...newTeam.value.user],
       user_leader: Number(newTeam.value.user_leader),
-      project: Number(newTeam.value.project),
+      project: newTeam.value.project ? Number(newTeam.value.project) : null, // обработка null
     };
 
     // Создаем команду
     const createdTeam = await create(teamData);
     if (createdTeam) {
-      // Получаем текущий проект
-      const currentProject = projectOptions.value.find(p => p.id === teamData.project);
-      
-      if (currentProject) {
-        // Создаем объект для обновления с текущими значениями + новым статусом
-        const updateData: UpdateProjectDto = {
-          ...currentProject, // Все текущие данные проекта
-          status: StatusProject.teamFound // Новый статус
-        };
-        
-        await updateProject(teamData.project, updateData);
+      // Обновляем проект только если он был выбран
+      if (teamData.project) {
+        const currentProject = projectOptions.value.find(p => p.id === teamData.project);
+        if (currentProject) {
+          const updateData: UpdateProjectDto = {
+            ...currentProject,
+            status: StatusProject.teamFound
+          };
+          await updateProject(teamData.project, updateData);
+        }
       }
       
       $q.notify({

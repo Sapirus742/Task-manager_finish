@@ -46,8 +46,8 @@ export class Team {
     @OneToMany(() => Portfolio, (portfolio) => portfolio.team)
     portfolio: Portfolio[];
 
-    @ManyToOne(() => Project, (project) => project.teams, { onDelete: 'SET NULL' })
-    project: Project;
+    @ManyToOne(() => Project, (project) => project.teams, {nullable: true, onDelete: 'SET NULL' })
+    project: Project | null;
 
     @ManyToOne(() => User, (user) => user.team_owner, { onDelete: 'CASCADE' })
     user_owner: User;
@@ -63,7 +63,7 @@ export class Team {
             user_owner: this.user_owner.getSecuredDto(),
             user: this.user.map(user => user.getSecuredDto()),
             portfolio: this.portfolio.map(portfolio => portfolio.getPortfolioDto()),
-            project: this.project.getProjectDto(),
+            project: this.project?.getProjectDto() || null,
         }
     }
 }

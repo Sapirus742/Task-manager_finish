@@ -306,7 +306,7 @@ const confirmDeleteTeam = (team: TeamDto) => {
       persistent: true,
       ok: {
         label: 'Да, я понимаю последствия',
-        color: 'negative',
+        color: 'negative', 
         flat: true
       },
       cancel: {
@@ -329,12 +329,12 @@ const showFinalConfirmation = (team: TeamDto) => {
     persistent: true,
     ok: {
       label: 'Удалить',
-      color: 'negative'
+      color: 'negative',
+      flat: true
     },
     cancel: {
       label: 'Отмена',
-      color: 'primary',
-      flat: true
+      color: 'positive',
     }
   }).onOk(async () => {
     await deleteTeam(team.id);

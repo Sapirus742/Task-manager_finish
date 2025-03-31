@@ -38,7 +38,7 @@ private readonly logger = new Logger(TeamService.name);
     status: StatusTeam,
     user_leader: number,
     user: number[],
-    project: number,
+    project: number | null,
     user_owner: number,
   ): Promise<Team> {
     const team = new Team();
@@ -48,16 +48,23 @@ private readonly logger = new Logger(TeamService.name);
     team.status = status;
     const user_leaderEntity = await this.userRepository.findOne({ where: { id: user_leader } });
     const userEntities = await this.userRepository.find({where: {id: In(user)}});
-    const projectEntity = await this.projectRepository.findOne({ where: { id: project } });
+    // Обрабатываем проект (может быть null)
+    if (project !== null) {
+      const projectEntity = await this.projectRepository.findOne({ where: { id: project } });
+      if (!projectEntity) {
+        throw new NotFoundException(`Project with id ${project} not found`);
+      }
+      team.project = projectEntity;
+    } else {
+      team.project = null; // Явно устанавливаем null, если проект не указан
+    }
     const user_ownerEntity = await this.userRepository.findOne({ where: { id: user_owner } });
 
     if (!user_leaderEntity) {throw new NotFoundException(`Initiator with id ${user_leader} not found`)}
     if (userEntities.length == 0) {throw new NotFoundException(`No users found with ids ${user.join(', ')}`)}
-    if (!projectEntity) {throw new NotFoundException(`Initiator with id ${project} not found`)}
     if (!user_ownerEntity) {throw new NotFoundException(`Initiator with id ${user_owner} not found`)}
     team.user_leader = user_leaderEntity;
     team.user = userEntities;
-    team.project = projectEntity;
     team.user_owner = user_ownerEntity;
     return this.teamRepository.save(team);
   }

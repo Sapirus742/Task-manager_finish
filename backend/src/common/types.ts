@@ -177,7 +177,7 @@ export interface CreateTeamDto {
   status: StatusTeam,
   user_leader: number,
   user: number[],
-  project: number,
+  project: number | null,
   user_owner: number,
 }
 
@@ -281,7 +281,7 @@ export type TeamDto = {
   user_leader: SecuredUser;
   user: SecuredUser[];
   portfolio: PortfolioDto[];
-  project: ProjectDto;
+  project: ProjectDto | null;
   user_owner: SecuredUser; //владелец
 }
 
