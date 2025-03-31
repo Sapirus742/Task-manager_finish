@@ -170,11 +170,17 @@ export const useMainStore = defineStore('main', () => {
   };
 
   const canEditTeam = (team: TeamDto) => {
-    return isAdmin() || team.user_owner.id === state.userId;
+    return isAdmin() || team.user_owner.id === state.userId || (team.user_leader?.id === state.userId && team.user_leader !== null);;
   };
 
   const canDeleteTeam = (team: TeamDto) => {
     return isAdmin() || team.user_owner.id === state.userId;
+  };
+
+  const canLeaveTeam = (team: TeamDto) => {
+    return team.user_leader?.id === state.userId && 
+           team.user.length > 1 && // Не может покинуть, если он последний
+           team.user_owner.id !== state.userId; // Владелец не может "покинуть" таким образом
   };
 
   // Метод для обновления данных команды из team-store
@@ -203,6 +209,7 @@ export const useMainStore = defineStore('main', () => {
     canEditTeam,
     canDeleteTeam,
     canDeleteProject,
-    updateTeamData, // Экспортируем метод для обновления данных команды
+    updateTeamData, 
+    canLeaveTeam,
   };
 });

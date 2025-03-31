@@ -2,7 +2,7 @@
   <q-dialog v-model="showDialog" persistent>
     <q-card class="edit-team-dialog">
       <q-card-section>
-        <div class="text-h6">Редактировать команду</div>
+        <div class="text-h6">Редактирование команды</div>
       </q-card-section>
 
       <q-card-section>
@@ -13,6 +13,7 @@
             label="Название команды"
             :rules="[(val) => !!val || 'Поле обязательно']"
             outlined
+            :readonly="!canEditLeader"
           />
 
           <!-- Описание -->
@@ -21,6 +22,7 @@
             label="Описание"
             :rules="[(val) => !!val || 'Поле обязательно']"
             outlined
+            :readonly="!canEditLeader"
           />
 
           <!-- Приватность -->
@@ -32,6 +34,7 @@
             outlined
             emit-value
             map-options
+            :disable="!!editedTeam.project || !canEditFull"
           />
 
           <!-- Статус команды -->
@@ -86,8 +89,9 @@
             :rules="[(val) => !!val || 'Необходимо выбрать тимлида']"
             outlined
             option-label="fullName"
-            emit-value
+            emit-value 
             map-options
+            :readonly="!canEditFull"
           >
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps">
@@ -112,6 +116,7 @@
             emit-value
             map-options
             clearable
+            :readonly="!canEditFull"
             @update:model-value="handleProjectChange"
             :display-value="editedTeam.project?.name || 'Не выбран'"
           >
@@ -150,11 +155,21 @@ import {
   getAll as getAllProjects, 
   update as updateProjectApi,
 } from 'src/api/project.api';
+import {useMainStore} from 'src/stores/main-store';
 
 const $q = useQuasar();
 const emit = defineEmits(['update']);
 const showDialog = ref(false);
 const loading = ref(false);
+const mainStore = useMainStore();
+
+const canEditFull = computed(() => {
+  return mainStore.isAdmin() || editedTeam.value.user_owner === mainStore.userId;
+});
+const canEditLeader = computed(() => {
+  return  canEditFull.value || 
+  (editedTeam.value.leader?.id === mainStore.userId && editedTeam.value.leader !== null);
+});
 
 interface TeamMember {
   id: number;
@@ -438,6 +453,11 @@ defineExpose({
 </script>
 
 <style scoped>
+.q-field--readonly .q-field__control {
+  background-color: #a86b6b;
+  opacity: 1;
+}
+
 .edit-team-dialog {
   width: 600px;
   max-width: 90%;
