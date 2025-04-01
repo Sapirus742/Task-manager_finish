@@ -2,7 +2,7 @@
   <q-dialog v-model="showDialog" persistent>
     <q-card class="edit-team-dialog">
       <q-card-section>
-        <div class="text-h6">Редактирование команды</div>
+        <div class="text-h4">Редактирование команды</div>
       </q-card-section>
 
       <q-card-section>
@@ -26,28 +26,49 @@
           />
 
           <!-- Приватность -->
-          <q-select
-            v-model="editedTeam.privacy"
-            label="Приватность"
-            :options="privacyOptions"
-            :rules="[(val) => !!val || 'Поле обязательно']"
-            outlined
-            emit-value
-            map-options
-            :disable="!!editedTeam.project || !canEditFull"
-          />
+          <div class="relative-position tooltip-wrapper">
+            <q-select
+              v-model="editedTeam.privacy"
+              label="Приватность"
+              :options="privacyOptions"
+              :rules="[(val) => !!val || 'Поле обязательно']"
+              outlined
+              emit-value
+              map-options
+              :disable="!canEditFull"
+            />
+            <q-tooltip 
+                v-if="!canEditFull"
+                anchor="top middle"
+                self="bottom middle"
+                class="custom-tooltip"
+              >
+              Недостаточно прав для изменения
+              </q-tooltip>
+          </div>
 
           <!-- Статус команды -->
-          <q-select
-            v-model="editedTeam.status"
-            label="Статус команды"
-            :options="statusOptions"
-            :rules="[(val) => !!val || 'Поле обязательно']"
-            outlined
-            emit-value
-            map-options
-            :disable="!!editedTeam.project"
-          />
+          <div class="relative-position tooltip-wrapper">
+            <q-select
+              v-model="editedTeam.status"
+              label="Статус команды"
+              :options="statusOptions"
+              :rules="[(val) => !!val || 'Поле обязательно']"
+              outlined
+              emit-value
+              map-options
+              :disable="!!editedTeam.project"
+              @update:model-value="handleStatusChange"
+            />
+            <q-tooltip 
+              v-if="!!editedTeam.project"
+              anchor="top middle"
+              self="bottom middle"
+              class="custom-tooltip"
+            >
+            Поле заблокировано, так как команда привязана к проекту
+            </q-tooltip>
+          </div>
 
           <!-- Участники команды -->
           <q-select
@@ -82,49 +103,69 @@
           </q-select>
 
           <!-- Тимлид -->
-          <q-select
-            v-model="editedTeam.leader"
-            label="Тимлид"
-            :options="editedTeam.members"
-            :rules="[(val) => !!val || 'Необходимо выбрать тимлида']"
-            outlined
-            option-label="fullName"
-            emit-value 
-            map-options
-            :readonly="!canEditFull"
-          >
-            <template v-slot:option="scope">
-              <q-item v-bind="scope.itemProps">
-                <q-item-section avatar>
-                  <q-icon name="star" :color="scope.opt.id === editedTeam.leader?.id ? 'amber' : 'transparent'"/>
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>{{ scope.opt.fullName }}</q-item-label>
-                  <q-item-label caption>{{ scope.opt.email }}</q-item-label>
-                </q-item-section>
-              </q-item>
-            </template>
-          </q-select>
+          <div class="relative-position tooltip-wrapper">
+            <q-select
+              v-model="editedTeam.leader"
+              label="Тимлид"
+              :options="editedTeam.members"
+              :rules="[(val) => !!val || 'Необходимо выбрать тимлида']"
+              outlined
+              option-label="fullName"
+              emit-value 
+              map-options
+              :readonly="!canEditFull"
+            >
+              <template v-slot:option="scope">
+                <q-item v-bind="scope.itemProps">
+                  <q-item-section avatar>
+                    <q-icon name="star" :color="scope.opt.id === editedTeam.leader?.id ? 'amber' : 'transparent'"/>
+                  </q-item-section>
+                  <q-item-section>
+                    <q-item-label>{{ scope.opt.fullName }}</q-item-label>
+                    <q-item-label caption>{{ scope.opt.email }}</q-item-label>
+                  </q-item-section>
+                </q-item>
+              </template>
+            </q-select>
+            <q-tooltip 
+              v-if="!canEditFull"
+              anchor="top middle"
+              self="bottom middle"
+              class="custom-tooltip"
+            >
+              Недостаточно прав для изменения
+            </q-tooltip>
+          </div>
 
           <!-- Проект -->
-          <q-select
-            v-model="editedTeam.project"
-            label="Проект"
-            :options="filteredProjectOptions"
-            outlined
-            option-label="name"
-            emit-value
-            map-options
-            clearable
-            :readonly="!canEditFull"
-            @update:model-value="handleProjectChange"
-            :display-value="editedTeam.project?.name || 'Не выбран'"
-          >
-            <template v-slot:selected-item="scope">
-              <span v-if="scope.opt">{{ scope.opt.name }}</span>
-              <span v-else>Не выбран</span>
-            </template>
-          </q-select>
+          <div class="relative-position tooltip-wrapper">
+            <q-select
+              v-model="editedTeam.project"
+              label="Проект"
+              :options="filteredProjectOptions"
+              outlined
+              option-label="name"
+              emit-value
+              map-options
+              clearable
+              :readonly="!canEditFull"
+              @update:model-value="handleProjectChange"
+              :display-value="editedTeam.project?.name || 'Не выбран'"
+            >
+              <template v-slot:selected-item="scope">
+                <span v-if="scope.opt">{{ scope.opt.name }}</span>
+                <span v-else>Не выбран</span>
+              </template>
+            </q-select>
+            <q-tooltip 
+              v-if="!canEditFull"
+              anchor="top middle"
+              self="bottom middle"
+              class="custom-tooltip"
+            >
+              Недостаточно прав для изменения
+            </q-tooltip>
+          </div>
 
           <q-card-actions align="right">
             <q-btn flat label="Отмена" color="negative" v-close-popup />
@@ -197,6 +238,8 @@ const editedTeam = ref({
   user_owner: 0,
 });
 
+const previousStatus = ref<StatusTeam | null>(null);
+
 const allUsers = ref<TeamMember[]>([]);
 const allProjects = ref<ProjectOption[]>([]);
 
@@ -217,6 +260,39 @@ const statusOptions = computed(() => {
     { label: 'На удалении', value: StatusTeam.delete }
   ];
 });
+
+const handleStatusChange = async (newStatus: StatusTeam) => {
+  if (newStatus === StatusTeam.delete) {
+    try {
+      const confirmed = await new Promise<boolean>((resolve) => {
+        $q.dialog({
+          html: true,
+          title: 'Подтверждение',
+          message: 'Вы действительно хотите пометить команду на удаление?<br>Через некоторое время все данные о команде безвозвратно удалятся!',
+          persistent: true,
+          ok: {
+            label: 'Да, я понимаю последствия',
+            color: 'negative', 
+            flat: true
+          },
+          cancel: {
+            label: 'Отмена',
+            color: 'positive',
+          }
+        }).onOk(() => resolve(true)).onCancel(() => resolve(false));
+      });
+
+      if (!confirmed) {
+        editedTeam.value.status = previousStatus.value || StatusTeam.searchProject;
+        return;
+      }
+    } catch {
+      editedTeam.value.status = previousStatus.value || StatusTeam.searchProject;
+      return;
+    }
+  }
+  previousStatus.value = newStatus;
+};
 
 const filteredProjectOptions = computed(() => {
   return allProjects.value.filter(project => 
@@ -336,6 +412,8 @@ const openDialog = async (team: TeamDto) => {
       status: team.project.status
     } : null;
 
+    previousStatus.value = team.status;
+
     editedTeam.value = {
       id: team.id,
       name: team.name,
@@ -453,6 +531,38 @@ defineExpose({
 </script>
 
 <style scoped>
+
+.dialog-header {
+  text-align: center;
+  padding: 20px;
+}
+
+.relative-position {
+  position: relative;
+  padding-bottom: 10px;
+}
+
+.tooltip-wrapper:hover .custom-tooltip {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+.custom-tooltip {
+  font-size: 16px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background-color: #424242;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 300px;
+  pointer-events: none;
+}
+
+.custom-tooltip .tooltip-content {
+  line-height: 1.5;
+  white-space: normal;
+}
+
 .q-field--readonly .q-field__control {
   background-color: #a86b6b;
   opacity: 1;
@@ -486,4 +596,5 @@ defineExpose({
 .text-negative {
   color: #ff5252;
 }
+
 </style>
