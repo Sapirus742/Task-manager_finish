@@ -382,6 +382,15 @@ const isCurrentUserOwner = (team: TeamDto) => {
 
 // Подтверждение выхода из команды
 const confirmLeaveTeam = (team: TeamDto) => {
+  const currentUser = mainStore.getCurrentUser();
+  
+  // Особый случай для тимлида
+  if (team.user_leader?.id === currentUser.id) {
+    handleLeaderLeave(team);
+    return;
+  }
+
+  // Стандартный диалог для обычных участников
   $q.dialog({
     title: 'Подтверждение выхода',
     message: `Вы уверены, что хотите покинуть команду "${team.name}"?`,
@@ -396,32 +405,84 @@ const confirmLeaveTeam = (team: TeamDto) => {
       color: 'primary',
     }
   }).onOk(async () => {
-    await handleLeaveTeam(team.id);
+    await completeLeaveTeam(team.id);
   });
 };
 
-// Обработчик выхода из команды
-const handleLeaveTeam = async (teamId: number) => {
-  try {
-    const currentUserId = mainStore.getCurrentUser().id;
-    const team = teams.value.find(t => t.id === teamId);
-    
-    if (!team) {
+const handleLeaderLeave = async (team: TeamDto) => {
+  const currentUserId = mainStore.getCurrentUser().id;
+  const remainingMembers = team.user.filter(u => 
+    u.id !== currentUserId && u.id !== team.user_owner?.id
+  );
+
+  // Сценарий 1: Есть другие участники кроме тимлида
+  if (remainingMembers.length > 0) {
+    $q.dialog({
+      title: 'Завещайте роль тимлида',
+      message: 'Выберите нового тимлида из участников команды:',
+      options: {
+        type: 'radio',
+        model: remainingMembers[0].id.toString(),
+        items: remainingMembers.map(member => ({
+          label: `${member.firstname} ${member.lastname}`,
+          value: member.id
+        }))
+      },
+      persistent: true,
+      ok: {
+        label: 'Покинуть команду',
+        color: 'negative'
+      },
+      cancel: {
+        label: 'Остаться',
+        color: 'primary'
+      },
+    }).onOk(async (newLeaderId) => {
+      try {
+        // Обновляем тимлида в команде
+        await updateTeams(team.id, { user_leader: parseInt(newLeaderId) });
+        // Продолжаем выход из команды
+        await completeLeaveTeam(team.id);
+      } catch (error) {
+        console.error('Ошибка при передаче роли тимлида:', error);
+      }
+    });
+  } 
+  // Сценарий 2: Тимлид - последний участник
+  else {
+    $q.dialog({
+      title: 'Последний участник',
+      html: true,
+      message: 'Вы последний участник команды. <br>После вашего ухода команда останется без тимлида.',
+      persistent: true,
+      ok: {
+        label: 'Покинуть команду',
+        color: 'negative'
+      },
+      cancel: {
+        label: 'Остаться',
+        color: 'primary'
+      }
+    }).onOk(async () => {
+      await completeLeaveTeam(team.id);
+      await updateTeams(team.id, {user_leader: null});
+    });
+  }
+};
+
+const completeLeaveTeam = async (teamId: number) => {
+  const currentUserId = mainStore.getCurrentUser().id;
+  const team = teams.value.find(t => t.id === teamId);
+
+  if (!team) {
       $q.notify({ message: 'Команда не найдена', color: 'negative' });
       return;
     }
-
-    // Обновляем пользователя, устанавливая team_id в null
+  
+  try {
+    // Обновляем пользователя
     await updateUser(currentUserId, { team: null });
     
-    // Если пользователь был тимлидом, сбрасываем тимлида в команде
-    if (team.user_leader?.id === currentUserId) {
-      const updateData = {
-        user_leader: null
-      };
-      await updateTeams(teamId, updateData);
-    }
-
     // Обновляем список команд
     await loadTeams();
     
@@ -668,6 +729,17 @@ const updateTeam = async (updatedTeam: TeamDto) => {
 </script>
 
 <style scoped>
+
+/* Стили для диалога выбора нового тимлида */
+.q-dialog__inner--radio .q-radio__label {
+  padding: 8px;
+  font-size: 1rem;
+}
+
+/* Подсветка выбранного участника */
+.q-item--active {
+  background-color: rgba(25, 118, 210, 0.1);
+}
 
 .join-btn {
   margin-left: 8px;
