@@ -60,6 +60,16 @@
                 @click.stop="openTeamDetails(team)"
                 class="open-btn"
               />
+
+              <q-btn 
+                v-if="mainStore.canJoinTeam(team)"
+                flat
+                label="Вступить"
+                color="positive"
+                @click.stop="handleJoinTeamClick(team)"
+                class="join-btn"
+              />
+
             </div>
           </q-card-section>
 
@@ -189,6 +199,23 @@
           color="primary" 
           @click="openEditTeamDialog(selectedTeam)" 
         />
+
+        <q-btn 
+          v-if="isCurrentUserMember(selectedTeam) && !isCurrentUserOwner(selectedTeam)"
+          flat
+          label="Покинуть команду"
+          color="orange"
+          @click="confirmLeaveTeam(selectedTeam)"
+        />
+
+        <q-btn 
+          v-if="selectedTeam && mainStore.canJoinTeam(selectedTeam)"
+          flat
+          label="Вступить"
+          color="positive"
+          @click="handleJoinTeamClick(selectedTeam)"
+        />
+
         <q-btn 
           v-if="mainStore.canDeleteTeam(selectedTeam)"
           flat 
@@ -212,10 +239,12 @@
 import { ref, computed, onMounted } from 'vue';
 import { useMainStore } from 'src/stores/main-store';
 import { getAll, remove } from 'src/api/team.api';
-import { update } from 'src/api/project.api'; // Добавляем импорт функции update
+import { update as updateProject } from 'src/api/project.api'; // Добавляем импорт функции update
+import {update as updateUser} from 'src/api/users.api';
+import {update as updateTeams} from 'src/api/team.api';
 import CreateTeamDialog from './CreateTeamDialog.vue';
 import EditTeamDialog from './EditTeamDialog.vue';
-import { TeamDto, PrivacyTeam, StatusProject, ProjectDto } from '../../../../backend/src/common/types'; // Добавляем StatusProject
+import { TeamDto, PrivacyTeam, StatusProject, ProjectDto, StatusTeam} from '../../../../backend/src/common/types'; // Добавляем StatusProject
 import { useQuasar } from 'quasar';
 
 // Хранилище
@@ -235,6 +264,181 @@ const filteredTeams = computed(() => {
   if (activeFilter.value === 'all') return teams.value;
   return teams.value.filter(team => team.privacy === activeFilter.value);
 });
+
+const handleJoinTeamClick = (team: TeamDto | null) => {
+  if (!team) return;
+
+  const currentUser = mainStore.getCurrentUser();
+  
+  // Проверка на уже состоящего в команде
+  if (team.user.some(u => u.id === currentUser.id)) {
+    $q.notify({
+      message: 'Вы уже состоите в этой команде',
+      color: 'warning',
+      position: 'top'
+    });
+    return;
+  }
+
+  // Проверка на приватность команды
+  if (team.privacy === PrivacyTeam.close) {
+    $q.notify({
+      message: 'Эта команда закрыта для вступления. Обратитесь к владельцу команды.',
+      color: 'negative',
+      position: 'top'
+    });
+    return;
+  }
+
+  // Проверка на наличие другой команды
+  if (currentUser.team) {
+    $q.notify({
+      message: 'Вы уже состоите в другой команде. Покиньте текущую команду перед вступлением в новую.',
+      color: 'negative',
+      position: 'top'
+    });
+    return;
+  }
+
+  // Проверка на статус команды
+  if (team.status === StatusTeam.delete) {
+    $q.notify({
+      message: 'Невозможно вступить в команду, которая помечена на удаление',
+      color: 'negative',
+      position: 'top'
+    });
+    return;
+  }
+
+  // Если все проверки пройдены, показываем диалог подтверждения
+  confirmJoinTeam(team);
+};
+
+// Подтверждение вступления в команду
+const confirmJoinTeam = (team: TeamDto) => {
+  $q.dialog({
+    title: 'Подтверждение вступления',
+    message: `Вы уверены, что хотите вступить в команду "${team.name}"?`,
+    persistent: true,
+    ok: {
+      label: 'Вступить',
+      color: 'positive',
+      flat: true
+    },
+    cancel: {
+      label: 'Отмена',
+      color: 'primary',
+    }
+  }).onOk(async () => {
+    await handleJoinTeam(team.id);
+  });
+};
+
+// Обработчик вступления в команду
+const handleJoinTeam = async (teamId: number) => {
+  try {
+    const currentUserId = mainStore.getCurrentUser().id;
+    const team = teams.value.find(t => t.id === teamId);
+    
+    if (!team) {
+      $q.notify({ message: 'Команда не найдена', color: 'negative' });
+      return;
+    }
+
+    // Обновляем пользователя, устанавливая team_id
+    await updateUser(currentUserId, { team: teamId });
+    
+    // Обновляем данные в хранилище
+    mainStore.updateTeamData(teamId);
+    
+    $q.notify({
+      message: 'Вы успешно вступили в команду',
+      color: 'positive'
+    });
+    
+    showTeamDetails.value = false;
+    await loadTeams(); // Перезагружаем список команд
+  } catch (error) {
+    console.error('Ошибка при вступлении в команду:', error);
+    $q.notify({
+      message: 'Ошибка при вступлении в команду',
+      color: 'negative'
+    });
+  }
+};
+
+// Проверяем, является ли текущий пользователь участником команды
+const isCurrentUserMember = (team: TeamDto) => {
+  const currentUserId = mainStore.getCurrentUser().id;
+  return team.user?.some(u => u.id === currentUserId) || 
+         team.user_leader?.id === currentUserId ||
+         team.user_owner?.id === currentUserId;
+};
+
+// Проверяем, является ли текущий пользователь владельцем команды
+const isCurrentUserOwner = (team: TeamDto) => {
+  return mainStore.getCurrentUser().id === team.user_owner?.id;
+};
+
+// Подтверждение выхода из команды
+const confirmLeaveTeam = (team: TeamDto) => {
+  $q.dialog({
+    title: 'Подтверждение выхода',
+    message: `Вы уверены, что хотите покинуть команду "${team.name}"?`,
+    persistent: true,
+    ok: {
+      label: 'Покинуть',
+      color: 'orange',
+      flat: true
+    },
+    cancel: {
+      label: 'Отмена',
+      color: 'primary',
+    }
+  }).onOk(async () => {
+    await handleLeaveTeam(team.id);
+  });
+};
+
+// Обработчик выхода из команды
+const handleLeaveTeam = async (teamId: number) => {
+  try {
+    const currentUserId = mainStore.getCurrentUser().id;
+    const team = teams.value.find(t => t.id === teamId);
+    
+    if (!team) {
+      $q.notify({ message: 'Команда не найдена', color: 'negative' });
+      return;
+    }
+
+    // Обновляем пользователя, устанавливая team_id в null
+    await updateUser(currentUserId, { team: null });
+    
+    // Если пользователь был тимлидом, сбрасываем тимлида в команде
+    if (team.user_leader?.id === currentUserId) {
+      const updateData = {
+        user_leader: null
+      };
+      await updateTeams(teamId, updateData);
+    }
+
+    // Обновляем список команд
+    await loadTeams();
+    
+    $q.notify({
+      message: 'Вы успешно покинули команду',
+      color: 'positive'
+    });
+    
+    showTeamDetails.value = false;
+  } catch (error) {
+    console.error('Ошибка при выходе из команды:', error);
+    $q.notify({
+      message: 'Ошибка при выходе из команды',
+      color: 'negative'
+    });
+  }
+};
 
 const getRegularMembers = (team: TeamDto) => {
   if (!team?.user || !team?.user_owner) return [];
@@ -366,7 +570,7 @@ const deleteTeam = async (teamId: number) => {
           data: updateData
         });
         
-        await update(teamToDelete.project.id, updateData);
+        await updateProject(teamToDelete.project.id, updateData);
         
         // Локальное обновление - исправленная версия
         teams.value.forEach(t => {
@@ -463,6 +667,15 @@ const updateTeam = async (updatedTeam: TeamDto) => {
 </script>
 
 <style scoped>
+
+.join-btn {
+  margin-left: 8px;
+  pointer-events: auto;
+  opacity: 1 !important; /* Обеспечиваем постоянную видимость */
+}
+.q-btn--disabled.join-btn {
+  opacity: 0.7 !important;
+}
 
 .member-item.leader {
   background-color: rgba(113, 176, 240, 0.05); /* Легкий голубой фон для тимлида */

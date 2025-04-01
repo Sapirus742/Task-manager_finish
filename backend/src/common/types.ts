@@ -85,22 +85,22 @@ export interface CreateUserDto {
 }
 
 export interface UpdateUserDto {
-  id: number;
-  email: string;
-  firstname: string;
-  lastname: string;
-  group: string;
-  telephone: string;
-  roles: Role[];
-  status: UserAccountStatus;
-  competence: Competence[];
-  team_leader: number;
-  team_owner: number[];
-  portfolio: number[];
-  idea_initiator: number[];
-  project_initiator: number[];
-  comment: number[]
-  team: number;
+  id?: number;
+  email?: string;
+  firstname?: string;
+  lastname?: string;
+  group?: string;
+  telephone?: string;
+  roles?: Role[];
+  status?: UserAccountStatus;
+  competence?: Competence[];
+  team_leader?: number;
+  team_owner?: number[];
+  portfolio?: number[];
+  idea_initiator?: number[];
+  project_initiator?: number[];
+  comment?: number[]
+  team?: number | null;
 }
 
 export interface CreateProjectDto {
@@ -182,14 +182,14 @@ export interface CreateTeamDto {
 }
 
 export interface UpdateTeamDto {
-  name: string,        
-  description: string,        
-  privacy: PrivacyTeam,    
-  status: StatusTeam,
-  user_leader: number | null,
-  user: number[],
-  project: number | null,
-  user_owner: number,
+  name?: string,        
+  description?: string,        
+  privacy?: PrivacyTeam,    
+  status?: StatusTeam,
+  user_leader?: number | null,
+  user?: number[],
+  project?: number | null,
+  user_owner?: number,
 }
 
 export interface CreatePortfolioDto {

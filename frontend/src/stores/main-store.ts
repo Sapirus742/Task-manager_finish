@@ -11,6 +11,8 @@ import {
   UserAccountStatus,
   CommentDto,
   IdeaDto,
+  PrivacyTeam,
+  StatusTeam,
 } from '../../../backend/src/common/types';
 import { useProfileStore } from './profile-store';
 import { useTeamStore } from './team-store';
@@ -165,8 +167,20 @@ export const useMainStore = defineStore('main', () => {
     return isAdmin() || isDirectorate();
   };
 
-  const canJoinTeam = () => {
-    return isAdmin() || isUser();
+  const canJoinTeam = (team?: TeamDto) => {
+    if (!isUser()) return false; // Только для роли user
+    if (userHasTeam()) return false; // Уже есть команда
+    if (!team) return false; // Нет данных о команде
+    
+    return (
+      team.privacy === PrivacyTeam.open && // Только открытые команды
+      team.status !== StatusTeam.delete && // Не на удалении
+      !team.user.some(u => u.id === state.userId) // Уже не состоит в команде
+    );
+  };
+
+  const userHasTeam = () => {
+    return state.team !== null;
   };
 
   const canEditTeam = (team: TeamDto) => {
@@ -211,5 +225,6 @@ export const useMainStore = defineStore('main', () => {
     canDeleteProject,
     updateTeamData, 
     canLeaveTeam,
+    userHasTeam,
   };
 });
