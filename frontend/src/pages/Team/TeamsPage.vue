@@ -438,6 +438,7 @@ const handleLeaveTeam = async (teamId: number) => {
       color: 'negative'
     });
   }
+  window.location.reload()
 };
 
 const getRegularMembers = (team: TeamDto) => {
