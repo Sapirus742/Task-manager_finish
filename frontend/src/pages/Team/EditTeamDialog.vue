@@ -35,16 +35,7 @@
               outlined
               emit-value
               map-options
-              :disable="!canEditFull"
             />
-            <q-tooltip 
-                v-if="!canEditFull"
-                anchor="top middle"
-                self="bottom middle"
-                class="custom-tooltip"
-              >
-              Недостаточно прав для изменения
-              </q-tooltip>
           </div>
 
           <!-- Статус команды -->
@@ -113,7 +104,6 @@
               option-label="fullName"
               emit-value 
               map-options
-              :readonly="!canEditFull"
             >
               <template v-slot:option="scope">
                 <q-item v-bind="scope.itemProps">
@@ -127,14 +117,6 @@
                 </q-item>
               </template>
             </q-select>
-            <q-tooltip 
-              v-if="!canEditFull"
-              anchor="top middle"
-              self="bottom middle"
-              class="custom-tooltip"
-            >
-              Недостаточно прав для изменения
-            </q-tooltip>
           </div>
 
           <!-- Проект -->
