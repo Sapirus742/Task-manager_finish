@@ -83,14 +83,22 @@
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps">
                 <q-item-section avatar v-if="isUserInOtherTeam(scope.opt)">
-                  <q-icon name="block" color="negative"/>
+                  <q-icon 
+                    name="block" 
+                    :color="editedTeam.members.some(m => m.id === scope.opt.id) ? 'positive' : 'negative'"
+                  />
                 </q-item-section>
                 <q-item-section>
                   <q-item-label>{{ scope.opt.fullName }}</q-item-label>
                   <q-item-label caption>
                     {{ scope.opt.email }}
                     <span v-if="isUserInOtherTeam(scope.opt)" class="text-negative">
-                      (Уже в другой команде)
+                      <template v-if="editedTeam.members.some(m => m.id === scope.opt.id)">
+                        (Уже в этой команде)
+                      </template>
+                      <template v-else>
+                        (Уже в другой команде)
+                      </template>
                     </span>
                   </q-item-label>
                 </q-item-section>
@@ -104,7 +112,7 @@
               v-model="editedTeam.leader"
               label="Тимлид"
               :options="editedTeam.members"
-              :rules="[(val) => !!val || 'Необходимо выбрать тимлида']"
+              :rules="[(val) => editedTeam.status === StatusTeam.delete || !!val || 'Необходимо выбрать тимлида']"
               outlined
               option-label="fullName"
               emit-value 
@@ -121,6 +129,14 @@
                   </q-item-section>
                 </q-item>
               </template>
+              <q-tooltip 
+                v-if="editedTeam.status === StatusTeam.delete"
+                anchor="top middle"
+                self="bottom middle"
+                class="custom-tooltip"
+              >
+                Для команд на удалении выбор тимлида не обязателен
+              </q-tooltip>
             </q-select>
           </div>
 
@@ -135,7 +151,7 @@
               emit-value
               map-options
               clearable
-              :readonly="!canEditProject"
+              :readonly="!canEditProject || editedTeam.status === StatusTeam.delete"
               @update:model-value="handleProjectChange"
               :display-value="editedTeam.project?.name || 'Не выбран'"
             >
@@ -144,12 +160,15 @@
                 <span v-else>Не выбран</span>
               </template>
               <q-tooltip 
-                v-if="!canEditProject"
+                v-if="!canEditProject || editedTeam.status === StatusTeam.delete"
                 anchor="top middle"
                 self="bottom middle"
                 class="custom-tooltip"
               >
-                <span v-if="!canEditFull && editedTeam.leader?.id !== mainStore.userId">
+                <span v-if="editedTeam.status === StatusTeam.delete">
+                  Нельзя изменить проект для команды на удалении
+                </span>
+                <span v-else-if="!canEditFull && editedTeam.leader?.id !== mainStore.userId">
                   Недостаточно прав для изменения
                 </span>
                 <span v-else-if="editedTeam.project && editedTeam.status === StatusTeam.inProgress">
@@ -313,17 +332,25 @@ const filteredProjectOptions = computed(() => {
 });
 
 const isUserInOtherTeam = (user: TeamMember): boolean => {
-  return user.inTeam;
+  // Возвращаем true, если пользователь в другой команде ИЛИ если он уже в текущей команде
+  return user.inTeam || editedTeam.value.members.some(m => m.id === user.id);
 };
 
 const handleMemberSelection = async (newMembers: TeamMember[]) => {
-  // Находим только что добавленных пользователей
-  const addedMembers = newMembers.filter(newMember => 
-    !editedTeam.value.members.some(m => m.id === newMember.id)
+  // Находим пользователей, которые уже в команде
+  const alreadyInTeam = newMembers.filter(newMember => 
+    editedTeam.value.members.some(m => m.id === newMember.id)
   );
 
-  // Проверяем новых участников на наличие в других командах
-  const invalidMembers = addedMembers.filter(member => member.inTeam);
+  // Если пытаемся добавить тех, кто уже в команде - просто игнорируем
+  if (alreadyInTeam.length > 0) {
+    return;
+  }
+
+  // Остальная логика проверки пользователей в других командах
+  const invalidMembers = newMembers.filter(member => 
+    member.inTeam && !editedTeam.value.members.some(m => m.id === member.id)
+  );
 
   if (invalidMembers.length > 0) {
     // Откатываем выбор
@@ -333,7 +360,7 @@ const handleMemberSelection = async (newMembers: TeamMember[]) => {
     
     // Показываем сообщение об ошибке
     $q.notify({
-      message: `Пользователь ${invalidMembers[0].fullName} уже состоит в другой команде`,
+      message: `Пользователь ${invalidMembers[0].fullName} уже состоит в команде`,
       color: 'negative',
       position: 'top',
       timeout: 3000
@@ -399,6 +426,16 @@ const loadProjects = async () => {
 };
 
 const handleProjectChange = (selectedProject: ProjectOption | null) => {
+  // Если статус "На удалении", запрещаем изменения
+  if (editedTeam.value.status === StatusTeam.delete) {
+    $q.notify({
+      message: 'Нельзя изменить проект для команды на удалении',
+      color: 'negative',
+      position: 'top'
+    });
+    return;
+  }
+
   // Если пытаемся отвязать проект, но команда уже принята
   if (!selectedProject && editedTeam.value.status === StatusTeam.inProgress && !mainStore.isAdmin) {
     $q.notify({
@@ -486,7 +523,7 @@ const onSubmit = async () => {
     const invalidMembers = editedTeam.value.members.filter(m => m.inTeam);
     if (invalidMembers.length > 0) {
       $q.notify({
-        message: `Невозможно сохранить: ${invalidMembers[0].fullName} уже в другой команде`,
+        message: `Невозможно сохранить: ${invalidMembers[0].fullName} уже в команде`,
         color: 'negative',
         position: 'top'
       });

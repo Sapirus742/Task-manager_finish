@@ -16,6 +16,7 @@ import {
 } from '../../../backend/src/common/types';
 import { useProfileStore } from './profile-store';
 import { useTeamStore } from './team-store';
+import { useIdeaStore } from './idea-store';
 
 export const useMainStore = defineStore('main', () => {
   const state = reactive({
@@ -37,6 +38,7 @@ export const useMainStore = defineStore('main', () => {
     idea_initiator: [] as IdeaDto[],
   });
 
+  const ideaStore = useIdeaStore();
   const teamStore = useTeamStore();
 
   const initAppState = async (appState: LoginResponseDto & { 
@@ -207,6 +209,15 @@ export const useMainStore = defineStore('main', () => {
     }
   };
 
+  const updateIdeasData = async () => {
+    try {
+      await ideaStore.fetchIdeas();
+      state.idea_initiator = ideaStore.ideas.filter(idea => idea.initiator.id === state.userId);
+    } catch (error) {
+      console.error('Ошибка при обновлении данных идей:', error);
+    }
+  };
+
   return {
     ...toRefs(state),
     initAppState,
@@ -226,5 +237,6 @@ export const useMainStore = defineStore('main', () => {
     updateTeamData, 
     canLeaveTeam,
     userHasTeam,
+    updateIdeasData,
   };
 });

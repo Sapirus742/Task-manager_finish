@@ -8,7 +8,7 @@ const routes: RouteRecordRaw[] = [
       // Добавляем перенаправление с корневого пути на /projects
       { path: '', redirect: '/projects' }, // Перенаправление на /projects по умолчанию
       { path: 'teams', component: () => import('pages/Team/TeamsPage.vue') },
-      { path: 'ideas', component: () => import('pages/IdeiPage.vue') },
+      { path: 'ideas', component: () => import('pages/Idei/IdeiPage.vue') },
       { path: 'projects', component: () => import('pages/Project/IndexPage.vue') },
       { path: 'users', component: () => import('pages/UsersPage.vue') },
       { path: 'users/:id', component: () => import('pages/UserEditPage.vue') },
