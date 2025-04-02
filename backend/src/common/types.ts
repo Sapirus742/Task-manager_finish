@@ -19,6 +19,7 @@ export enum UserCommandStatus {
     
 export enum StatusProject {
   searchTeam = 'Search for team',
+  selectionTeam = 'Team selection',
   teamFound = 'Team found',
 }
     
@@ -34,6 +35,7 @@ export enum StatusIdea {
 export enum StatusTeam {
   searchProject = 'Поиск проекта (Search for a project)',
   inProgress = 'В процессе работы (In progress)',
+  joinProject = 'Подана на проект',
   delete = 'На удалении (Delete)',
 }
     

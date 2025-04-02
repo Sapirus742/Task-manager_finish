@@ -269,7 +269,8 @@ const formatTeamStatus = (status: StatusTeam) => {
   const statusMap = {
     [StatusTeam.searchProject]: 'Поиск проекта',
     [StatusTeam.inProgress]: 'В работе',
-    [StatusTeam.delete]: 'Удалена'
+    [StatusTeam.delete]: 'Удалена',
+    [StatusTeam.joinProject]: 'Подана на проект'
   };
   return statusMap[status] || status;
 };

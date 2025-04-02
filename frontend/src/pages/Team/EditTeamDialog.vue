@@ -48,17 +48,22 @@
               outlined
               emit-value
               map-options
-              :disable="!!editedTeam.project"
+              :disable="!!editedTeam.project && editedTeam.status !== StatusTeam.inProgress"
               @update:model-value="handleStatusChange"
-            />
-            <q-tooltip 
-              v-if="!!editedTeam.project"
-              anchor="top middle"
-              self="bottom middle"
-              class="custom-tooltip"
             >
-            Поле заблокировано, так как команда привязана к проекту
-            </q-tooltip>
+              <template v-slot:selected-item="scope">
+                <span v-if="scope.opt">{{ scope.opt.label }}</span>
+                <span v-else>Не выбран</span>
+              </template>
+              <q-tooltip 
+                v-if="!!editedTeam.project && editedTeam.status !== StatusTeam.inProgress"
+                anchor="top middle"
+                self="bottom middle"
+                class="custom-tooltip"
+              >
+                Статус можно изменить только после принятия команды на проект
+              </q-tooltip>
+            </q-select>
           </div>
 
           <!-- Участники команды -->
@@ -232,10 +237,20 @@ const privacyOptions = [
 
 const statusOptions = computed(() => {
   if (editedTeam.value.project) {
-    return [
-      { label: 'В процессе работы', value: StatusTeam.inProgress }
-    ];
+    // Если команда привязана к проекту
+    if (editedTeam.value.status === StatusTeam.inProgress) {
+      // Если команда уже принята (в процессе работы)
+      return [
+        { label: 'В процессе работы', value: StatusTeam.inProgress }
+      ];
+    } else {
+      // Если команда только подана на проект
+      return [
+        { label: 'Подана на проект', value: StatusTeam.joinProject }
+      ];
+    }
   }
+  // Если команда не привязана к проекту
   return [
     { label: 'Поиск проекта', value: StatusTeam.searchProject },
     { label: 'В процессе работы', value: StatusTeam.inProgress },
@@ -376,9 +391,13 @@ const handleProjectChange = (selectedProject: ProjectOption | null) => {
       name: selectedProject.name,
       status: selectedProject.status
     };
-    editedTeam.value.status = StatusTeam.inProgress;
+    // Устанавливаем статус "Подана на проект" только если команда еще не в процессе работы
+    if (editedTeam.value.status !== StatusTeam.inProgress) {
+      editedTeam.value.status = StatusTeam.joinProject;
+    }
   } else {
     editedTeam.value.project = null;
+    // Если отвязываем от проекта, возвращаем статус "Поиск проекта"
     editedTeam.value.status = StatusTeam.searchProject;
   }
 };
@@ -464,7 +483,7 @@ const onSubmit = async () => {
       
       if (currentProject?.id) {
         await updateProjectApi(currentProject.id, { 
-          status: StatusProject.teamFound 
+          status: StatusProject.selectionTeam
         });
       }
     }

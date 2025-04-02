@@ -42,7 +42,7 @@
             :rules="[(val) => !!val || 'Поле обязательно']"
             outlined
             emit-value
-              map-options
+            map-options
             :disable="!!newTeam.project" 
           />
 
@@ -133,9 +133,9 @@ const privacyOptions = [
 // Добавляем вычисляемое свойство для статуса
 const statusOptions = computed(() => {
   if (newTeam.value.project) {
-    // Если проект выбран, оставляем только "В процессе"
+    // Если проект выбран, оставляем только "Подана на проект"
     return [
-      { label: 'В процессе', value: StatusTeam.inProgress }
+      { label: 'Подана на проект', value: StatusTeam.joinProject }
     ];
   }
   // Если проект не выбран, показываем все варианты
@@ -148,7 +148,7 @@ const statusOptions = computed(() => {
 // Обработчик изменения проекта
 const handleProjectChange = (projectId: number | null) => {
   if (projectId) {
-    newTeam.value.status = StatusTeam.inProgress;
+    newTeam.value.status = StatusTeam.joinProject;
   } else {
     newTeam.value.status = StatusTeam.searchProject;
   }
@@ -185,7 +185,10 @@ const loadProjects = async () => {
     const projects = await getAllProjects();
     if (projects) {
       projectOptions.value = projects
-        .filter(project => project.status === StatusProject.searchTeam)
+      .filter(project => 
+        project.status === StatusProject.searchTeam || 
+        project.status === StatusProject.selectionTeam
+      )
         .map(project => ({
           id: project.id,
           name: project.name
@@ -278,11 +281,18 @@ const onSubmit = async () => {
     if (createdTeam) {
       // Обновляем проект только если он был выбран
       if (teamData.project) {
+        $q.notify({
+          message: newTeam.value.project
+            ? 'Заявка на проект отправлена'
+            : 'Команда успешно создана',
+          color: 'positive',
+          position: 'top',
+        });
         const currentProject = projectOptions.value.find(p => p.id === teamData.project);
         if (currentProject) {
           const updateData: UpdateProjectDto = {
             ...currentProject,
-            status: StatusProject.teamFound
+            status: StatusProject.selectionTeam
           };
           await updateProject(teamData.project, updateData);
         }
