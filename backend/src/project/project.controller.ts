@@ -44,7 +44,7 @@ export class ProjectController {
   }
 
   @Patch(':id')
-  @Roles(Role.admin, Role.customer, Role.directorate)
+  @Roles(Role.admin, Role.customer, Role.directorate, Role.user)
   @UseGuards(JwtAuthGuard, RolesGuard)
   async update(@Param('id') id: number, @Body() updateProjectDto: UpdateProjectDto): Promise<Project> {
       return this.projectService.update(id, updateProjectDto);

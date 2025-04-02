@@ -135,7 +135,7 @@
               emit-value
               map-options
               clearable
-              :readonly="!canEditFull"
+              :readonly="!canEditProject"
               @update:model-value="handleProjectChange"
               :display-value="editedTeam.project?.name || 'Не выбран'"
             >
@@ -143,15 +143,20 @@
                 <span v-if="scope.opt">{{ scope.opt.name }}</span>
                 <span v-else>Не выбран</span>
               </template>
+              <q-tooltip 
+                v-if="!canEditProject"
+                anchor="top middle"
+                self="bottom middle"
+                class="custom-tooltip"
+              >
+                <span v-if="!canEditFull && editedTeam.leader?.id !== mainStore.userId">
+                  Недостаточно прав для изменения
+                </span>
+                <span v-else-if="editedTeam.project && editedTeam.status === StatusTeam.inProgress">
+                  Нельзя отвязать команду от проекта после принятия
+                </span>
+              </q-tooltip>
             </q-select>
-            <q-tooltip 
-              v-if="!canEditFull"
-              anchor="top middle"
-              self="bottom middle"
-              class="custom-tooltip"
-            >
-              Недостаточно прав для изменения
-            </q-tooltip>
           </div>
 
           <q-card-actions align="right">
@@ -197,6 +202,15 @@ const canEditFull = computed(() => {
 const canEditLeader = computed(() => {
   return  canEditFull.value || 
   (editedTeam.value.leader?.id === mainStore.userId && editedTeam.value.leader !== null);
+});
+const canEditProject = computed(() => {
+  // Разрешаем редактирование проекта если:
+  // 1. Админ или владелец команды
+  // 2. Лидер команды И команда не привязана к проекту ИЛИ привязана но статус "Подана на проект"
+  return canEditFull.value || 
+         (editedTeam.value.leader?.id === mainStore.userId && 
+          (!editedTeam.value.project || 
+           editedTeam.value.status === StatusTeam.joinProject));
 });
 
 interface TeamMember {
@@ -385,6 +399,16 @@ const loadProjects = async () => {
 };
 
 const handleProjectChange = (selectedProject: ProjectOption | null) => {
+  // Если пытаемся отвязать проект, но команда уже принята
+  if (!selectedProject && editedTeam.value.status === StatusTeam.inProgress && !mainStore.isAdmin) {
+    $q.notify({
+      message: 'Нельзя отвязать команду от проекта после принятия',
+      color: 'negative',
+      position: 'top'
+    });
+    return;
+  }
+
   if (selectedProject) {
     editedTeam.value.project = {
       id: selectedProject.id,
@@ -469,6 +493,17 @@ const onSubmit = async () => {
       return;
     }
 
+    // Проверяем права на изменение проекта
+    if (editedTeam.value.project !== editedTeam.value.originalProjectState && 
+        !canEditProject.value) {
+      $q.notify({
+        message: 'Недостаточно прав для изменения проекта',
+        color: 'negative',
+        position: 'top'
+      });
+      return;
+    }
+
     loading.value = true;
     
     const originalProjectBeforeEdit = editedTeam.value.originalProjectState;
@@ -496,7 +531,7 @@ const onSubmit = async () => {
       user_leader: editedTeam.value.leader?.id || null,
       user: editedTeam.value.members.map(m => m.id),
       project: currentProject?.id || null,
-      user_owner: editedTeam.value.user_owner
+      user_owner: editedTeam.value.user_owner 
     };
     
     const updatedTeam = await updateTeam(editedTeam.value.id, updateData);
