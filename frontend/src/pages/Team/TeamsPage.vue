@@ -13,7 +13,9 @@
         />
       </div>
 
-      <!-- Фильтры -->
+      <div class="filter-label">Фильтрация:</div>
+
+      <!-- Фильтр по приватности -->
       <div class="filters q-mb-md">
         <q-btn-toggle
           v-model="activeFilter"
@@ -1010,6 +1012,13 @@ const updateTeam = async (updatedTeam: TeamDto) => {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.filter-label {
+  font-size: 1.1rem; /* Увеличиваем размер шрифта */
+  font-weight: 600;  /* Делаем шрифт полужирным */
+  color: #333;       /* Темно-серый цвет для лучшей читаемости */
+  margin-bottom: 8px; /* Увеличиваем отступ снизу */
 }
 
 .filters {
