@@ -13,6 +13,22 @@
         />
       </div>
 
+      <!-- Блок поиска -->
+      <div class="search-box q-mb-md">
+        <q-input
+          v-model="searchQuery"
+          outlined
+          placeholder="Поиск команд по названию или описанию..."
+          dense
+          clearable
+          class="search-input"
+        >
+          <template v-slot:prepend>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+      </div>
+
       <div class="filter-label">Фильтрация:</div>
 
       <!-- Фильтр по приватности -->
@@ -133,6 +149,7 @@
           v-for="(team) in paginatedTeams"
           :key="team.id"
           class="q-mb-sm team-card"
+          @click="toggleTeamDescription(team.id)"
         >
           <q-card-section class="team-card-content row items-center">
             <!-- Название команды -->
@@ -193,6 +210,7 @@
             <div v-show="expandedTeams.includes(team.id)">
               <q-separator />
               <q-card-section class="team-description-section">
+                <div class="text-subtitle2 q-mb-sm">Описание команды:</div>
                 <div class="text-body2">
                   {{ team.description || 'Описание отсутствует' }}
                 </div>
@@ -368,6 +386,9 @@ const mainStore = useMainStore();
 // Инициализируем Quasar
 const $q = useQuasar();
 
+// Хранение поискового запроса
+const searchQuery = ref('');
+
 // Команды
 const teams = ref<TeamDto[]>([]);
 
@@ -386,6 +407,15 @@ const sortDirection = ref<SortDirection>('asc');
 // Фильтрация и сортировка команд
 const filteredTeams = computed(() => {
   let result = [...teams.value];
+
+  // Поиск по названию или описанию
+  if (searchQuery.value) {
+    const query = searchQuery.value.toLowerCase();
+    result = result.filter(team => 
+      team.name.toLowerCase().includes(query) || 
+      (team.description && team.description.toLowerCase().includes(query))
+    );
+  }
   
   // Фильтр по приватности
   if (activeFilter.value !== 'all') {
@@ -691,14 +721,14 @@ const getRegularMembers = (team: TeamDto) => {
 const expandedTeams = ref<number[]>([]);
 
 // Функция для переключения отображения описания
-/*const toggleTeamDescription = (teamId: number) => {
+const toggleTeamDescription = (teamId: number) => {
   const index = expandedTeams.value.indexOf(teamId);
   if (index === -1) {
     expandedTeams.value.push(teamId);
   } else {
     expandedTeams.value.splice(index, 1);
   }
-};*/
+};
 
 // Загрузка команд из базы данных
 const loadTeams = async () => {
@@ -907,6 +937,16 @@ const updateTeam = async (updatedTeam: TeamDto) => {
 
 <style scoped>
 
+.team-description-section {
+  padding: 16px;
+  background-color: #f9f9f9;
+}
+
+.text-subtitle2 {
+  font-weight: 500;
+  color: #555;
+}
+
 .sorting {
   background-color: #f5f5f5;
   padding: 8px 12px;
@@ -1014,6 +1054,15 @@ const updateTeam = async (updatedTeam: TeamDto) => {
   gap: 10px;
 }
 
+.search-box {
+  max-width: 500px;
+  margin-bottom: 20px;
+}
+
+.search-input {
+  width: 100%;
+}
+
 .filter-label {
   font-size: 1.1rem; /* Увеличиваем размер шрифта */
   font-weight: 600;  /* Делаем шрифт полужирным */
@@ -1081,6 +1130,19 @@ const updateTeam = async (updatedTeam: TeamDto) => {
   display: flex;
   align-items: center;
   padding: 12px 16px;
+  cursor: pointer; /* Добавляем указатель при наведении */
+}
+
+.team-card-content > * {
+  pointer-events: auto;
+}
+
+.team-actions > * {
+  pointer-events: auto !important;
+}
+
+.open-btn, .join-btn {
+  pointer-events: auto;
 }
 
 /* Общие стили для ячеек с данными */
