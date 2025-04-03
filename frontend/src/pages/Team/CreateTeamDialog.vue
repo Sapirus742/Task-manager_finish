@@ -141,7 +141,7 @@ const statusOptions = computed(() => {
   // Если проект не выбран, показываем все варианты
   return [
     { label: 'Поиск проекта', value: StatusTeam.searchProject },
-    { label: 'В процессе', value: StatusTeam.inProgress },
+    { label: 'В процессе работы', value: StatusTeam.inProgress },
   ];
 });
 

@@ -28,25 +28,124 @@
         />
       </div>
 
+      <!-- Фильтр по статусу -->
+      <div class = "filter q-md-md">
+        <q-btn-toggle
+          v-model="statusFilter"
+          spread
+          no-caps
+          toggle-color="primary"
+          :options="[
+            { label: 'Все статусы', value: 'all' },
+            { label: 'В процессе работы', value: StatusTeam.inProgress },
+            { label: 'Поиск проекта', value: StatusTeam.searchProject },
+            { label: 'Подана на проект', value: StatusTeam.joinProject },
+            { label: 'На удалении', value: StatusTeam.delete }
+          ]"
+        />
+      </div>
+
+      <!-- Сортировка -->
+      <div class="sorting-header q-mb-md">
+        <div class="row items-center">
+          <!-- Сортировка по названию -->
+          <div class="col-md-3 col-sm-6 col-xs-12">
+            <q-btn
+              flat dense no-caps
+              @click="toggleSort('name')"
+              :color="sortField === 'name' ? 'primary' : ''"
+              class="full-width sort-btn"
+            >
+              Название
+              <q-icon 
+                v-if="sortField === 'name'" 
+                name="keyboard_arrow_right" 
+                class="q-ml-xs"
+                :class="{ 'rotate-90': sortDirection === 'asc', 'rotate-270': sortDirection === 'desc' }"
+              />
+            </q-btn>
+          </div>
+          
+          <!-- Сортировка по участникам -->
+          <div class="col-md-2 col-sm-4 col-xs-6">
+            <q-btn
+              flat dense no-caps
+              @click="toggleSort('members')"
+              :color="sortField === 'members' ? 'primary' : ''"
+              class="full-width sort-btn"
+            >
+              Участники
+              <q-icon 
+                v-if="sortField === 'members'" 
+                name="keyboard_arrow_right" 
+                class="q-ml-xs"
+                :class="{ 'rotate-90': sortDirection === 'asc', 'rotate-270': sortDirection === 'desc' }"
+              />
+            </q-btn>
+          </div>
+          
+          <!-- Сортировка по приватности -->
+          <div class="col-md-2 col-sm-4 col-xs-6">
+            <q-btn
+              flat dense no-caps
+              @click="toggleSort('privacy')"
+              :color="sortField === 'privacy' ? 'primary' : ''"
+              class="full-width sort-btn"
+            >
+              Приватность
+              <q-icon 
+                v-if="sortField === 'privacy'" 
+                name="keyboard_arrow_right" 
+                class="q-ml-xs"
+                :class="{ 'rotate-90': sortDirection === 'asc', 'rotate-270': sortDirection === 'desc' }"
+              />
+            </q-btn>
+          </div>
+          
+          <!-- Сортировка по статусу -->
+          <div class="col-md-2 col-sm-4 col-xs-6">
+            <q-btn
+              flat dense no-caps
+              @click="toggleSort('status')"
+              :color="sortField === 'status' ? 'primary' : ''"
+              class="full-width sort-btn"
+            >
+              Статус
+              <q-icon 
+                v-if="sortField === 'status'" 
+                name="keyboard_arrow_right" 
+                class="q-ml-xs"
+                :class="{ 'rotate-90': sortDirection === 'asc', 'rotate-270': sortDirection === 'desc' }"
+              />
+            </q-btn>
+          </div>
+          
+          <!-- Пустая колонка для кнопок действий -->
+          <div class="col-md-3 col-sm-4 col-xs-6"></div>
+        </div>
+      </div>
+
       <!-- Список команд -->
       <div class="teams-list">
         <q-card
-          v-for="(team, index) in paginatedTeams"
+          v-for="(team) in paginatedTeams"
           :key="team.id"
           class="q-mb-sm team-card"
         >
-          <q-card-section 
-            class="team-card-content"
-            @click="toggleTeamDescription(team.id)"
-          >
-            <div class="team-name">
-              #{{ (currentPage - 1) * itemsPerPage + index + 1 }} {{ team.name }}
+          <q-card-section class="team-card-content row items-center">
+            <!-- Название команды -->
+            <div class="col-md-3 col-sm-6 col-xs-12 team-name">
+              {{ team.name }}
             </div>
-            <div class="team-actions">
-              <div class="team-members-count">
-                <q-icon name="people" class="q-mr-xs" />
-                {{ team.user.length }} участников
-              </div>
+            
+            <!-- Количество участников -->
+            <div class="col-md-2 col-sm-4 col-xs-6 team-members-count">
+              <q-icon name="people" class="q-mr-xs" />
+              {{ team.user.length }}
+            </div>
+            
+            <!-- Приватность -->
+            <div class="col-md-2 col-sm-4 col-xs-6 privacy-chip-container">
               <q-chip
                 :color="team.privacy === PrivacyTeam.close ? 'negative' : 'positive'"
                 text-color="white"
@@ -54,13 +153,28 @@
               >
                 {{ team.privacy === PrivacyTeam.close ? 'Закрытая' : 'Открытая' }}
               </q-chip>
+            </div>
+            
+            <!-- Статус -->
+            <div class="col-md-2 col-sm-4 col-xs-6 status-chip-container">
+              <q-chip
+                v-if="team.status"
+                :color="getStatusColor(team.status)"
+                text-color="white"
+                class="status-chip"
+              >
+                {{ team.status }}
+              </q-chip>
+            </div>
+            
+            <!-- Кнопки действий -->
+            <div class="col-md-3 col-sm-6 col-xs-12 team-actions">
               <q-btn
                 color="primary"
                 label="Открыть"
                 @click.stop="openTeamDetails(team)"
                 class="open-btn"
               />
-
               <q-btn 
                 v-if="mainStore.canJoinTeam(team)"
                 flat
@@ -69,7 +183,6 @@
                 @click.stop="handleJoinTeamClick(team)"
                 class="join-btn"
               />
-
             </div>
           </q-card-section>
 
@@ -258,12 +371,74 @@ const teams = ref<TeamDto[]>([]);
 
 // Объявляем activeFilter с типом
 const activeFilter = ref<string | PrivacyTeam>('all');
+const statusFilter = ref<string | StatusTeam>('all');
 
-// Фильтрация команд
+// Добавляем тип для сортировки
+type SortField = 'privacy' | 'name' | 'status' | 'members';
+type SortDirection = 'asc' | 'desc';
+
+// Состояние сортировки
+const sortField = ref<SortField>('name');
+const sortDirection = ref<SortDirection>('asc');
+
+// Фильтрация и сортировка команд
 const filteredTeams = computed(() => {
-  if (activeFilter.value === 'all') return teams.value;
-  return teams.value.filter(team => team.privacy === activeFilter.value);
+  let result = [...teams.value];
+  
+  // Фильтр по приватности
+  if (activeFilter.value !== 'all') {
+    result = result.filter(team => team.privacy === activeFilter.value);
+  }
+  
+  // Фильтр по статусу - важно сравнивать с enum значениями
+  if (statusFilter.value !== 'all') {
+    result = result.filter(team => team.status === statusFilter.value);
+  }
+  
+  // Сортировка
+  result.sort((a, b) => {
+    let comparison = 0;
+    switch (sortField.value) {
+      case 'privacy':
+        comparison = a.privacy.localeCompare(b.privacy);
+        break;
+      case 'name':
+        comparison = a.name.localeCompare(b.name);
+        break;
+      case 'status':
+        comparison = a.status.localeCompare(b.status);
+        break;
+      case 'members':
+        comparison = (a.user?.length || 0) - (b.user?.length || 0);
+        break;
+    }
+    return sortDirection.value === 'asc' ? comparison : -comparison;
+  });
+  
+  return result;
 });
+
+
+const toggleSort = (field: SortField) => {
+  if (sortField.value === field) {
+    // Если уже сортируем по этому полю, меняем направление
+    sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    // Если новое поле, устанавливаем его и направление по умолчанию
+    sortField.value = field;
+    sortDirection.value = 'asc';
+  }
+};
+
+const getStatusColor = (status: StatusTeam) => {
+  switch (status) {
+    case StatusTeam.inProgress: return 'positive';
+    case StatusTeam.searchProject: return 'info';
+    case StatusTeam.joinProject: return 'warning';
+    case StatusTeam.delete: return 'negative';
+    default: return 'grey';
+  }
+};
 
 const handleJoinTeamClick = (team: TeamDto | null) => {
   if (!team) return;
@@ -514,14 +689,14 @@ const getRegularMembers = (team: TeamDto) => {
 const expandedTeams = ref<number[]>([]);
 
 // Функция для переключения отображения описания
-const toggleTeamDescription = (teamId: number) => {
+/*const toggleTeamDescription = (teamId: number) => {
   const index = expandedTeams.value.indexOf(teamId);
   if (index === -1) {
     expandedTeams.value.push(teamId);
   } else {
     expandedTeams.value.splice(index, 1);
   }
-};
+};*/
 
 // Загрузка команд из базы данных
 const loadTeams = async () => {
@@ -730,6 +905,28 @@ const updateTeam = async (updatedTeam: TeamDto) => {
 
 <style scoped>
 
+.sorting {
+  background-color: #f5f5f5;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.sort-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rotate-90 {
+  transform: rotate(270deg);
+  transition: transform 0.2s ease;
+}
+
+.rotate-270 {
+  transform: rotate(90deg);
+  transition: transform 0.2s ease;
+}
+
 /* Стили для диалога выбора нового тимлида */
 .q-dialog__inner--radio .q-radio__label {
   padding: 8px;
@@ -817,8 +1014,26 @@ const updateTeam = async (updatedTeam: TeamDto) => {
 
 .filters {
   display: flex;
-  gap: 5px;
+  gap: 16px; /* Отступ между фильтрами */
   flex-wrap: wrap;
+}
+
+.filters .q-btn-toggle {
+  min-width: 300px; /* Минимальная ширина переключателей */
+  border-radius: 18px;
+}
+
+.filter {
+  display: flex;
+  gap: 16px; /* Отступ между фильтрами */
+  flex-wrap: wrap;
+}
+
+.filter .q-btn-toggle {
+  min-width: 300px; /* Минимальная ширина переключателей */
+  width: 800px;
+  border-radius: 18px;
+  margin-bottom: 30px;
 }
 
 .teams-list {
@@ -828,6 +1043,26 @@ const updateTeam = async (updatedTeam: TeamDto) => {
   margin-bottom: 20px;
 }
 
+.team-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.team-number {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.sort-indicator {
+  margin-left: 4px;
+  font-size: 0.8em;
+}
+
+.active-sort {
+  font-weight: bold;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
 .team-card {
   cursor: pointer;
   transition: all 0.3s ease;
@@ -835,31 +1070,57 @@ const updateTeam = async (updatedTeam: TeamDto) => {
 
 .team-card-content {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
 }
 
+/* Общие стили для ячеек с данными */
+.team-members-count,
+.privacy-chip-container,
+.status-chip-container {
+  display: flex;
+  justify-content: center; /* Центрирование по горизонтали */
+  align-items: center; /* Центрирование по вертикали */
+  height: 100%; /* Занимает всю высоту строки */
+}
+
+/* Название команды - занимает свою колонку */
 .team-name {
+  flex: 3;
   font-size: 1.1rem;
   font-weight: 500;
-  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 8px;
 }
 
+/* Основные изменения для кнопок действий */
 .team-actions {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
 }
 
+/* Количество участников - своя колонка */
 .team-members-count {
   display: flex;
+  justify-content: center;
   align-items: center;
-  margin-right: 8px;
 }
 
-.privacy-chip {
-  margin-right: 8px;
+/* Чипы приватности и статуса - свои колонки */
+.privacy-chip,
+.status-chip {
+  margin: 0 auto; /* Автоматические отступы для центрирования */
+  display: inline-flex;
+  justify-content: center;
+}
+
+.privacy-chip-container,
+.status-chip-container {
+  flex: 2;
 }
 
 /* Добавляем отступ для кнопки "Открыть" чтобы она не срабатывала при клике на карточку */

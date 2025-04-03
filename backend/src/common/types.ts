@@ -33,10 +33,10 @@ export enum StatusIdea {
 }
     
 export enum StatusTeam {
-  searchProject = 'Поиск проекта (Search for a project)',
-  inProgress = 'В процессе работы (In progress)',
+  searchProject = 'Поиск проекта',
+  inProgress = 'В процессе работы',
   joinProject = 'Подана на проект',
-  delete = 'На удалении (Delete)',
+  delete = 'На удалении',
 }
     
 export enum PrivacyTeam {
