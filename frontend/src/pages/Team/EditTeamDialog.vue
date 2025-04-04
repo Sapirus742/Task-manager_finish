@@ -72,14 +72,26 @@
             label="Участники команды"
             multiple
             use-chips
-            :options="allUsers"
+            :options="filteredMembers"
             option-label="fullName"
             emit-value
             map-options
             outlined 
             class="members-select" 
             @update:model-value="handleMemberSelection"
+            use-input
+            input-debounce="300"
+            @filter="filterMembers"
+            clearable
           >
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  Пользователи не найдены
+                </q-item-section>
+              </q-item>
+            </template>
+
             <template v-slot:option="scope">
               <q-item v-bind="scope.itemProps">
                 <q-item-section avatar v-if="isUserInOtherTeam(scope.opt)">
@@ -262,6 +274,20 @@ const previousStatus = ref<StatusTeam | null>(null);
 
 const allUsers = ref<TeamMember[]>([]);
 const allProjects = ref<ProjectOption[]>([]);
+const filteredMembers = ref(allUsers.value);
+
+const filterMembers = (val: string, update: (fn: () => void) => void) => {
+  update(() => {
+    if (val === '') {
+      filteredMembers.value = allUsers.value;
+    } else {
+      const needle = val.toLowerCase();
+      filteredMembers.value = allUsers.value.filter(
+        user => user.fullName.toLowerCase().includes(needle)
+      );
+    }
+  });
+};
 
 const privacyOptions = [
   { label: 'Открытая', value: PrivacyTeam.open },

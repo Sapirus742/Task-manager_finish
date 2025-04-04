@@ -45,21 +45,33 @@
             map-options
             :disable="!!newTeam.project" 
           />
-
+          
           <!-- Участники команды -->
           <q-select
             v-model="newTeam.user"
             label="Участники команды"
             multiple
             use-chips
-            :options="userOptions"
+            :options="filteredUserOptions"
             :rules="[(val) => val.length > 0 || 'Добавьте хотя бы одного участника']"
             outlined
             option-value="id"
             option-label="fullName"
             emit-value
             map-options
-          />
+            use-input
+            input-debounce="300"
+            @filter="filterUsers"
+            clearable
+          >
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  Пользователи не найдены
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
 
           <!-- Тимлид (выбирается из участников) -->
           <q-select
@@ -156,6 +168,20 @@ const handleProjectChange = (projectId: number | null) => {
 
 const userOptions = ref<Array<{id: number, fullName: string, inTeam: boolean;}>>([]);
 const projectOptions = ref<Array<{id: number, name: string}>>([]);
+const filteredUserOptions = ref(userOptions.value);
+
+const filterUsers = (val: string, update: (fn: () => void) => void) => {
+  update(() => {
+    if (val === '') {
+      filteredUserOptions.value = userOptions.value;
+    } else {
+      const needle = val.toLowerCase();
+      filteredUserOptions.value = userOptions.value.filter(
+        user => user.fullName.toLowerCase().includes(needle)
+      );
+    }
+  });
+};
 
 const loadUsers = async () => {
   try {
