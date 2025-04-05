@@ -214,6 +214,23 @@
                 <div class="text-body2">
                   {{ team.description || 'Описание отсутствует' }}
                 </div>
+
+                <!-- Добавляем блок с компетенциями команды -->
+                <div v-if="getTeamCompetencies(team).length > 0" class="q-mt-sm">
+                  <div class="text-subtitle2 q-mb-xs">Компетенции команды:</div>
+                  <div class="competencies-container">
+                    <q-chip
+                      v-for="(competency, index) in getTeamCompetencies(team)"
+                      :key="index"
+                      color="primary"
+                      text-color="white"
+                      size="s"
+                      class="q-mr-xs q-mb-xs"
+                    >
+                      {{ competency }}
+                    </q-chip>
+                  </div>
+                </div>
               </q-card-section>
             </div>
           </q-slide-transition>
@@ -243,6 +260,23 @@
         <h2 class="team-heading"><strong>{{ selectedTeam?.name }}</strong></h2>
         <p class="team-description"> <strong>Описание:</strong>&nbsp;{{ selectedTeam?.description }}</p>
 
+        <!-- Блок с компетенциями команды -->
+        <div v-if="getTeamCompetencies(selectedTeam).length > 0" class="q-mb-md">
+          <div class="text-subtitle2 q-mb-xs">Компетенции команды:</div>
+          <div class="competencies-container">
+            <q-chip
+              v-for="(competency, index) in getTeamCompetencies(selectedTeam)"
+              :key="index"
+              color="primary"
+              text-color="white"
+              size="s"
+              class="q-mr-xs q-mb-xs"
+            >
+              {{ competency }}
+            </q-chip>
+          </div>
+        </div>
+        
         <!-- Владелец команды -->
         <div class="team-owner q-mb-md" v-if="selectedTeam?.user_owner">
           <q-icon name="person" class="q-mr-sm" />
@@ -449,6 +483,30 @@ const filteredTeams = computed(() => {
   
   return result;
 });
+
+// Функция для получения уникальных компетенций команды
+const getTeamCompetencies = (team: TeamDto): string[] => {
+  const competencies = new Set<string>();
+  
+  // Добавляем компетенции владельца
+  if (team.user_owner?.competence?.length) {
+    team.user_owner.competence.forEach(c => competencies.add(c));
+  }
+  
+  // Добавляем компетенции тимлида
+  if (team.user_leader?.competence?.length) {
+    team.user_leader.competence.forEach(c => competencies.add(c));
+  }
+  
+  // Добавляем компетенции участников
+  team.user?.forEach(member => {
+    if (member.competence?.length) {
+      member.competence.forEach(c => competencies.add(c));
+    }
+  });
+  
+  return Array.from(competencies);
+};
 
 
 const toggleSort = (field: SortField) => {
@@ -936,6 +994,12 @@ const updateTeam = async (updatedTeam: TeamDto) => {
 </script>
 
 <style scoped>
+
+.competencies-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
 
 .team-description-section {
   padding: 16px;

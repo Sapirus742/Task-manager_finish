@@ -54,92 +54,37 @@
                 
                 <!-- Список команд, подавших заявку -->
                 <q-list bordered separator v-if="pendingTeams.length > 0">
-                  <q-expansion-item
+                  <q-item
                     v-for="team in pendingTeams"
                     :key="team.id"
-                    group="teams"
+                    clickable
                     class="pending-team-item"
+                    @click="openTeamDetailsDialog(team)"
                   >
-                    <template v-slot:header>
-                      <q-item-section>
-                        <q-item-label>{{ team.name }}</q-item-label>
-                        <q-item-label caption>{{ team.description }}</q-item-label>
-                      </q-item-section>
-                      
-                      <q-item-section side v-if="canApproveTeam">
-                        <q-btn 
-                          label="Выбрать" 
-                          color="positive" 
-                          @click.stop="approveTeam(team.id)"
-                        />
-                      </q-item-section>
-                    </template>
-
-                    <!-- Подробная информация о команде -->
-                    <q-card>
-                      <q-card-section>
-                        <div v-if="team.user_owner" class="member-item owner row items-center q-mb-xs">
-                          <div class="col">
-                            <span class="text-weight-medium">
-                              {{ team.user_owner.firstname }} {{ team.user_owner.lastname }}
-                            </span>
-                            <q-badge color="teal" class="q-ml-sm">Владелец</q-badge>
-                            <q-chip v-if="team.user_owner.competence?.length" size="s" color="grey-4" text-color="dark" class="q-ml-sm">
-                              {{ team.user_owner.competence.join(', ') }}
-                            </q-chip>
-                          </div>
-                          <div v-if="team.user_owner.email" class="col-auto text-caption text-grey">
-                            {{ team.user_owner.email }}
-                          </div>
-                        </div>
-
-                        <div 
-                          v-if="team.user_leader && team.user_leader.id !== team.user_owner?.id"
-                          class="member-item leader row items-center q-mb-xs"
-                        >
-                          <div class="col">
-                            <span class="text-weight-medium">
-                              {{ team.user_leader.firstname }} {{ team.user_leader.lastname }}
-                            </span>
-                            <q-badge color="primary" class="q-ml-sm">Тимлид</q-badge>
-                            <q-chip v-if="team.user_leader.competence?.length" size="s" color="grey-4" text-color="dark" class="q-ml-sm">
-                              {{ team.user_leader.competence.join(', ') }}
-                            </q-chip>
-                          </div>
-                          <div v-if="team.user_leader.email" class="col-auto text-caption text-grey">
-                            {{ team.user_leader.email }}
-                          </div>
-                        </div>
-
-                        <div 
-                          v-for="member in getRegularMembers(team)" 
-                          :key="member.id" 
-                          class="member-item row items-center q-mb-xs"
-                        >
-                          <div class="col">
-                            <span>{{ member.firstname }} {{ member.lastname }}</span>
-                            <q-chip v-if="member.competence?.length" size="s" color="grey-4" text-color="dark" class="q-ml-sm">
-                              {{ member.competence.join(', ') }}
-                            </q-chip>
-                          </div>
-                          <div v-if="member.email" class="col-auto text-caption text-grey">
-                            {{ member.email }}
-                          </div>
-                        </div>
-                      </q-card-section>
-                    </q-card>
-                  </q-expansion-item>
+                    <q-item-section>
+                      <q-item-label>{{ team.name }}</q-item-label>
+                      <q-item-label caption>{{ team.description }}</q-item-label>
+                    </q-item-section>
+                    
+                    <q-item-section side v-if="canApproveTeam">
+                      <q-btn 
+                        label="Выбрать" 
+                        color="positive" 
+                        @click.stop="approveTeam(team.id)"
+                      />
+                    </q-item-section>
+                  </q-item>
                 </q-list>
                 
-                 <!-- Текущая команда проекта (старое отображение) -->
-                 <template v-if="currentTeam && project?.status === StatusProject.teamFound">
+                <!-- Текущая команда проекта -->
+                <template v-if="currentTeam && project?.status === StatusProject.teamFound">
                   <div class="current-team-section q-mt-md">
                     <h4 class="text-subtitle1 text-weight-bold q-mb-sm">Текущая команда проекта</h4>
                     
                     <div class="team-name q-mb-md">
                       <q-icon name="groups" class="q-mr-sm" />
                       <strong>Команда:</strong> {{ currentTeam.name }}
-                      <q-chip size="s" :color="currentTeam.privacy === 'Close' ? 'negative' : 'positive'" text-color="white" >
+                      <q-chip size="s" :color="currentTeam.privacy === 'Close' ? 'negative' : 'positive'" text-color="white">
                         {{ currentTeam.privacy === 'Close' ? 'Закрытая' : 'Открытая' }}
                       </q-chip>
                       <q-chip size="s" color="info" text-color="white">
@@ -153,62 +98,12 @@
                       <p>{{ currentTeam.description }}</p>
                     </div>
 
-                    <!-- Участники команды -->
-                    <div class="members-container q-pa-sm bg-grey-2 rounded-borders q-mb-md">
-                      <!-- Владелец команды -->
-                      <div class="member-item owner row items-center q-mb-xs" v-if="currentTeam.user_owner">
-                        <div class="col">
-                          <span class="text-weight-medium">
-                            {{ currentTeam.user_owner.firstname }} {{ currentTeam.user_owner.lastname }}
-                          </span>
-                          <q-badge color="teal" class="q-ml-sm">Владелец</q-badge>
-                          <q-chip v-if="currentTeam.user_owner.competence?.length" size="s" color="grey-4" text-color="dark" class="q-ml-sm">
-                            {{ currentTeam.user_owner.competence.join(', ') }}
-                          </q-chip>
-                        </div>
-                        <div v-if="currentTeam.user_owner.email" class="col-auto text-caption text-grey">
-                          {{ currentTeam.user_owner.email }}
-                        </div>
-                      </div>
-
-                      <!-- Тимлид -->
-                      <div 
-                        v-if="currentTeam.user_leader && currentTeam.user_leader.id !== currentTeam.user_owner?.id"
-                        class="member-item leader row items-center q-mb-xs"
-                      >
-                        <div class="col">
-                          <span class="text-weight-medium">
-                            {{ currentTeam.user_leader.firstname }} {{ currentTeam.user_leader.lastname }}
-                          </span>
-                          <q-badge color="primary" class="q-ml-sm">Тимлид</q-badge>
-                          <q-chip v-if="currentTeam.user_leader.competence?.length" size="s" color="grey-4" text-color="dark" class="q-ml-sm">
-                            {{ currentTeam.user_leader.competence.join(', ') }}
-                          </q-chip>
-                        </div>
-                        <div v-if="currentTeam.user_leader.email" class="col-auto text-caption text-grey">
-                          {{ currentTeam.user_leader.email }}
-                        </div>
-                      </div>
-
-                      <!-- Остальные участники -->
-                      <template v-if="currentTeam.user?.length">
-                        <div 
-                          v-for="member in getRegularMembers(currentTeam)" 
-                          :key="member.id" 
-                          class="member-item row items-center q-mb-xs"
-                        >
-                          <div class="col">
-                            <span>{{ member.firstname }} {{ member.lastname }}</span>
-                            <q-chip v-if="member.competence?.length" size="s" color="grey-4" text-color="dark" class="q-ml-sm">
-                              {{ member.competence.join(', ') }}
-                            </q-chip>
-                          </div>
-                          <div v-if="member.email" class="col-auto text-caption text-grey">
-                            {{ member.email }}
-                          </div>
-                        </div>
-                      </template>
-                    </div>
+                    <q-btn
+                      label="Просмотреть команду"
+                      color="primary"
+                      @click="openTeamDetailsDialog(currentTeam)"
+                      class="q-mb-md"
+                    />
                   </div>
                 </template>
                 
@@ -264,6 +159,103 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
+
+  <!-- Диалог для просмотра команды -->
+  <q-dialog v-model="showTeamDetails">
+    <q-card v-if="selectedTeam" class="team-details-card">
+      <q-card-section>
+        <h2 class="team-heading">{{ selectedTeam.name }}</h2>
+
+        <!-- Описание команды -->
+        <div class="team-description q-mb-md" v-if="selectedTeam.description">
+          <strong>Описание:</strong>&nbsp;
+          <p>{{ selectedTeam.description }}</p>
+        </div>
+
+        <!-- Блок с компетенциями команды -->
+        <div v-if="getTeamCompetencies(selectedTeam).length > 0" class="q-mb-md">
+          <div class="text-subtitle2 q-mb-xs">Компетенции команды:</div>
+          <div class="competencies-container">
+            <q-chip
+              v-for="(competency, index) in getTeamCompetencies(selectedTeam)"
+              :key="index"
+              color="primary"
+              text-color="white"
+              size="s"
+              class="q-mr-xs q-mb-xs"
+            >
+              {{ competency }}
+            </q-chip>
+          </div>
+        </div>
+        
+        <!-- Владелец команды -->
+        <div class="team-owner q-mb-md" v-if="selectedTeam.user_owner">
+          <q-icon name="person" class="q-mr-sm" />
+          <strong>Создал: </strong>&nbsp;
+          <span>{{ selectedTeam.user_owner.firstname }} {{ selectedTeam.user_owner.lastname }}</span>
+        </div>
+
+        <!-- Подпись "Команда" -->
+        <div class="team-label q-mb-sm">
+          <q-icon name="people" class="q-mr-sm" />
+          <strong>Команда:</strong>
+        </div>
+
+        <!-- Блок участников -->
+        <div class="members-container q-pa-sm bg-grey-2 rounded-borders">
+          <!-- Владелец -->
+          <div class="member-item owner" v-if="selectedTeam.user_owner">
+              <div class="member-info">
+                <span class="member-name">
+                  {{ selectedTeam.user_owner?.firstname }} {{ selectedTeam.user_owner?.lastname }}
+                  <q-badge color="teal" class="q-ml-sm">Владелец</q-badge>
+                </span>
+                <span class="member-email" v-if="selectedTeam.user_owner?.email">
+                  <strong style="color: black">email: </strong> {{ selectedTeam.user_owner.email }}
+                </span>
+              </div>
+            </div>
+
+          <!-- Тимлид (если не владелец) -->
+          <div 
+            v-if="selectedTeam.user_leader && selectedTeam.user_leader.id !== selectedTeam.user_owner?.id"
+            class="member-item leader q-mb-xs"
+          >
+            <div class="member-info">
+              <span class="member-name">
+                {{ selectedTeam.user_leader.firstname }} {{ selectedTeam.user_leader.lastname }}
+                <q-badge color="primary" class="q-ml-sm">Тимлид</q-badge>
+              </span>
+              <span class="member-email" v-if="selectedTeam.user_leader.email">
+                <strong style="color: black">email: </strong> {{ selectedTeam.user_leader.email }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Остальные участники -->
+          <div 
+            v-for="member in getRegularMembers(selectedTeam)" 
+            :key="member.id" 
+            class="member-item q-mb-xs"
+          >
+            <div class="member-info">
+              <span class="member-name">
+                {{ member.firstname }} {{ member.lastname }}
+              </span>
+              <span class="member-email" v-if="member.email">
+                <strong style="color: black">email: </strong> {{ member.email }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Закрыть" color="primary" v-close-popup />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup lang="ts">
@@ -273,8 +265,8 @@ import type { ProjectDto, TeamDto } from '../../../../backend/src/common/types';
 import { useTeamStore } from 'src/stores/team-store';
 import { useQuasar } from 'quasar';
 import { useMainStore } from 'src/stores/main-store';
-import {update as updateTeam} from 'src/api/team.api'; 
-import {update as updateProject, get as getProject} from 'src/api/project.api'; 
+import { update as updateTeam } from 'src/api/team.api'; 
+import { update as updateProject, get as getProject } from 'src/api/project.api'; 
 
 const $q = useQuasar();
 const showDialog = ref(false);
@@ -284,63 +276,83 @@ const maxHeight = ref(0);
 const teamStore = useTeamStore();
 const mainStore = useMainStore();
 
+// Добавляем переменные для управления диалогом команды
+const showTeamDetails = ref(false);
+const selectedTeam = ref<TeamDto | null>(null);
+
 const currentTeam = computed<TeamDto | null>(() => {
-  // Если есть команда в store - используем ее
   if (teamStore.currentTeam) return teamStore.currentTeam;
-  
-  // Иначе проверяем команду проекта
   return project.value?.teams?.[0] || null;
 });
 
-// Команды, подавшие заявку на проект
+// Функция для получения уникальных компетенций команды
+const getTeamCompetencies = (team: TeamDto): string[] => {
+  const competencies = new Set<string>();
+  
+  // Добавляем компетенции владельца
+  if (team.user_owner?.competence?.length) {
+    team.user_owner.competence.forEach(c => competencies.add(c));
+  }
+  
+  // Добавляем компетенции тимлида
+  if (team.user_leader?.competence?.length) {
+    team.user_leader.competence.forEach(c => competencies.add(c));
+  }
+  
+  // Добавляем компетенции участников
+  team.user?.forEach(member => {
+    if (member.competence?.length) {
+      member.competence.forEach(c => competencies.add(c));
+    }
+  });
+  
+  return Array.from(competencies);
+};
+
 const pendingTeams = computed(() => {
   if (!project.value?.teams) return [];
-  
   return project.value.teams.filter(t => {
-    // Проверяем, что команда имеет статус "Подана на проект"
-    // и что данные о команде загружены
     return t.status === StatusTeam.joinProject && 
            t.user && t.user_owner;
   });
 });
 
-// Может ли текущий пользователь одобрять команды
 const canApproveTeam = computed(() => {
   return mainStore.isCustomer() && 
          project.value?.initiator.id === mainStore.userId;
 });
 
-// Одобрение команды
+// Функция для открытия диалога с деталями команды
+const openTeamDetailsDialog = (team: TeamDto) => {
+  selectedTeam.value = team;
+  showTeamDetails.value = true;
+};
+
 const approveTeam = async (teamId: number) => {
   try {
-    // Получаем список всех команд проекта, кроме выбранной
     const otherTeams = project.value?.teams?.filter(t => t.id !== teamId) || [];
     
-    // Обновляем статус выбранной команды
     await updateTeam(teamId, { 
       status: StatusTeam.inProgress 
     });
     
-    // Обновляем статусы остальных команд и отвязываем их от проекта
     await Promise.all(otherTeams.map(async team => {
       try {
         await updateTeam(team.id, {
           status: StatusTeam.searchProject,
-          project: null // Отвязываем команду от проекта
+          project: null
         });
       } catch (error) {
         console.error(`Ошибка обновления команды ${team.id}:`, error);
       }
     }));
     
-    // Обновляем статус проекта
     if (project.value?.id) {
       await updateProject(project.value.id, {
         status: StatusProject.teamFound
       });
     }
     
-    // Перезагружаем данные
     if (project.value?.id) {
       await teamStore.fetchTeamByProject(project.value.id);
     }
@@ -359,7 +371,6 @@ const approveTeam = async (teamId: number) => {
   window.location.reload();
 };
 
-// Функция для получения обычных участников (без владельца и тимлида)
 const getRegularMembers = (team: TeamDto) => {
   if (!team?.user) return [];
   return team.user.filter(member => {
@@ -397,27 +408,24 @@ const calculateMaxHeight = () => {
 const open = async (projectData: ProjectDto) => {
   project.value = { ...projectData }; 
   
-  // Очищаем текущую команду перед загрузкой новой
   if (teamStore.clearCurrentTeam) {
     teamStore.clearCurrentTeam();
   }
   
   if (projectData.id) {
     try {
-      // Загружаем свежие данные о командах проекта
       const updatedProject = await getProject(projectData.id);
       if (updatedProject) {
         project.value = updatedProject;
         
-        // Дополнительно загружаем полные данные о командах
         if (updatedProject.teams?.length) {
           const teamsWithDetails = await Promise.all(
             updatedProject.teams.map(async t => {
               try {
                 const teamDetails = await teamStore.fetchTeam(t.id);
-                return teamDetails || t; // Возвращаем детали или базовые данные
+                return teamDetails || t;
               } catch {
-                return t; // Если не удалось загрузить детали
+                return t;
               }
             })
           );
@@ -436,24 +444,25 @@ const open = async (projectData: ProjectDto) => {
   showDialog.value = true;
   calculateMaxHeight();
 };
+
 defineExpose({ open });
 </script>
 
 <style scoped>
-
 .pending-team-item {
   margin-bottom: 8px;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   background-color: #f9f9f9;
+  transition: background-color 0.2s;
+}
+
+.pending-team-item:hover {
+  background-color: #f0f0f0;
 }
 
 .pending-team-item .q-item {
   padding: 12px 16px;
-}
-
-.pending-team-item .q-expansion-item__content {
-  padding: 0;
 }
 
 .member-item {
@@ -526,7 +535,6 @@ defineExpose({ open });
   padding-bottom: 20px;
 }
 
-/* Стили для участников команды */
 .members-container {
   border: 1px solid #e0e0e0;
   border-radius: 6px;
@@ -550,6 +558,7 @@ defineExpose({ open });
 .member-item.owner {
   background-color: rgba(0, 150, 136, 0.05);
   border-left: 3px solid #009688;
+  marker: none;
 }
 
 .team-name {
@@ -559,6 +568,67 @@ defineExpose({ open });
   padding: 8px;
   background: #f5f5f5;
   border-radius: 6px;
+}
+
+/* Стили для диалога команды */
+.team-details-card {
+  width: 600px;
+  max-width: 90vw;
+}
+
+.team-heading {
+  font-size: 1.5rem;
+  margin-bottom: 16px;
+}
+
+.team-description {
+  padding: 8px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+}
+
+.team-owner {
+  display: flex;
+  align-items: center;
+}
+
+.team-label {
+  display: flex;
+  align-items: center;
+  font-size: 1.1rem;
+}
+
+.members-container {
+  border: 1px solid #e0e0e0;
+}
+
+.member-item {
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.member-item.owner {
+  background-color: rgba(0, 150, 136, 0.05);
+  border-left: 3px solid #009688;
+}
+
+.member-item.leader {
+  background-color: rgba(25, 118, 210, 0.05);
+  border-left: 3px solid #1976d2;
+}
+
+.member-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.member-name {
+  font-weight: 500;
+}
+
+.member-email {
+  color: #666;
+  font-size: 0.9em;
 }
 
 @media (max-width: 800px) {
