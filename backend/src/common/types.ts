@@ -18,16 +18,17 @@ export enum UserCommandStatus {
 }
     
 export enum StatusProject {
+  draft = 'Draft',
   searchTeam = 'Search for team',
   selectionTeam = 'Team selection',
   teamFound = 'Team found',
 }
     
 export enum StatusIdea {
+  draft = 'Draft',
   new = 'New',
-  underEditing = 'Under Editing',
-  underApproval = 'Under Approval',
   approved = 'Approved',
+  endorsed = 'Endorsed',
   published = 'Published',
   implemented = 'Implemented',
 }
@@ -132,6 +133,7 @@ export interface UpdateProjectDto {
   stopProject?: Date;
   maxUsers?: string;
   customer?: string;
+  exchange?: string;
   initiator?: number;
 }
 
@@ -246,6 +248,7 @@ export type ProjectDto = {
   startProject: Date;
   stopProject: Date;
   maxUsers: string;
+  exchange: string;
   teams: TeamDto[];
   customer: string; 
   initiator: SecuredUser; 

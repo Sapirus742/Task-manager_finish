@@ -57,6 +57,9 @@ export class Project {
     @Column()
     customer: string;
 
+    @Column({ default: '' })
+    exchange: string;
+
     @OneToOne(() => Idea, (idea) => idea.project, { onDelete: 'SET NULL' })
     @JoinColumn()
     idea: Idea;
@@ -80,6 +83,7 @@ export class Project {
             startProject: this.startProject,
             stopProject: this.stopProject,
             maxUsers: this.maxUsers,
+            exchange: this.exchange,
             teams: this.teams.map(team => team.getTeamDto()), 
             customer: this.customer, 
             initiator: this.initiator.getSecuredDto(),
