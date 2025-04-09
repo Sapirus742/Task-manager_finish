@@ -7,6 +7,7 @@ import { Idea } from './idea.entity';
 import { Portfolio } from './portfolio.entity';
 import { Project } from './project.entity';
 import { Comments } from './comment.entity';
+import { Exchange } from './exchange.entity';
 
 config();
 
@@ -19,7 +20,7 @@ export default new DataSource({
   username: configService.get('DB_USER'),
   password: configService.get('DB_PASSWORD'),
   database: configService.get('DB_DATABASE'),
-  entities: [User, Team, Comments, Idea, Portfolio, Project],
+  entities: [User, Team, Comments, Idea, Portfolio, Project, Exchange],
 
   migrations: ['dist/orm/migrations/*.js'],
 });

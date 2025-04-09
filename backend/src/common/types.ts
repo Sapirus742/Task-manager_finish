@@ -137,6 +137,19 @@ export interface UpdateProjectDto {
   initiator?: number;
 }
 
+export interface CreateExchangeDto {
+  name: string;
+  startExchange: Date;
+  stopExchange: Date;
+}
+
+export interface UpdateExchangeDto {
+  name?: string;
+  startExchange?: Date;
+  stopExchange?: Date;
+  projects?: ProjectDto[];
+}
+
 export interface CreateIdeaDto {
   name: string;
   problem: string;
@@ -248,10 +261,18 @@ export type ProjectDto = {
   startProject: Date;
   stopProject: Date;
   maxUsers: string;
-  exchange: string;
+  exchange: ExchangeDto;
   teams: TeamDto[];
   customer: string; 
   initiator: SecuredUser; 
+};
+
+export type ExchangeDto = {
+  id: number;
+  name: string;
+  startExchange: Date;
+  stopExchange: Date;
+  projects: ProjectDto[];
 };
 
 export type IdeaDto = {

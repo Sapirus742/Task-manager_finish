@@ -17,11 +17,14 @@ import { TeamModule } from './team/team.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
 import { IdeaModule } from './idea/idea.module';
 import { CommentModule } from './comment/comment.module';
+import { Exchange } from './orm/exchange.entity';
+import { ExchangeModule } from './exchange/exchange.module';
  
 
 @Module({
 
   imports: [
+    ExchangeModule,
     CommentModule,
     IdeaModule,
     PortfolioModule,
@@ -43,7 +46,7 @@ import { CommentModule } from './comment/comment.module';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         cache: true,
-        entities: [User, Team, Comments, Idea, Portfolio, Project],
+        entities: [User, Team, Comments, Idea, Portfolio, Project, Exchange],
         maxQueryExecutionTime: 5000,
         extra: {
           max: 50,
@@ -53,7 +56,7 @@ import { CommentModule } from './comment/comment.module';
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, Team, Comments, Idea, Portfolio, Project]),
+    TypeOrmModule.forFeature([User, Team, Comments, Idea, Portfolio, Project, Exchange]),
   ],
   controllers: [AppController],
   providers: [AppService],
