@@ -41,7 +41,7 @@ export class IdeaController {
   async addApproved(@Param('id') id: number, @Param('app') app: number): Promise<Idea> {
     return this.ideaService.addApproved(id,app);
   }
-  
+
   @Post()
   @UseGuards(JwtAuthGuard)
   async create(@Body() idea: CreateIdeaDto): Promise<Idea> {
