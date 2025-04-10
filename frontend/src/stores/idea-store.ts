@@ -45,7 +45,7 @@ export const useIdeaStore = defineStore('idea', () => {
         result: ideaData.result,
         resource: ideaData.resource,
         stack: [Competence.no], // Добавляем значение по умолчанию
-        status: StatusIdea.underEditing,
+        status: StatusIdea.draft,
         comment: [],
         initiator: mainStore.userId,
       });
@@ -108,22 +108,49 @@ export const useIdeaStore = defineStore('idea', () => {
     }
   };
 
-  const approveIdea = async (ideaId: number, userId: number) => {
+  const approveIdea = async (ideaId: number, userId: number): Promise<IdeaDto> => {
     state.isLoading = true;
     state.error = null;
     try {
+      const idea = state.ideas.find(i => i.id === ideaId);
+      
+      if (!idea) throw new Error('Идея не найдена');
+      if (idea.status !== StatusIdea.approved) {
+        throw new Error('Можно одобрять только идеи со статусом Approved');
+      }
+      if (idea.approved?.includes(userId)) {
+        throw new Error('Вы уже одобрили эту идею');
+      }
+  
+      // 1. Добавляем одобрение через API
       const updatedIdea = await ideaApi.addApproved(ideaId, userId);
-      if (updatedIdea) {
+      if (!updatedIdea) throw new Error('Не удалось обновить идею');
+      
+      // 2. Проверяем количество одобрений
+      if (updatedIdea.approved.length >= 3) {
+        // 3. Создаем объект с новым статусом
+        const endorsedIdea: IdeaDto = {
+          ...updatedIdea,
+          status: StatusIdea.endorsed
+        };
+        
+        // 4. Обновляем в хранилище
         const index = state.ideas.findIndex(i => i.id === ideaId);
         if (index !== -1) {
-          // Обновляем массив approved в идее
-          state.ideas[index].approved = updatedIdea.approved;
+          state.ideas[index] = endorsedIdea;
         }
+        
+        return endorsedIdea;
+      }
+  
+      // Обновляем локальное состояние
+      const index = state.ideas.findIndex(i => i.id === ideaId);
+      if (index !== -1) {
+        state.ideas[index] = updatedIdea;
       }
       return updatedIdea;
     } catch (error) {
-      state.error = 'Не удалось одобрить идею';
-      console.error('Ошибка при одобрении идеи:', error);
+      state.error = error instanceof Error ? error.message : 'Не удалось одобрить идею';
       throw error;
     } finally {
       state.isLoading = false;
