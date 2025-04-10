@@ -525,7 +525,6 @@ const filteredIdeas = computed(() => {
 const getStatusColor = (status: StatusIdea) => {
   const statusColors = {
     [StatusIdea.draft]: 'grey',
-<<<<<<< HEAD
     [StatusIdea.new]: 'grey',
     [StatusIdea.underEditing]: 'orange',
     [StatusIdea.underApproval]: 'blue',
@@ -533,13 +532,6 @@ const getStatusColor = (status: StatusIdea) => {
     [StatusIdea.endorsed]: 'green',
     [StatusIdea.published]: 'green',
     [StatusIdea.implemented]: 'purple',
-=======
-    [StatusIdea.new]: 'blue',
-    [StatusIdea.approved]: 'teal',
-    [StatusIdea.endorsed]: 'green',
-    [StatusIdea.published]: 'purple',
-    [StatusIdea.implemented]: 'orange',
->>>>>>> b150708dd200285a65b62c29356a0107c6dd98e5
   };
   return statusColors[status] || 'grey';
 };
@@ -548,15 +540,10 @@ const getStatusLabel = (status: StatusIdea) => {
   const statusLabels = {
     [StatusIdea.draft]: 'Черновик',
     [StatusIdea.new]: 'Новая',
-<<<<<<< HEAD
     [StatusIdea.underEditing]: 'В редактировании',
     [StatusIdea.underApproval]: 'На согласовании',
     [StatusIdea.approved]: 'Одобрена',
     [StatusIdea.endorsed]: 'Подтверждена',
-=======
-    [StatusIdea.approved]: 'Утверждена',
-    [StatusIdea.endorsed]: 'Одобрена',
->>>>>>> b150708dd200285a65b62c29356a0107c6dd98e5
     [StatusIdea.published]: 'Опубликована',
     [StatusIdea.implemented]: 'Реализована',
   };
