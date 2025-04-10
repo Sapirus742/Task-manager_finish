@@ -21,9 +21,12 @@ export async function get(id: number): Promise<IdeaDto | undefined> {
   }
 }
 
-export async function addApproved(id: number, app: number): Promise<IdeaDto | undefined> {
+export async function addApproved(
+  id: number, 
+  userId: number
+): Promise<IdeaDto | undefined> {
   try {
-    const response = await api.get(`/idea/${id}/${app}`);
+    const response = await api.patch(`/idea/${id}/approve`, { userId });
     return response.data;
   } catch (error) {
     console.error(`Ошибка при одобрении идеи ${id}:`, error);
