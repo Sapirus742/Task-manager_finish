@@ -1,4 +1,5 @@
 <template>
+  
   <q-page class="flex flex-column">
     <div class="projects-container">
       <div class="header-section">

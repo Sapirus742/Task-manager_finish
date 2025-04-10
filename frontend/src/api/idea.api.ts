@@ -2,67 +2,54 @@ import { api } from './axios';
 import { CreateIdeaDto, IdeaDto, UpdateIdeaDto } from '../../../backend/src/common/types';
 
 export async function getAll(): Promise<IdeaDto[]> {
-  try {
-    const response = await api.get('/idea');
+  const response = await api.get('/idea');
+  if (response.status == 200) {
     return response.data;
-  } catch (error) {
-    console.error('Ошибка при загрузке идей:', error);
-    throw error;
   }
+  return [];
 }
 
 export async function get(id: number): Promise<IdeaDto | undefined> {
-  try {
-    const response = await api.get(`/idea/${id}`);
+  const response = await api.get('/idea/' + id);
+  if (response.status == 200) {
     return response.data;
-  } catch (error) {
-    console.error(`Ошибка при загрузке идеи ${id}:`, error);
-    throw error;
   }
+  return;
 }
 
-export async function addApproved(
-  id: number, 
-  userId: number
+export async function addApproved(id: number, app: number): Promise<IdeaDto | undefined> {
+  const response = await api.get('/idea/' + id + '/' + app);
+  if (response.status == 200) {
+    return response.data;
+  }
+  return;
+}
+
+export async function create(
+  newIdea: CreateIdeaDto
 ): Promise<IdeaDto | undefined> {
-  try {
-    const response = await api.patch(`/idea/${id}/approve`, { userId });
+  const response = await api.post('/idea', newIdea);
+  if (response.status == 201) {
     return response.data;
-  } catch (error) {
-    console.error(`Ошибка при одобрении идеи ${id}:`, error);
-    throw error;
   }
-}
-
-export async function create(newIdea: CreateIdeaDto): Promise<IdeaDto | undefined> {
-  try {
-    const response = await api.post('/idea', newIdea);
-    return response.data;
-  } catch (error) {
-    console.error('Ошибка при создании идеи:', error);
-    throw error;
-  }
+  return;
 }
 
 export async function update(
   id: number,
   payload: UpdateIdeaDto
 ): Promise<IdeaDto | undefined> {
-  try {
-    const response = await api.patch(`/idea/${id}`, payload);
+  const response = await api.patch('/idea/' + id, payload);
+  if (response.status == 200) {
     return response.data;
-  } catch (error) {
-    console.error(`Ошибка при обновлении идеи ${id}:`, error);
-    throw error;
   }
+  return;
 }
 
 export async function remove(id: number): Promise<IdeaDto | undefined> {
-  try {
-    const response = await api.delete(`/idea/${id}`);
+  const response = await api.delete('/idea/' + id);
+  if (response.status == 200) {
     return response.data;
-  } catch (error) {
-    console.error(`Ошибка при удалении идеи ${id}:`, error);
-    throw error;
   }
+  return;
 }
