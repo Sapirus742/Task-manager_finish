@@ -1,4 +1,5 @@
 <template>
+  
   <q-page class="flex flex-column">
     <div class="projects-container">
       <div class="header-section">
@@ -116,49 +117,70 @@
                   <div class="text-subtitle2 q-mb-sm">
                     <strong>Необходимые ресурсы:</strong> {{ idea.resource }}
                   </div>
-                  <!-- Блок одобрения перенесен сюда -->
-            <!-- Заменим блок одобрения на этот -->
+                  
+                  <!-- Новая секция для отправки на проверку -->
+                  <div class="submit-section q-mt-md" v-if="idea.status === StatusIdea.draft && canSubmitIdea(idea)">
+                    <q-btn 
+                      label="Отправить на проверку" 
+                      color="primary" 
+                      @click="confirmSubmitIdea(idea)"
+                      class="q-mt-sm"
+                    />
+                  </div>
+
+                  <!-- Блок одобрения -->
 <div class="approve-section q-mt-md">
-  <div class="text-subtitle2 q-mb-sm" v-if="idea.approved && idea.approved.length > 0">
-    <strong>Одобрили:</strong> 
+  <!-- Кнопка одобрения (показывается только если можно одобрить и пользователь еще не одобрил) -->
+  <q-btn 
+  v-if="canApproveIdea(idea)"
+  icon="thumb_up" 
+  label="Одобрить идею"
+  color="positive"
+  class="q-mt-sm"
+  @click="confirmApproveIdea(idea)"
+  :loading="isApproving === idea.id"
+/>
+  
+  <!-- Сообщение для уже одобривших -->
+  <q-banner 
+    v-if="isApprovedByCurrentUser(idea)"
+    class="bg-positive text-white q-mt-sm"
+  >
+    Вы уже одобрили эту идею
+  </q-banner>
+
+  <!-- Отображение одобрений для админов -->
+  <div v-if="mainStore.isAdmin()" class="text-subtitle2 q-mb-sm">
+    <strong v-if="idea.approved && idea.approved.length > 0">Одобрили:</strong>
     <template v-for="userId in getUniqueApprovedUsers(idea)" :key="userId">
-      <q-chip 
-        size="sm"
-        color="primary"
-        class="q-mx-xs"
-      >
+      <q-chip size="sm" color="primary" class="q-mx-xs">
         {{ getUserName(userId) }}
         <q-tooltip v-if="userId === mainStore.userId">Вы одобрили</q-tooltip>
       </q-chip>
+      <q-chip 
+  v-if="idea.status === StatusIdea.approved" 
+  color="blue" 
+  text-color="white"
+>
+  Одобрений: {{ idea.approved?.length || 0 }}/3
+</q-chip>
     </template>
   </div>
-  
-  <q-btn 
-    v-if="canApproveIdea(idea)"
-    icon="thumb_up" 
-    label="Одобрить идею"
-    color="positive"
-    class="q-mt-sm"
-    @click="approveIdea(idea)"
-    :loading="isApproving === idea.id"
-    :disable="isApprovedByCurrentUser(idea)"
-    :title="isApprovedByCurrentUser(idea) ? 'Вы уже одобрили эту идею' : 'Одобрить идею'"
-  />
 </div>
-          </q-card-section>
+                </q-card-section>
 
-          <!-- Секция комментариев (без кнопки одобрения) -->
-          <q-card-section class="comment-section col-4">
-            <div class="comment-header">
-              <h3>Комментарии</h3>
-              <q-btn 
-                label="Добавить комментарий" 
-                color="primary" 
-                @click="openCommentDialog(idea.id)"
-                size="sm"
-              />
-            </div>
-                  
+                <!-- Секция комментариев -->
+                <q-card-section class="comment-section col-4">
+                  <div class="comment-header">
+                    <h3>Комментарии</h3>
+                    <q-btn 
+                      label="Добавить комментарий" 
+                      color="primary" 
+                      @click="openCommentDialog(idea.id)"
+                      size="sm"
+                    />
+                  </div>
+                          
                   <div v-if="commentStore.isLoading" class="text-center q-my-md">
                     <q-spinner size="2em" />
                   </div>
@@ -396,7 +418,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useMainStore } from 'src/stores/main-store';
 import { useIdeaStore } from 'src/stores/idea-store';
 import { useCommentStore } from 'src/stores/comment-store';
-import { StatusIdea, type IdeaDto, type CommentDto } from '../../../../backend/src/common/types';
+import { StatusIdea, type IdeaDto, type CommentDto, type UpdateIdeaDto } from '../../../../backend/src/common/types';
 import { useQuasar } from 'quasar';
 
 const $q = useQuasar();
@@ -468,13 +490,15 @@ const currentComment = ref<CommentForm>({ comment: '' });
 
 const filters = ref<Filter[]>([
   { label: 'Все', value: null, active: true },
+  { label: 'Черновик', value: StatusIdea.draft, active: false },
   { label: 'Новая', value: StatusIdea.new, active: false },
-  { label: 'На редактировании', value: StatusIdea.underEditing, active: false },
-  { label: 'На согласовании', value: StatusIdea.underApproval, active: false },
-  { label: 'Одобрена', value: StatusIdea.approved, active: false },
+  { label: 'Утверждена', value: StatusIdea.approved, active: false },
+  { label: 'Одобрена', value: StatusIdea.endorsed, active: false },
   { label: 'Опубликована', value: StatusIdea.published, active: false },
   { label: 'Реализована', value: StatusIdea.implemented, active: false }, 
 ]);
+
+
 
 const toggleFilter = (filter: Filter) => {
   filters.value.forEach((f) => (f.active = f === filter));
@@ -501,6 +525,7 @@ const filteredIdeas = computed(() => {
 const getStatusColor = (status: StatusIdea) => {
   const statusColors = {
     [StatusIdea.draft]: 'grey',
+<<<<<<< HEAD
     [StatusIdea.new]: 'grey',
     [StatusIdea.underEditing]: 'orange',
     [StatusIdea.underApproval]: 'blue',
@@ -508,6 +533,13 @@ const getStatusColor = (status: StatusIdea) => {
     [StatusIdea.endorsed]: 'green',
     [StatusIdea.published]: 'green',
     [StatusIdea.implemented]: 'purple',
+=======
+    [StatusIdea.new]: 'blue',
+    [StatusIdea.approved]: 'teal',
+    [StatusIdea.endorsed]: 'green',
+    [StatusIdea.published]: 'purple',
+    [StatusIdea.implemented]: 'orange',
+>>>>>>> b150708dd200285a65b62c29356a0107c6dd98e5
   };
   return statusColors[status] || 'grey';
 };
@@ -516,10 +548,15 @@ const getStatusLabel = (status: StatusIdea) => {
   const statusLabels = {
     [StatusIdea.draft]: 'Черновик',
     [StatusIdea.new]: 'Новая',
+<<<<<<< HEAD
     [StatusIdea.underEditing]: 'В редактировании',
     [StatusIdea.underApproval]: 'На согласовании',
     [StatusIdea.approved]: 'Одобрена',
     [StatusIdea.endorsed]: 'Подтверждена',
+=======
+    [StatusIdea.approved]: 'Утверждена',
+    [StatusIdea.endorsed]: 'Одобрена',
+>>>>>>> b150708dd200285a65b62c29356a0107c6dd98e5
     [StatusIdea.published]: 'Опубликована',
     [StatusIdea.implemented]: 'Реализована',
   };
@@ -532,16 +569,9 @@ const getUniqueApprovedUsers = (idea: IdeaDto): number[] => {
 };
 
 const getUserName = (userId: number): string => {
-  // Проверяем текущего пользователя
   if (userId === mainStore.userId) {
     return `${mainStore.firstname} ${mainStore.lastname}`;
   }
-  
-  // Здесь можно добавить логику для получения других пользователей,
-  // если они не текущий пользователь
-  // Например, можно хранить список всех пользователей в mainStore
-  
-  // Временное решение - показываем только ID
   return `Пользователь #${userId}`;
 };
 
@@ -639,6 +669,34 @@ const confirmDeleteIdea = (id: number) => {
   });
 };
 
+const confirmSubmitIdea = (idea: IdeaDto) => {
+  $q.dialog({
+    title: 'Подтверждение',
+    message: 'Вы уверены, что хотите отправить идею на проверку? После отправки вы не сможете редактировать идею до рассмотрения.',
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    try {
+      // Создаем объект только с теми полями, которые можно обновлять
+      const updateData: UpdateIdeaDto = {
+        name: idea.name,
+        problem: idea.problem,
+        solution: idea.solution,
+        result: idea.result,
+        resource: idea.resource,
+        status: StatusIdea.new, // Меняем статус на "Новая"
+        stack: idea.stack,
+      };
+      
+      await ideaStore.updateIdea(idea.id, updateData);
+      $q.notify({ type: 'positive', message: 'Идея отправлена на проверку!' });
+      await ideaStore.fetchIdeas(); // Обновляем список идей
+    } catch {
+      $q.notify({ type: 'negative', message: 'Ошибка при отправке идеи' });
+    }
+  });
+};
+
 const openCommentDialog = (ideaId: number) => {
   currentComment.value = { comment: '', ideaId };
   isEditingComment.value = false;
@@ -696,51 +754,15 @@ const confirmDeleteComment = (id: number) => {
   });
 };
 
-const approveIdea = async (idea: IdeaDto) => {
-  if (isApprovedByCurrentUser(idea)) {
-    $q.notify({ type: 'info', message: 'Вы уже одобрили эту идею' });
-    return;
-  }
-
-  isApproving.value = idea.id;
-  try {
-    // Обновляем данные на сервере
-    await ideaStore.approveIdea(idea.id, mainStore.userId);
-    
-    // Получаем обновленные данные идеи
-    const updatedIdea = await ideaStore.get(idea.id);
-    
-    if (updatedIdea) {
-      // Обновляем идею в списке
-      const index = ideaStore.ideas.findIndex(i => i.id === idea.id);
-      if (index !== -1) {
-        ideaStore.ideas[index] = updatedIdea;
-      }
-      
-      // Обновляем инициатора в mainStore если это необходимо
-      if (!mainStore.idea_initiator.some(i => i.id === updatedIdea.id)) {
-        mainStore.idea_initiator.push(updatedIdea);
-      }
-    }
-    
-    $q.notify({ type: 'positive', message: 'Идея одобрена!' });
-  } catch (error) {
-    console.error('Ошибка при одобрении:', error);
-    $q.notify({ type: 'negative', message: 'Ошибка при одобрении идеи' });
-  } finally {
-    isApproving.value = null;
-  }
-};
-    
-  
 
 const canCreateIdea = computed(() => {
-  return mainStore.isAdmin() || mainStore.isCustomer() || mainStore.isDirectorate();
+  return mainStore.isAdmin() || mainStore.isCustomer() || mainStore.isDirectorate() || mainStore.isExpert()|| mainStore.isUser();
 });
 
 const canEditIdea = (idea: IdeaDto) => {
   return mainStore.isAdmin() || 
-        (mainStore.userId === idea.initiator.id && idea.status !== StatusIdea.published);
+        (mainStore.userId === idea.initiator.id && 
+         (idea.status === StatusIdea.draft || idea.status === StatusIdea.new));
 };
 
 const canDeleteIdea = (idea: IdeaDto) => {
@@ -753,8 +775,53 @@ const canEditComment = (comment: CommentDto) => {
 };
 
 const canApproveIdea = (idea: IdeaDto) => {
-  return (mainStore.isAdmin() || mainStore.isDirectorate()) && 
-         idea.status !== StatusIdea.implemented;
+  const hasRights = mainStore.isAdmin() || mainStore.isDirectorate() || mainStore.isExpert();
+  const isApprovedStatus = idea.status === StatusIdea.approved;
+  const underLimit = !idea.approved || idea.approved.length < 3;
+  const notApprovedYet = !isApprovedByCurrentUser(idea);
+  
+  return hasRights && isApprovedStatus && underLimit && notApprovedYet;
+};
+
+const confirmApproveIdea = (idea: IdeaDto) => {
+  $q.dialog({
+    title: 'Подтверждение',
+    message: 'Вы точно хотите одобрить эту идею?',
+    persistent: true,
+    ok: {
+      label: 'Одобрить',
+      color: 'positive'
+    },
+    cancel: {
+      label: 'Отмена',
+      color: 'negative'
+    }
+  }).onOk(async () => {
+    try {
+      const result = await ideaStore.approveIdea(idea.id, mainStore.userId);
+      
+      if (result?.status === StatusIdea.endorsed) {
+        $q.notify({
+          type: 'positive',
+          message: 'Идея получила 3 одобрения! Статус изменен на Endorsed'
+        });
+      } else {
+        $q.notify({
+          type: 'positive',
+          message: 'Идея одобрена!'
+        });
+      }
+    } catch (error) {
+      $q.notify({
+        type: 'negative',
+        message: error instanceof Error ? error.message : 'Ошибка при одобрении'
+      });
+    }
+  });
+};
+
+const canSubmitIdea = (idea: IdeaDto) => {
+  return mainStore.userId === idea.initiator.id && idea.status === StatusIdea.draft;
 };
 
 const canChangeStatus = computed(() => {
@@ -910,7 +977,14 @@ const statusOptions = computed(() => {
 .comment-actions .q-btn.positive {
   color: green;
 }
+
 .approve-section {
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+  margin-top: 16px;
+}
+
+.submit-section {
   border-top: 1px solid #eee;
   padding-top: 16px;
   margin-top: 16px;
@@ -935,8 +1009,6 @@ const statusOptions = computed(() => {
     align-items: flex-start;
     gap: 8px;
   }
-
-  
   
   .idea-actions {
     width: 100%;
