@@ -473,7 +473,7 @@ const filters = ref<Filter[]>([
   { label: 'На согласовании', value: StatusIdea.underApproval, active: false },
   { label: 'Одобрена', value: StatusIdea.approved, active: false },
   { label: 'Опубликована', value: StatusIdea.published, active: false },
-  { label: 'Реализована', value: StatusIdea.implemented, active: false },
+  { label: 'Реализована', value: StatusIdea.implemented, active: false }, 
 ]);
 
 const toggleFilter = (filter: Filter) => {
@@ -500,10 +500,12 @@ const filteredIdeas = computed(() => {
 
 const getStatusColor = (status: StatusIdea) => {
   const statusColors = {
+    [StatusIdea.draft]: 'grey',
     [StatusIdea.new]: 'grey',
     [StatusIdea.underEditing]: 'orange',
     [StatusIdea.underApproval]: 'blue',
     [StatusIdea.approved]: 'teal',
+    [StatusIdea.endorsed]: 'green',
     [StatusIdea.published]: 'green',
     [StatusIdea.implemented]: 'purple',
   };
@@ -512,10 +514,12 @@ const getStatusColor = (status: StatusIdea) => {
 
 const getStatusLabel = (status: StatusIdea) => {
   const statusLabels = {
+    [StatusIdea.draft]: 'Черновик',
     [StatusIdea.new]: 'Новая',
     [StatusIdea.underEditing]: 'В редактировании',
     [StatusIdea.underApproval]: 'На согласовании',
     [StatusIdea.approved]: 'Одобрена',
+    [StatusIdea.endorsed]: 'Подтверждена',
     [StatusIdea.published]: 'Опубликована',
     [StatusIdea.implemented]: 'Реализована',
   };
