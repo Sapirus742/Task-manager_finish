@@ -14,6 +14,7 @@ import { User } from './user.entity';
 import { Competence, ProjectDto, StatusProject } from 'src/common/types'; 
 import { Team } from './team.entity';
 import { Idea } from './idea.entity';
+import { Exchange } from './exchange.entity';
 
 @Entity()
 export class Project {
@@ -57,15 +58,15 @@ export class Project {
     @Column()
     customer: string;
 
-    @Column({ default: '' })
-    exchange: string;
-
     @OneToOne(() => Idea, (idea) => idea.project, { onDelete: 'SET NULL' })
     @JoinColumn()
     idea: Idea;
     
     @OneToMany(() => Team, (team) => team.project)
     teams: Team[];
+
+    @ManyToOne(() => Exchange, (exchange) => exchange.projects, { onDelete: 'SET NULL' })
+    exchange: Exchange;
 
     @ManyToOne(() => User, (user) => user.project_initiator, { onDelete: 'CASCADE' })
     initiator: User;
@@ -83,9 +84,9 @@ export class Project {
             startProject: this.startProject,
             stopProject: this.stopProject,
             maxUsers: this.maxUsers,
-            exchange: this.exchange,
             teams: this.teams.map(team => team.getTeamDto()), 
-            customer: this.customer, 
+            customer: this.customer,
+            exchange: this.exchange.getExchangeDto(),
             initiator: this.initiator.getSecuredDto(),
         };
     }

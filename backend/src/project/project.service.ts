@@ -15,13 +15,13 @@ export class ProjectService {
   ) {}
 
   async findAll(): Promise<Project[]> {
-    return this.projectRepository.find({ relations: ['teams', 'initiator', 'idea'] });
+    return this.projectRepository.find({ relations: ['teams', 'initiator', 'idea', 'exchange'] });
   }
 
   async findOne(id: number): Promise<Project | any> {
     const project = await this.projectRepository.findOne({
       where: { id },
-      relations: ['teams', 'initiator', 'idea'],
+      relations: ['teams', 'initiator', 'idea', 'exchange'],
     });
     return project;
   }

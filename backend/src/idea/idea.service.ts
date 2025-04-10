@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { User } from 'src/orm/user.entity';
@@ -39,6 +39,11 @@ export class IdeaService {
       throw new NotFoundException(`Идея с id ${id} не найдена`);
     }
 
+    const alreadyApproved = idea.approved.includes(app);
+    if (alreadyApproved) {
+        throw new BadRequestException('User  already approved this idea');
+    }
+    
     idea.approved = [...idea.approved, app];
     return this.ideaRepository.save(idea);
   }
