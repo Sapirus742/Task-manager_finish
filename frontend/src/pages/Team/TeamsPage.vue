@@ -149,6 +149,7 @@
           v-for="(team) in paginatedTeams"
           :key="team.id"
           class="q-mb-sm team-card"
+          :class="{ 'status-delete': team.status === StatusTeam.delete }"
           @click="toggleTeamDescription(team.id)"
         >
           <q-card-section class="team-card-content row items-center">
@@ -442,7 +443,7 @@ const sortDirection = ref<SortDirection>('asc');
 const filteredTeams = computed(() => {
   let result = [...teams.value];
 
-  // Поиск по названию или описанию
+  // Фильтрация по поиску
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
     result = result.filter(team => 
@@ -451,18 +452,33 @@ const filteredTeams = computed(() => {
     );
   }
   
-  // Фильтр по приватности
+  // Фильтрация по приватности
   if (activeFilter.value !== 'all') {
     result = result.filter(team => team.privacy === activeFilter.value);
   }
   
-  // Фильтр по статусу - важно сравнивать с enum значениями
+  // Фильтрация по статусу
   if (statusFilter.value !== 'all') {
     result = result.filter(team => team.status === statusFilter.value);
   }
   
   // Сортировка
   result.sort((a, b) => {
+    // Если сортируем по статусу, применяем кастомную логику
+    if (sortField.value === 'status') {
+      const aWeight = getStatusWeight(a.status);
+      const bWeight = getStatusWeight(b.status);
+      const comparison = aWeight - bWeight;
+      return sortDirection.value === 'asc' ? comparison : -comparison;
+    }
+    
+    // Для остальных случаев сортировки:
+    // 1. Сначала команды не на удалении
+    // 2. Затем команды на удалении
+    if (a.status === StatusTeam.delete && b.status !== StatusTeam.delete) return 1;
+    if (a.status !== StatusTeam.delete && b.status === StatusTeam.delete) return -1;
+    
+    // Применяем выбранную сортировку для остальных случаев
     let comparison = 0;
     switch (sortField.value) {
       case 'privacy':
@@ -470,9 +486,6 @@ const filteredTeams = computed(() => {
         break;
       case 'name':
         comparison = a.name.localeCompare(b.name);
-        break;
-      case 'status':
-        comparison = a.status.localeCompare(b.status);
         break;
       case 'members':
         comparison = (a.user?.length || 0) - (b.user?.length || 0);
@@ -483,6 +496,16 @@ const filteredTeams = computed(() => {
   
   return result;
 });
+
+const getStatusWeight = (status: StatusTeam): number => {
+  switch (status) {
+    case StatusTeam.searchProject: return 1;    // Поиск работы
+    case StatusTeam.joinProject: return 2;      // Подана на проект
+    case StatusTeam.inProgress: return 3;       // В процессе работы
+    case StatusTeam.delete: return 4;           // На удалении
+    default: return 0;
+  }
+};
 
 // Функция для получения уникальных компетенций команды
 const getTeamCompetencies = (team: TeamDto): string[] => {
@@ -813,7 +836,6 @@ const paginatedTeams = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage;
   return filteredTeams.value.slice(start, start + itemsPerPage);
 });
-
 // Логика для открытия деталей команды
 const showTeamDetails = ref(false);
 const selectedTeam = ref<TeamDto | null>(null);
@@ -1370,6 +1392,30 @@ const updateTeam = async (updatedTeam: TeamDto) => {
 
 .team-details-card .q-btn.negative {
   margin-right: auto; /* Размещаем слева */
+}
+
+/* Стиль для команд на удалении */
+.team-card.status-delete {
+  opacity: 0.6;
+  background-color: #f5f5f5;
+  color: #726f6f;
+}
+
+/* При наведении возвращаем обычный вид */
+.team-card.status-delete:hover {
+  opacity: 1;
+  background-color: white;
+  color: inherit;
+}
+
+/* Делаем кнопки менее заметными для команд на удалении */
+.team-card.status-delete .q-btn {
+  opacity: 0.6;
+}
+
+/* При наведении возвращаем обычный вид кнопкам */
+.team-card.status-delete:hover .q-btn {
+  opacity: 1;
 }
 
 /* Адаптивные стили для мобильных устройств */
