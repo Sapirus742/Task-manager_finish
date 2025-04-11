@@ -65,7 +65,7 @@
 
       <!-- Сортировка -->
       <div class="sorting-header q-mb-md">
-        <div class="row items-center">
+        <div class="row items-center no-wrap">
           <!-- Сортировка по названию -->
           <div class="col-md-3 col-sm-6 col-xs-12">
             <q-btn
@@ -152,7 +152,7 @@
           :class="{ 'status-delete': team.status === StatusTeam.delete }"
           @click="toggleTeamDescription(team.id)"
         >
-          <q-card-section class="team-card-content row items-center">
+          <q-card-section class="team-card-content row items-center no-wrap">
             <!-- Название команды -->
             <div class="col-md-3 col-sm-6 col-xs-12 team-name">
               {{ team.name }}
@@ -1017,6 +1017,21 @@ const updateTeam = async (updatedTeam: TeamDto) => {
 
 <style scoped>
 
+/* Общие стили для адаптивности */
+.sorting-header .row {
+  min-width: 100%;
+  overflow-x: auto; /* Добавляем горизонтальный скролл при необходимости */
+}
+
+/* Стили для текста с обрезанием */
+.text-ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  max-width: 100%;
+}
+
 .competencies-container {
   display: flex;
   flex-wrap: wrap;
@@ -1216,6 +1231,7 @@ const updateTeam = async (updatedTeam: TeamDto) => {
   display: flex;
   align-items: center;
   padding: 12px 16px;
+  min-width: 100%;
   cursor: pointer; /* Добавляем указатель при наведении */
 }
 
@@ -1260,6 +1276,17 @@ const updateTeam = async (updatedTeam: TeamDto) => {
   margin-left: auto;
 }
 
+/* Стили для кнопок в карточке */
+.team-actions .q-btn {
+  min-width: auto;
+  padding: 0 8px;
+}
+
+.sort-btn {
+  padding: 0 4px;
+  min-width: auto;
+}
+
 /* Количество участников - своя колонка */
 .team-members-count {
   display: flex;
@@ -1267,11 +1294,18 @@ const updateTeam = async (updatedTeam: TeamDto) => {
   align-items: center;
 }
 
+/* Стили для чипов */
+.privacy-chip, .status-chip {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Чипы приватности и статуса - свои колонки */
 .privacy-chip,
 .status-chip {
   margin: 0 auto; /* Автоматические отступы для центрирования */
-  display: inline-flex;
+  display: flex;
   justify-content: center;
 }
 
@@ -1419,16 +1453,31 @@ const updateTeam = async (updatedTeam: TeamDto) => {
 }
 
 /* Адаптивные стили для мобильных устройств */
-@media (max-width: 600px) {
+@media (max-width: 400px) {
   .team-card-content {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .sort-btn span {
+    display: none;
+  }
+
+  .sort-btn .q-icon {
+    margin: 0;
+  }
+
+  .team-name, .team-members-count, 
+  .privacy-chip-container, .status-chip-container {
+    flex: 1 1 50%;
+    margin-bottom: 8px;
   }
   
   .team-actions {
-    width: 100%;
-    justify-content: space-between;
+    flex: 1 1 100%;
+    justify-content: center;
   }
   
   .team-members-count {
