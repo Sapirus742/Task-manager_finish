@@ -147,7 +147,7 @@ export interface UpdateExchangeDto {
   name?: string;
   startExchange?: Date;
   stopExchange?: Date;
-  projects?: ProjectDto[];
+  projects?: number[];
 }
 
 export interface CreateIdeaDto {
