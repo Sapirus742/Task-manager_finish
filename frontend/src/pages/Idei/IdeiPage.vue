@@ -495,7 +495,7 @@ const filters = ref<Filter[]>([
   { label: 'Утверждена', value: StatusIdea.approved, active: false },
   { label: 'Одобрена', value: StatusIdea.endorsed, active: false },
   { label: 'Опубликована', value: StatusIdea.published, active: false },
-  { label: 'Реализована', value: StatusIdea.implemented, active: false }, 
+  { label: 'Реализована', value: StatusIdea.implemented, active: false },
 ]);
 
 
@@ -539,7 +539,7 @@ const getStatusLabel = (status: StatusIdea) => {
     [StatusIdea.draft]: 'Черновик',
     [StatusIdea.new]: 'Новая',
     [StatusIdea.approved]: 'Одобрена',
-    [StatusIdea.endorsed]: 'Подтверждена',
+    [StatusIdea.endorsed]: 'Утверждена',
     [StatusIdea.published]: 'Опубликована',
     [StatusIdea.implemented]: 'Реализована',
   };
