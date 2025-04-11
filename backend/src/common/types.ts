@@ -27,8 +27,6 @@ export enum StatusProject {
 export enum StatusIdea {
   draft = 'Draft',
   new = 'New',
-  underEditing = 'Under Editing',
-  underApproval = 'Under Approval',
   approved = 'Approved',
   endorsed = 'Endorsed',
   published = 'Published',

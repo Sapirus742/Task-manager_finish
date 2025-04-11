@@ -526,8 +526,6 @@ const getStatusColor = (status: StatusIdea) => {
   const statusColors = {
     [StatusIdea.draft]: 'grey',
     [StatusIdea.new]: 'grey',
-    [StatusIdea.underEditing]: 'orange',
-    [StatusIdea.underApproval]: 'blue',
     [StatusIdea.approved]: 'teal',
     [StatusIdea.endorsed]: 'green',
     [StatusIdea.published]: 'green',
@@ -540,8 +538,6 @@ const getStatusLabel = (status: StatusIdea) => {
   const statusLabels = {
     [StatusIdea.draft]: 'Черновик',
     [StatusIdea.new]: 'Новая',
-    [StatusIdea.underEditing]: 'В редактировании',
-    [StatusIdea.underApproval]: 'На согласовании',
     [StatusIdea.approved]: 'Одобрена',
     [StatusIdea.endorsed]: 'Подтверждена',
     [StatusIdea.published]: 'Опубликована',
