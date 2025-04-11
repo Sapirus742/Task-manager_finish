@@ -23,6 +23,7 @@
 
         <div class="q-mr-md">
           <q-btn flat label="Проекты" @click="goToProjects" />
+          <q-btn flat label="Биржа" @click="goToMarketplace" />
           <q-btn flat label="Идеи" @click="goToIdeas" />
           <q-btn flat label="Команды" @click="goToTeams" />
         </div>
@@ -86,6 +87,10 @@ const onLogout = () => {
 
 const goToProjects = () => {
   router.push('/projects');
+};
+
+const goToMarketplace = () => {
+  router.push('/marketplace');
 };
 
 const goToIdeas = () => {
