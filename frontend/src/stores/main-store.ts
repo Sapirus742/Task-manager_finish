@@ -29,6 +29,7 @@ export const useMainStore = defineStore('main', () => {
     group: 'unknown',
     telephone: 'unknown',
     competence: [] as Competence[],
+    created_at: null as Date | null,
     portfolio: [] as PortfolioDto[],
     team_leader: null as TeamDto | null,
     team_owner: [] as TeamDto[],
@@ -54,6 +55,7 @@ export const useMainStore = defineStore('main', () => {
     state.group = appState.group || 'unknown';
     state.telephone = appState.telephone || 'unknown';
     state.competence = appState.competence || [];
+    state.created_at = new Date();
     
     // Загружаем полные данные пользователя через profile-store
     const profileStore = useProfileStore();
@@ -118,6 +120,7 @@ export const useMainStore = defineStore('main', () => {
       roles: state.roles,
       status: state.userStatus,
       competence: state.competence,
+      createdAt: state.created_at || new Date(),
       portfolio: state.portfolio,
       team_leader: state.team_leader,
       team_owner: state.team_owner,
@@ -130,10 +133,16 @@ export const useMainStore = defineStore('main', () => {
   };
 
   const updateUserData = (data: {
+    email?: string;
+    firstname?: string;
+    lastname?: string;
     group?: string;
     telephone?: string;
     competence?: Competence[];
   }) => {
+    if (data.email) state.username = data.email;
+    if (data.firstname) state.firstname = data.firstname;
+    if (data.lastname) state.lastname = data.lastname;
     if (data.group) state.group = data.group;
     if (data.telephone) state.telephone = data.telephone;
     if (data.competence) state.competence = data.competence;

@@ -1,3 +1,5 @@
+import { DataSource } from "typeorm";
+
 export enum Role {
   admin = 'admin',
   user = 'user',
@@ -45,12 +47,127 @@ export enum PrivacyTeam {
   close = 'Close',
 }
     
-export enum Competence {
-  no = 'No',
-  html = 'HTML',
-  typescript = 'TypeScript',
-  postgresql = 'PostgeSQL',
-}
+// types.ts
+export const Competencies = {
+  // Языки программирования
+  LANGUAGES: [
+    'No',
+    'PHP',
+    'Blueprint',
+    'GOLANG',
+    'Rust',
+    'Dart',
+    'R',
+    'Java',
+    'JavaScript',
+    'HTML',
+    'CSS',
+    'C++',
+    'TypeScript',
+    'Python',
+    'Swift',
+    'Kotlin',
+    'C#',
+    'Ruby',
+    'Julia'
+  ] as const,
+
+  // Фреймворки и библиотеки
+  FRAMEWORKS: [
+    'React',
+    'Vue',
+    'Angular',
+    'Spring Boot',
+    'Flutter',
+    'Django',
+    'Flask',
+    'Ruby on Rails',
+    '.NET',
+    'TensorFlow',
+    'PyTorch',
+    'Keras',
+    'Pandas',
+    'NumPy',
+    'Node.js',
+    'Express',
+    'Next.js',
+    'NestJS',
+    'React Native',
+    'Xamarin'
+  ] as const,
+
+  // Базы данных
+  DATABASES: [
+    'PostgreSQL',
+    'MySQL',
+    'MongoDB',
+    'SQLite',
+    'Redis',
+    'Firebase',
+    'Elasticsearch',
+    'SQL Server',
+    'Oracle',
+    'Cassandra'
+  ] as const,
+
+  // DevOps и инструменты
+  DEVOPS: [
+    'Docker',
+    'Kubernetes',
+    'Git',
+    'CI/CD',
+    'Jenkins',
+    'Ansible',
+    'Terraform',
+    'Prometheus',
+    'Grafana',
+    'AWS',
+    'Azure',
+    'GCP',
+    'Nginx',
+    'Apache'
+  ] as const,
+
+  // Тестирование
+  TESTING: [
+    'Jest',
+    'Mocha',
+    'Cypress',
+    'Selenium',
+    'JUnit',
+    'PyTest',
+    'Cucumber',
+    'Postman'
+  ] as const,
+
+  // Дизайн и UX
+  DESIGN: [
+    'Figma',
+    'Sketch',
+    'Adobe XD',
+    'Photoshop',
+    'Illustrator',
+    'UI/UX Design',
+    'Prototyping'
+  ] as const,
+
+  MOBILE: [
+    'Flutter',
+    'React Native',
+    'Swift',
+    'Kotlin',
+    'Ionic'
+  ] as const
+} as const;
+
+// Тип для отдельной компетенции
+export type Competence = typeof Competencies[keyof typeof Competencies][number];
+
+// Тип для группы компетенций
+export type CompetenceGroup = keyof typeof Competencies;
+
+// Вспомогательный тип для фильтрации
+export type CompetenceByGroup<T extends CompetenceGroup> = typeof Competencies[T][number];
 
 export enum TaskStatus {
   new = 'new',
@@ -231,6 +348,7 @@ export type SecuredUser = {
   roles: Role[];
   status: UserAccountStatus;
   competence: Competence[];
+  createdAt: Date;
   team_leader: TeamDto | null;
   team_owner: TeamDto[];
   portfolio: PortfolioDto[];

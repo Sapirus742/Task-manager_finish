@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { reactive, toRefs } from 'vue';
-import { IdeaDto, StatusIdea, UpdateIdeaDto, Competence } from '../../../backend/src/common/types';
+import { IdeaDto, StatusIdea, UpdateIdeaDto, Competencies } from '../../../backend/src/common/types';
 import * as ideaApi from '../api/idea.api';
 import { useMainStore } from './main-store';
 
@@ -11,6 +11,8 @@ interface CreateIdeaPayload {
   result: string;
   resource: string;
 }
+
+const defaultCompetence = Competencies.LANGUAGES[0];
 
 export const useIdeaStore = defineStore('idea', () => {
   const state = reactive({
@@ -44,7 +46,7 @@ export const useIdeaStore = defineStore('idea', () => {
         solution: ideaData.solution,
         result: ideaData.result,
         resource: ideaData.resource,
-        stack: [Competence.no], // Добавляем значение по умолчанию
+        stack: [defaultCompetence],  // Добавляем значение по умолчанию
         status: StatusIdea.draft,
         comment: [],
         initiator: mainStore.userId,
@@ -70,7 +72,7 @@ export const useIdeaStore = defineStore('idea', () => {
     try {
       const updatedIdea = await ideaApi.update(id, {
         ...updateData,
-        stack: updateData.stack || [Competence.no] // Значение по умолчанию при обновлении
+        stack: updateData.stack || [defaultCompetence]  // Значение по умолчанию при обновлении
       });
       
       if (updatedIdea) {

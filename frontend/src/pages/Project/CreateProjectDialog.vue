@@ -125,7 +125,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Competence, CreateProjectDto, StatusProject } from '../../../../backend/src/common/types';
+import { Competencies, CreateProjectDto, StatusProject } from '../../../../backend/src/common/types';
 import { create } from 'src/api/project.api'; // Импортируем метод для создания проекта
 import { useMainStore } from 'src/stores/main-store'; // Импортируем хранилище
 
@@ -170,7 +170,7 @@ const stopProjectString = computed({
 });
 
 // Опции для стека технологий
-const competenceOptions = Object.values(Competence);
+const competenceOptions = Object.values(Competencies).flat();;
 
 // Опции для статуса проекта
 const statusOptions = Object.values(StatusProject);

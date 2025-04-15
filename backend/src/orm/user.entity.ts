@@ -30,7 +30,7 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
   
-  @Column()
+  @Column({default: ''})
   email: string;
   
   @Column()
@@ -92,6 +92,7 @@ export class User {
       roles: this.roles,
       status: this.status,
       competence: this.competence,
+      createdAt: this.createdAt,
       team_leader: this.team_leader.getTeamDto(),
       team_owner: this.team_owner.map(team_owner => team_owner.getTeamDto()),
       portfolio: this.portfolio.map(portfolio => portfolio.getPortfolioDto()),
