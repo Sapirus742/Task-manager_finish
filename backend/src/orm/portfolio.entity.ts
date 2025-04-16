@@ -37,7 +37,7 @@ export class Portfolio {
         return {
             id: this.id,
             entryDate: this.entryDate,
-            exclusionDate: this.exclusionDate,
+            exclusionDate: this.exclusionDate ?? null,
             status: this.status,
             team: this.team.getTeamDto(),
             user: this.user.getSecuredDto(),

@@ -412,6 +412,8 @@ import {update as updateUser} from 'src/api/users.api';
 import {update as updateTeams} from 'src/api/team.api';
 import CreateTeamDialog from './CreateTeamDialog.vue';
 import EditTeamDialog from './EditTeamDialog.vue';
+import { create as createPortfolio, update as updatePortfolio } from 'src/api/portfolio.api';
+import { UserCommandStatus } from '../../../../backend/src/common/types';
 import { TeamDto, PrivacyTeam, StatusProject, ProjectDto, StatusTeam} from '../../../../backend/src/common/types'; // Добавляем StatusProject
 import { useQuasar } from 'quasar';
 
@@ -633,10 +635,18 @@ const handleJoinTeam = async (teamId: number) => {
       return;
     }
 
-    // Обновляем пользователя, устанавливая team_id
+    // 1. Обновляем пользователя, устанавливая team_id
     await updateUser(currentUserId, { team: teamId });
     
-    // Обновляем данные в хранилище
+    // 2. Создаем запись в портфолио
+    await createPortfolio({
+      status: UserCommandStatus.inTeam,
+      team: teamId,
+      user: currentUserId,
+      entryDate: new Date(), // Передаем объект Date вместо строки
+    });
+    
+    // 3. Обновляем данные в хранилище
     mainStore.updateTeamData(teamId);
     
     $q.notify({
@@ -758,20 +768,42 @@ const handleLeaderLeave = async (team: TeamDto) => {
   }
 };
 
+// Метод выхода из команды
 const completeLeaveTeam = async (teamId: number) => {
   const currentUserId = mainStore.getCurrentUser().id;
-  const team = teams.value.find(t => t.id === teamId);
-
-  if (!team) {
-      $q.notify({ message: 'Команда не найдена', color: 'negative' });
-      return;
-    }
   
   try {
-    // Обновляем пользователя
+    // 1. Обновляем пользователя (убираем team_id)
     await updateUser(currentUserId, { team: null });
     
-    // Обновляем список команд
+    // 2. Находим команду
+    const team = teams.value.find(t => t.id === teamId);
+    if (!team) throw new Error('Команда не найдена');
+
+    // 3. Находим активную запись о вступлении
+    const activePortfolio = team.portfolio?.find(
+      p => p.user?.id === currentUserId && p.status === UserCommandStatus.inTeam
+    );
+
+    if (activePortfolio) {
+      // Обновляем запись о вступлении - меняем статус на "исключен"
+      await updatePortfolio(activePortfolio.id, {
+        status: UserCommandStatus.expelled,
+        exclusionDate: new Date(),
+      });
+    } else {
+      // Создаем новую запись об исключении (без записи о вступлении)
+      await createPortfolio({
+        status: UserCommandStatus.expelled,
+        team: teamId,
+        user: currentUserId,
+        entryDate: new Date(), 
+        exclusionDate: new Date(),
+      });
+    }
+
+    // 4. Обновляем данные
+    mainStore.updateTeamData(teamId);
     await loadTeams();
     
     $q.notify({
@@ -787,7 +819,6 @@ const completeLeaveTeam = async (teamId: number) => {
       color: 'negative'
     });
   }
-  window.location.reload()
 };
 
 const getRegularMembers = (team: TeamDto) => {

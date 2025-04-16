@@ -275,73 +275,62 @@
             <!-- Портфолио -->
             <q-card v-if="sortedPortfolio.length" class="section-card q-mt-md">
               <q-card-section>
-                <div class="text-h6">История команд</div>
+                <div class="text-h6">Портфолио</div>
                 <q-separator class="q-my-sm" />
-                <div class="q-gutter-y-md">
-                  <q-expansion-item
-                    v-for="(item, index) in sortedPortfolio"
-                    :key="index"
-                    class="portfolio-item"
-                    header-class="portfolio-header"
-                  >
-                    <template v-slot:header>
-                      <q-item-section avatar>
-                        <q-avatar color="primary" text-color="white" icon="groups" />
-                      </q-item-section>
 
-                      <q-item-section>
-                        <div class="row items-center">
-                          <div class="text-weight-medium">{{ item.team.name }}</div>
-                          <q-chip 
-                            v-if="item.team.project"
-                            size="sm"
-                            color="info"
-                            text-color="white"
-                            class="q-ml-sm"
-                          >
-                            Проект: {{ item.team.project.name }}
-                          </q-chip>
-                        </div>
-                        <div class="text-caption">
-                          {{ formatDate(item.entryDate) }} - 
-                          {{ item.exclusionDate ? formatDate(item.exclusionDate) : 'по настоящее время' }}
-                        </div>
-                      </q-item-section>
-
-                      <q-item-section side>
-                        <q-badge 
-                          :color="getStatusColor(item.status)"
-                          :label="formatPortfolioStatus(item.status)"
-                        />
-                      </q-item-section>
-                    </template>
-
-                    <q-card-section>
-                      <div class="row q-col-gutter-md">
-                        <div class="col-md-6">
-                          <div class="text-caption text-grey">Роль в команде</div>
-                          <div class="text-weight-medium">
-                            {{ getRoleInTeam(item.team) }}
-                          </div>
-                        </div>
-
-                        <div class="col-md-6">
-                          <div class="text-caption text-grey">Статус команды</div>
-                          <div>
-                            <q-badge :color="getTeamStatusColor(item.team.status)">
-                              {{ formatTeamStatus(item.team.status) }}
-                            </q-badge>
-                          </div>
-                        </div>
-
-                        <div class="col-12" v-if="item.team.description">
-                          <div class="text-caption text-grey">Описание команды</div>
-                          <div>{{ item.team.description }}</div>
-                        </div>
-                      </div>
-                    </q-card-section>
-                  </q-expansion-item>
+                <div v-if="isPortfolioLoading" class="text-center q-pa-md">
+                  <q-spinner size="md" color="primary" />
+                  <div>Загрузка истории команд...</div>
                 </div>
+
+                <div v-else-if="sortedPortfolio.length === 0" class="text-grey q-pa-md text-center">
+                  Нет данных об участии в командах
+                </div>
+    
+                <q-table
+                  :rows="sortedPortfolio"
+                  :columns="portfolioColumns"
+                  row-key="id"
+                  flat
+                  bordered
+                  hide-pagination
+                  class="portfolio-table"
+                >
+                <template v-slot:body-cell-team="props: { row: PortfolioTableRow }">
+                  <q-td :props="props">
+                    <div class="text-weight-medium">{{ props.row.team.name }}</div>
+                    <div class="text-caption text-grey">
+                      {{ getRoleInTeam(props.row.team) }}
+                    </div>
+                  </q-td>
+                </template>
+
+                <template v-slot:body-cell-entryDate="props: { row: PortfolioTableRow }">
+                  <q-td :props="props">
+                    <div>{{ formatDate(props.row.entryDate) }}</div>
+                  </q-td>
+                </template>
+
+                <template v-slot:body-cell-exitDate="props: { row: PortfolioTableRow }">
+                  <q-td :props="props">
+                    <div v-if="props.row.exclusionDate">
+                      {{ formatDate(props.row.exclusionDate) }}
+                    </div>
+                    <div v-else class="text-positive">
+                      В команде
+                    </div>
+                  </q-td>
+                </template>
+
+                <template v-slot:body-cell-status="props: { row: PortfolioTableRow }">
+                  <q-td :props="props">
+                    <q-badge v-if="props.row.exclusionDate" 
+                            :color="getTeamStatusColor(props.row.team.status)"
+                            :label="formatTeamStatus(props.row.team.status)" />
+                    <q-badge v-else color="positive" label="Активен" />
+                  </q-td>
+                </template>
+                </q-table>
               </q-card-section>
             </q-card>
           </div>
@@ -363,20 +352,62 @@ import { useProfileStore } from 'src/stores/profile-store';
 import { useMainStore } from 'src/stores/main-store';
 import { 
   Role,
-  UserCommandStatus,
   StatusTeam,
-  type TeamDto,
   Competencies,
   type Competence,
   type CompetenceGroup
 } from '../../../backend/src/common/types';
 import { update } from '../api/users.api';
+import { QTableProps } from 'quasar';
+import {getAll as PortfolioGetAll} from '../api/portfolio.api'
 
 const isOpen = ref(false);
+const isPortfolioLoading = ref(false);
 const mainStore = useMainStore();
 const profileStore = useProfileStore();
 
 const { userProfile, isLoading, error } = storeToRefs(profileStore);
+
+interface PortfolioTableRow {
+  id: number;
+  team: {
+    id: number; // Добавляем обязательное поле
+    name: string;
+    status?: StatusTeam;
+    user_leader?: { id: number };
+    user_owner?: { id: number };
+  };
+  entryDate: Date;
+  exclusionDate?: Date;
+}
+
+const portfolioColumns: QTableProps['columns'] = [
+  {
+    name: 'team',
+    required: true,
+    label: 'Команда',
+    align: 'left',
+    field: (row: PortfolioTableRow) => row.team.name
+  },
+  {
+    name: 'entryDate',
+    label: 'Дата вступления',
+    align: 'center',
+    field: (row: PortfolioTableRow) => row.entryDate
+  },
+  {
+    name: 'exitDate',
+    label: 'Дата исключения',
+    align: 'center',
+    field: (row: PortfolioTableRow) => row.exclusionDate
+  },
+  {
+    name: 'teamStatus',
+    label: 'Статус',
+    align: 'center',
+    field: (row: PortfolioTableRow) => row.team.status
+  }
+];
 
 type EditableField = 'email' | 'firstname' | 'lastname' | 'group' | 'telephone';
 
@@ -579,27 +610,38 @@ const formattedRoles = computed(() => {
 
 const sortedPortfolio = computed(() => {
   if (!userProfile.value?.portfolio) return [];
-  return [...userProfile.value.portfolio].sort((a, b) => 
-    new Date(b.entryDate).getTime() - new Date(a.entryDate).getTime()
-  );
+  
+  return userProfile.value.portfolio
+    .filter(item => item.team) // Фильтруем только записи с командами
+    .map(item => ({
+      ...item,
+      entryDate: new Date(item.entryDate),
+      exclusionDate: item.exclusionDate ? new Date(item.exclusionDate) : undefined,
+      team: {
+        id: item.team.id,
+        name: item.team.name || 'Команда без названия',
+        status: item.team.status,
+        user_leader: item.team.user_leader,
+        user_owner: item.team.user_owner
+      }
+    }))
+    .sort((a, b) => b.entryDate.getTime() - a.entryDate.getTime());
 });
 
-const getRoleInTeam = (team: TeamDto) => {
+const getRoleInTeam = (team: { id: number; user_leader?: { id: number }; user_owner?: { id: number } }) => {
   if (!userProfile.value) return 'Участник';
-  if (team.user_leader?.id === userProfile.value.id) return 'Лидер команды';
-  if (team.user_owner?.id === userProfile.value.id) return 'Владелец команды';
+  
+  if (team.user_owner?.id === userProfile.value.id) {
+    return 'Владелец команды';
+  }
+  if (team.user_leader?.id === userProfile.value.id) {
+    return 'Лидер команды';
+  }
   return 'Участник';
 };
 
-const formatPortfolioStatus = (status: UserCommandStatus) => {
-  const statusMap = {
-    [UserCommandStatus.inTeam]: 'Активен',
-    [UserCommandStatus.expelled]: 'Исключен'
-  };
-  return statusMap[status] || status;
-};
-
-const formatTeamStatus = (status: StatusTeam) => {
+const formatTeamStatus = (status?: StatusTeam) => {
+  if (!status) return 'Неизвестно';
   const statusMap = {
     [StatusTeam.searchProject]: 'Поиск проекта',
     [StatusTeam.inProgress]: 'В работе',
@@ -609,41 +651,80 @@ const formatTeamStatus = (status: StatusTeam) => {
   return statusMap[status] || status;
 };
 
-const getStatusColor = (status: UserCommandStatus) => {
-  return status === UserCommandStatus.inTeam ? 'positive' : 'negative';
-};
-
-const getTeamStatusColor = (status: StatusTeam) => {
+const getTeamStatusColor = (status?: StatusTeam) => {
+  if (!status) return 'grey';
   switch(status) {
     case StatusTeam.inProgress: return 'positive';
     case StatusTeam.searchProject: return 'warning';
     case StatusTeam.delete: return 'negative';
+    case StatusTeam.joinProject: return 'info';
     default: return 'grey';
   }
 };
-
-const formatDate = (date: Date) => {
-  return new Date(date).toLocaleDateString('ru-RU', {
+const formatDate = (date: Date | string) => {
+  if (!date) return '-';
+  const d = new Date(date);
+  return d.toLocaleDateString('ru-RU', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric'
   });
 };
 
-const loadProfile = () => {
+const loadProfile = async () => {
+  console.log('Начало загрузки профиля...');
   if (mainStore.userId) {
-    console.log('[Profile] Загрузка профиля для пользователя ID:', mainStore.userId);
-    profileStore.fetchUserProfile(mainStore.userId)
-      .then(() => console.log('[Profile] Профиль успешно загружен'))
-      .catch(err => console.error('[Profile] Ошибка загрузки профиля:', err));
+    try {
+      console.log('Загрузка данных профиля для userId:', mainStore.userId);
+      isLoading.value = true;
+      error.value = '';
+      
+      // 1. Загружаем профиль
+      console.log('Загрузка профиля через profileStore...');
+      await profileStore.fetchUserProfile(mainStore.userId);
+      console.log('Профиль загружен:', userProfile.value);
+      
+      // 2. Загружаем все портфолио
+      console.log('Загрузка всех портфолио...');
+      isPortfolioLoading.value = true;
+      const allPortfolios = await PortfolioGetAll();
+      console.log('Все портфолио загружены:', allPortfolios);
+      
+      // 3. Фильтруем портфолио текущего пользователя
+      console.log('Фильтрация портфолио для текущего пользователя...');
+      const userPortfolios = allPortfolios.filter(
+        p => p.user?.id === mainStore.userId
+      );
+      console.log('Отфильтрованные портфолио:', userPortfolios);
+      
+      if (userProfile.value) {
+        userProfile.value.portfolio = userPortfolios;
+        console.log('Обновлённый userProfile с портфолио:', userProfile.value);
+      }
+      
+      // 4. Проверка данных перед отображением
+      console.log('Проверка перед отображением:');
+      console.log('userProfile существует:', !!userProfile.value);
+      console.log('portfolio существует:', !!userProfile.value?.portfolio);
+      console.log('Количество записей:', userProfile.value?.portfolio?.length || 0);
+      
+    } catch (err) {
+      console.error('Ошибка загрузки профиля:', err);
+      error.value = 'Не удалось загрузить данные профиля';
+    } finally {
+      isLoading.value = false;
+      isPortfolioLoading.value = false;
+      console.log('Загрузка завершена');
+    }
   } else {
-    console.warn('[Profile] Не удалось загрузить профиль: userId не установлен');
+    console.warn('userId не установлен, пропускаем загрузку');
   }
 };
 
 const open = () => {
   isOpen.value = true;
   loadProfile();
+
 };
 
 const closeDialog = () => {

@@ -328,14 +328,18 @@ export interface UpdateTeamDto {
 
 export interface CreatePortfolioDto {
   status: UserCommandStatus;
+  entryDate: Date;
+  exclusionDate?: Date | null; 
   team: number;
   user: number;
 }
 
 export interface UpdatePortfolioDto {
   status: UserCommandStatus;
-  team: number;
-  user: number;
+  entryDate?: Date;
+  exclusionDate: Date; 
+  team?: number;
+  user?: number;
 }
 
 export type SecuredUser = {
@@ -425,14 +429,14 @@ export type TeamDto = {
   user_leader: SecuredUser;
   user: SecuredUser[];
   portfolio: PortfolioDto[];
-  project: ProjectDto | null;
+  project?: ProjectDto | null;
   user_owner: SecuredUser; //владелец
 }
 
 export type PortfolioDto = {
   id: number;
   entryDate: Date;
-  exclusionDate: Date;
+  exclusionDate: Date | null;
   status: UserCommandStatus;
   team: TeamDto;
   user: SecuredUser;
