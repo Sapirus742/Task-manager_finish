@@ -178,47 +178,62 @@
           />
         </div>
 
-        <div v-else-if="userProfile" class="profile-info-container">
-          <!-- Основная информация -->
-          <div class="info-section">
-            <div class="info-row">
-              <span class="info-label">Почта:</span>
-              <span class="info-value">{{ userProfile.email }}</span>
-              <q-btn flat dense icon="edit" class="edit-btn" @click="editField('email')"/>
+        <div v-else-if="userProfile" class="profile-layout">
+          <!-- Левая колонка - Аватар и основная информация -->
+          <div class="left-column">
+            <!-- Аватар пользователя -->
+            <div class="avatar-section">
+              <q-avatar size="120px" class="profile-avatar">
+                <q-icon name="person" size="80px" color="grey-6" />
+              </q-avatar>
+              <div class="user-name">
+                {{ userProfile.firstname }} {{ userProfile.lastname }}
+              </div>
+              <div class="user-email text-grey">
+                {{ userProfile.email }}
+              </div>
             </div>
 
-            <div class="info-row">
-              <span class="info-label">Имя:</span>
-              <span class="info-value">{{ userProfile.firstname }}</span>
-              <q-btn flat dense icon="edit" class="edit-btn" @click="editField('firstname')"/>
-            </div>
+            <!-- Основная информация -->
+            <q-card class="info-card q-mt-md">
+              <q-card-section>
+                <div class="text-h6">Основная информация</div>
+                <q-separator class="q-my-sm" />
 
-            <div class="info-row">
-              <span class="info-label">Фамилия:</span>
-              <span class="info-value">{{ userProfile.lastname }}</span>
-              <q-btn flat dense icon="edit" class="edit-btn" @click="editField('lastname')"/>
-            </div>
+                <div class="info-row">
+                  <span class="info-label">Имя:</span>
+                  <span class="info-value">{{ userProfile.firstname }}</span>
+                  <q-btn flat dense icon="edit" class="edit-btn" @click="editField('firstname')"/>
+                </div>
 
-            <div class="info-row">
-              <span class="info-label">Группа:</span>
-              <span class="info-value">{{ userProfile.group || 'Не указана' }}</span>
-              <q-btn flat dense icon="edit" class="edit-btn" @click="editField('group')"/>
-            </div>
+                <div class="info-row">
+                  <span class="info-label">Фамилия:</span>
+                  <span class="info-value">{{ userProfile.lastname }}</span>
+                  <q-btn flat dense icon="edit" class="edit-btn" @click="editField('lastname')"/>
+                </div>
 
-            <div class="info-row">
-              <span class="info-label">Телефон:</span>
-              <span class="info-value">{{ formatPhone(userProfile.telephone) || 'Не указан' }}</span>
-              <q-btn flat dense icon="edit" class="edit-btn" @click="editField('telephone')"/>
-            </div>
+                <div class="info-row">
+                  <span class="info-label">Группа:</span>
+                  <span class="info-value">{{ userProfile.group || 'Не указана' }}</span>
+                  <q-btn flat dense icon="edit" class="edit-btn" @click="editField('group')"/>
+                </div>
 
-            <div class="info-row">
-              <span class="info-label">Дата регистрации:</span>
-              <span class="info-value">{{ formatDate(userProfile.createdAt) }}</span>
-            </div>
+                <div class="info-row">
+                  <span class="info-label">Телефон:</span>
+                  <span class="info-value">{{ formatPhone(userProfile.telephone) || 'Не указан' }}</span>
+                  <q-btn flat dense icon="edit" class="edit-btn" @click="editField('telephone')"/>
+                </div>
+
+                <div class="info-row">
+                  <span class="info-label">Дата регистрации:</span>
+                  <span class="info-value">{{ formatDate(userProfile.createdAt) }}</span>
+                </div>
+              </q-card-section>
+            </q-card>
           </div>
 
-          <!-- Дополнительные разделы -->
-          <div class="additional-sections">
+          <!-- Правая колонка - Роли, компетенции, портфолио -->
+          <div class="right-column">
             <!-- Роли -->
             <q-card class="section-card">
               <q-card-section>
@@ -288,6 +303,7 @@
                 </div>
     
                 <q-table
+                  v-else
                   :rows="sortedPortfolio"
                   :columns="portfolioColumns"
                   row-key="id"
@@ -296,45 +312,45 @@
                   hide-pagination
                   class="portfolio-table"
                 >
-                <template v-slot:body-cell-team="props: { row: PortfolioTableRow }">
-                  <q-td :props="props">
-                    <div class="text-weight-medium">{{ props.row.team.name }}</div>
-                    <div class="text-caption text-grey">
-                      {{ getRoleInTeam(props.row.team) }}
-                    </div>
-                  </q-td>
-                </template>
+                  <template v-slot:body-cell-team="props: { row: PortfolioTableRow }">
+                    <q-td :props="props">
+                      <div class="text-weight-medium">{{ props.row.team.name }}</div>
+                      <div class="text-caption text-grey">
+                        {{ getRoleInTeam(props.row.team) }}
+                      </div>
+                    </q-td>
+                  </template>
 
-                <template v-slot:body-cell-entryDate="props: { row: PortfolioTableRow }">
-                  <q-td :props="props">
-                    <div>{{ formatDate(props.row.entryDate) }}</div>
-                  </q-td>
-                </template>
+                  <template v-slot:body-cell-entryDate="props: { row: PortfolioTableRow }">
+                    <q-td :props="props">
+                      <div>{{ formatDate(props.row.entryDate) }}</div>
+                    </q-td>
+                  </template>
 
-                <template v-slot:body-cell-exitDate="props: { row: PortfolioTableRow }">
-                  <q-td :props="props">
-                    <div v-if="props.row.recordStatus === UserCommandStatus.expelled && props.row.exclusionDate">
-                      {{ formatDate(props.row.exclusionDate) }}
-                    </div>
-                    <div v-else class="text-black">
-                      -
-                    </div>
-                  </q-td>
-                </template>
+                  <template v-slot:body-cell-exitDate="props: { row: PortfolioTableRow }">
+                    <q-td :props="props">
+                      <div v-if="props.row.recordStatus === UserCommandStatus.expelled && props.row.exclusionDate">
+                        {{ formatDate(props.row.exclusionDate) }}
+                      </div>
+                      <div v-else class="text-black">
+                        -
+                      </div>
+                    </q-td>
+                  </template>
 
-                <template v-slot:body-cell-recordStatus="props: { row: PortfolioTableRow }">
-                  <q-td :props="props">
-                    <q-badge 
-                      :color="props.row.recordStatus === UserCommandStatus.inTeam ? 'positive' : 'grey'"
-                      :label="formatRecordStatus(props.row.recordStatus)" 
-                    />
-                  </q-td>
-                </template>
-              </q-table>
-            </q-card-section>
-          </q-card>
+                  <template v-slot:body-cell-recordStatus="props: { row: PortfolioTableRow }">
+                    <q-td :props="props">
+                      <q-badge 
+                        :color="props.row.recordStatus === UserCommandStatus.inTeam ? 'positive' : 'grey'"
+                        :label="formatRecordStatus(props.row.recordStatus)" 
+                      />
+                    </q-td>
+                  </template>
+                </q-table>
+              </q-card-section>
+            </q-card>
+          </div>
         </div>
-      </div>
 
         <div v-else class="text-center q-pa-md text-grey">
           <q-icon name="person_off" size="xl" />
@@ -744,15 +760,48 @@ defineExpose({ open });
   padding: 24px;
 }
 
-.profile-info-container {
-  max-width: 800px;
+.profile-layout {
+  display: flex;
+  gap: 24px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
-.info-section {
+.left-column {
+  width: 350px;
+  flex-shrink: 0;
+}
+
+.right-column {
+  flex: 1;
+  min-width: 0;
+}
+
+.avatar-section {
+  text-align: center;
+  padding: 20px;
   background: white;
   border-radius: 8px;
-  padding: 20px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+  
+  .profile-avatar {
+    margin-bottom: 16px;
+    background: #f5f5f5;
+  }
+  
+  .user-name {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  
+  .user-email {
+    font-size: 14px;
+  }
+}
+
+.info-card {
+  border-radius: 8px;
   box-shadow: 0 1px 5px rgba(0,0,0,0.1);
 }
 
@@ -769,17 +818,13 @@ defineExpose({ open });
 
 .info-label {
   font-weight: 500;
-  width: 180px;
+  width: 120px;
   color: #555;
 }
 
 .info-value {
   flex: 1;
   padding: 0 10px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
 }
 
 .edit-btn {
@@ -791,25 +836,8 @@ defineExpose({ open });
   box-shadow: 0 1px 5px rgba(0,0,0,0.1);
 }
 
-.portfolio-item {
-  border-radius: 8px;
-  margin-bottom: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  transition: all 0.3s ease;
-
-  &:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
-  }
-
-  .portfolio-header {
-    min-height: 64px;
-    background-color: rgba(0, 0, 0, 0.02);
-  }
-}
-
-.q-chip {
-  font-size: 14px;
+.portfolio-table {
+  width: 100%;
 }
 
 .competence-panel {
@@ -819,5 +847,15 @@ defineExpose({ open });
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
+}
+
+@media (max-width: 900px) {
+  .profile-layout {
+    flex-direction: column;
+  }
+  
+  .left-column {
+    width: 100%;
+  }
 }
 </style>
