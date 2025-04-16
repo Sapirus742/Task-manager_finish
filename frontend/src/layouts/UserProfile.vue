@@ -32,7 +32,7 @@
                 autofocus
                 type="tel"
                 :rules="[val => !!val || 'Обязательное поле']"
-                mask="+7(###)-###-##-##"
+                mask="+#(###)-###-##-##"
                 unmasked-value
               />
               <q-input
@@ -145,21 +145,6 @@
             </q-card-actions>
           </q-card>
         </q-dialog>
-
-        <!-- Уведомления -->
-        <q-banner v-if="successMessage" class="bg-positive text-white q-mb-md">
-          {{ successMessage }}
-          <template v-slot:action>
-            <q-btn flat color="white" label="Закрыть" @click="successMessage = ''"/>
-          </template>
-        </q-banner>
-
-        <q-banner v-if="errorMessage" class="bg-negative text-white q-mb-md">
-          {{ errorMessage }}
-          <template v-slot:action>
-            <q-btn flat color="white" label="Закрыть" @click="errorMessage = ''"/>
-          </template>
-        </q-banner>
 
         <!-- Основное содержимое -->
         <div v-if="isLoading" class="text-center q-pa-md">
@@ -376,13 +361,14 @@ import {
   type CompetenceGroup
 } from '../../../backend/src/common/types';
 import { update } from '../api/users.api';
-import { QTableProps } from 'quasar';
+import { QTableProps, useQuasar  } from 'quasar';
 import {getAll as PortfolioGetAll} from '../api/portfolio.api'
 
 const isOpen = ref(false);
 const isPortfolioLoading = ref(false);
 const mainStore = useMainStore();
 const profileStore = useProfileStore();
+const $q = useQuasar();
 
 const { userProfile, isLoading, error } = storeToRefs(profileStore);
 
@@ -454,7 +440,6 @@ const editFieldName = ref<EditableField>('email');
 const editFieldLabel = ref('');
 const editValue = ref('');
 const isSaving = ref(false);
-const successMessage = ref('');
 const errorMessage = ref('');
 
 // Редактирование компетенций
@@ -501,18 +486,19 @@ const saveField = async () => {
     return;
   }
 
-  // Специальная проверка только для email
   if (editFieldName.value === 'email') {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(editValue.value.trim())) {
-      errorMessage.value = 'Введите корректный email (например: user@example.com)';
+      $q.notify({
+        type: 'negative',
+        message: 'Введите корректный email (например: user@example.com)',
+        position: 'top'
+      });
       return;
     }
   }
 
   isSaving.value = true;
-  errorMessage.value = '';
-  successMessage.value = '';
 
   try {
     let valueToSave = editValue.value.trim();
@@ -536,12 +522,21 @@ const saveField = async () => {
         mainStore.updateUserData(updateData);
       }
       
-      successMessage.value = 'Данные успешно обновлены';
+      $q.notify({
+        type: 'positive',
+        message: 'Данные успешно обновлены',
+        position: 'top',
+        timeout: 2000
+      });
       editDialog.value = false;
     }
   } catch (err) {
     console.error('Ошибка при обновлении:', err);
-    errorMessage.value = 'Не удалось обновить данные. Пожалуйста, попробуйте позже.';
+    $q.notify({
+      type: 'negative',
+      message: 'Не удалось обновить данные. Пожалуйста, попробуйте позже.',
+      position: 'top'
+    });
   } finally {
     isSaving.value = false;
   }
@@ -598,8 +593,6 @@ const saveCompetences = async () => {
   if (!userProfile.value) return;
 
   isSavingCompetences.value = true;
-  errorMessage.value = '';
-  successMessage.value = '';
 
   try {
     const updateData = {
@@ -610,12 +603,21 @@ const saveCompetences = async () => {
     
     if (updatedUser && userProfile.value) {
       userProfile.value.competence = selectedCompetences.value;
-      successMessage.value = 'Компетенции успешно обновлены';
+      $q.notify({
+        type: 'positive',
+        message: 'Компетенции успешно обновлены',
+        position: 'top',
+        timeout: 2000
+      });
       competencesDialog.value = false;
     }
   } catch (err) {
     console.error('Ошибка при обновлении компетенций:', err);
-    errorMessage.value = 'Не удалось обновить компетенции. Пожалуйста, попробуйте позже.';
+    $q.notify({
+      type: 'negative',
+      message: 'Не удалось обновить компетенции. Пожалуйста, попробуйте позже.',
+      position: 'top'
+    });
   } finally {
     isSavingCompetences.value = false;
   }
