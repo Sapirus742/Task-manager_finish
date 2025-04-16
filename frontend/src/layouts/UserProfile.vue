@@ -1,5 +1,5 @@
 <template>
-  <q-dialog v-model="isOpen" maximized>
+  <q-dialog v-model="isOpen" persistent>
     <q-card class="profile-card">
       <q-card-section class="profile-header bg-primary text-white">
         <div class="row items-center justify-between">
@@ -184,7 +184,8 @@
             <!-- Аватар пользователя -->
             <div class="avatar-section">
               <q-avatar size="120px" class="profile-avatar">
-                <q-icon name="person" size="80px" color="grey-6" />
+                <img :src="avatarImage" v-if="avatarImage">
+                <q-icon v-else name="person" size="80px" color="grey-6" />
               </q-avatar>
               <div class="user-name">
                 {{ userProfile.firstname }} {{ userProfile.lastname }}
@@ -362,7 +363,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref} from 'vue';
 import { storeToRefs } from 'pinia';
 import { useProfileStore } from 'src/stores/profile-store';
 import { useMainStore } from 'src/stores/main-store';
@@ -384,6 +385,16 @@ const mainStore = useMainStore();
 const profileStore = useProfileStore();
 
 const { userProfile, isLoading, error } = storeToRefs(profileStore);
+
+// Случайный аватар
+const avatarImage = ref<string>('');
+
+// Функция для получения случайного аватара
+const getRandomAvatar = () => {
+  const avatarCount = 3; // Количество аватаров в папке
+  const randomNum = Math.floor(Math.random() * avatarCount) + 1;
+  return `/ava/${randomNum}.png`; // Путь к аватару
+};
 
 interface PortfolioTableRow {
   id: number;
@@ -684,6 +695,9 @@ const loadProfile = async () => {
       console.log('Загрузка данных профиля для userId:', mainStore.userId);
       isLoading.value = true;
       error.value = '';
+
+      // Устанавливаем случайный аватар
+      avatarImage.value = getRandomAvatar();
       
       // 1. Загружаем профиль
       console.log('Загрузка профиля через profileStore...');
@@ -742,13 +756,18 @@ defineExpose({ open });
 
 <style scoped lang="scss">
 .profile-card {
+  width: 90%;
+  max-width: 1000px;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
+  border-radius: 12px;
 }
 
 .profile-header {
-  padding: 20px;
+  padding: 16px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
   .close-btn {
     color: white;
   }
@@ -757,18 +776,17 @@ defineExpose({ open });
 .profile-content {
   flex: 1;
   overflow-y: auto;
-  padding: 24px;
+  padding: 20px;
 }
 
 .profile-layout {
   display: flex;
-  gap: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
+  gap: 20px;
+  max-width: 100%;
 }
 
 .left-column {
-  width: 350px;
+  width: 300px;
   flex-shrink: 0;
 }
 
@@ -779,30 +797,30 @@ defineExpose({ open });
 
 .avatar-section {
   text-align: center;
-  padding: 20px;
+  padding: 16px;
   background: white;
   border-radius: 8px;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   
   .profile-avatar {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     background: #f5f5f5;
   }
   
   .user-name {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 500;
     margin-bottom: 4px;
   }
   
   .user-email {
-    font-size: 14px;
+    font-size: 13px;
   }
 }
 
 .info-card {
   border-radius: 8px;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .info-row {
@@ -818,44 +836,65 @@ defineExpose({ open });
 
 .info-label {
   font-weight: 500;
-  width: 120px;
+  width: 100px;
   color: #555;
+  font-size: 13px;
 }
 
 .info-value {
   flex: 1;
-  padding: 0 10px;
+  padding: 0 8px;
+  font-size: 13px;
 }
 
 .edit-btn {
   color: var(--q-primary);
+  padding: 4px;
 }
 
 .section-card {
   border-radius: 8px;
-  box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .portfolio-table {
   width: 100%;
+  font-size: 13px;
+  
+  :deep(.q-table__top) {
+    padding: 8px;
+  }
+  
+  :deep(.q-table__bottom) {
+    padding: 8px;
+  }
 }
 
 .competence-panel {
-  max-height: 300px;
+  max-height: 200px;
   overflow-y: auto;
-  padding: 8px;
+  padding: 6px;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 800px) {
   .profile-layout {
     flex-direction: column;
   }
   
   .left-column {
     width: 100%;
+  }
+  
+  .profile-card {
+    width: 95%;
+    max-height: 85vh;
+  }
+  
+  .info-label {
+    width: 80px;
   }
 }
 </style>
