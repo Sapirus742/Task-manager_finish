@@ -210,7 +210,7 @@ import {
   Role,
   TeamDto,
 } from '../../../../backend/src/common/types';
-import { update as updateTeam } from 'src/api/team.api';
+import { update as updateTeam, get as getTeam } from 'src/api/team.api';
 import { 
   getAll as getAllUsers, 
   get as getUser,
@@ -220,6 +220,12 @@ import {
   update as updateProjectApi,
 } from 'src/api/project.api';
 import {useMainStore} from 'src/stores/main-store';
+import { 
+  getAll as getAllPortfolio,
+  update as updatePortfolio,
+  create as createPortfolio,
+} from 'src/api/portfolio.api';
+import { UserCommandStatus } from '../../../../backend/src/common/types';
 
 const $q = useQuasar();
 const emit = defineEmits(['update']);
@@ -568,6 +574,60 @@ const onSubmit = async () => {
     }
 
     loading.value = true;
+
+    // Получаем текущий состав команды из API для сравнения
+    const currentTeamData = await getTeam(editedTeam.value.id);
+    const currentMembers = currentTeamData?.user || [];
+    
+    // Находим добавленных участников
+    const addedMembers = editedTeam.value.members.filter(newMember => 
+      !currentMembers.some(m => m.id === newMember.id)
+    );
+    
+    // Находим удаленных участников
+    const removedMembers = currentMembers.filter(oldMember => 
+      !editedTeam.value.members.some(m => m.id === oldMember.id)
+    );
+
+    // Создаем записи в портфолио для новых участников
+    if (addedMembers.length > 0) {
+      try {
+        for (const member of addedMembers) {
+          await createPortfolio({
+            user: member.id,
+            team: editedTeam.value.id,
+            status: UserCommandStatus.inTeam,
+          });
+        }
+      } catch (error) {
+        console.error('Ошибка создания записей портфолио:', error);
+        throw new Error('Не удалось создать записи портфолио для новых участников');
+      }
+    }
+
+    // Обновляем записи в портфолио для удаленных пользователей
+    if (removedMembers.length > 0) {
+      try {
+        const allPortfolios = await getAllPortfolio();
+        
+        for (const member of removedMembers) {
+          const activePortfolio = allPortfolios.find(
+            p => p.team?.id === editedTeam.value.id && 
+                 p.user?.id === member.id && 
+                 p.status === UserCommandStatus.inTeam
+          );
+
+          if (activePortfolio) {
+            await updatePortfolio(activePortfolio.id, {
+              status: UserCommandStatus.expelled,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Ошибка обновления портфолио:', error);
+        throw new Error('Не удалось обновить записи портфолио для удаленных участников');
+      }
+    }
     
     const originalProjectBeforeEdit = editedTeam.value.originalProjectState;
     const currentProject = editedTeam.value.project;
@@ -606,7 +666,6 @@ const onSubmit = async () => {
       color: 'positive',
       timeout: 2000
     });
-    
   } catch (error) {
     console.error('Save error:', error);
     $q.notify({ 

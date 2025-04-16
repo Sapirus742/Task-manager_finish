@@ -328,7 +328,7 @@ export interface UpdateTeamDto {
 
 export interface CreatePortfolioDto {
   status: UserCommandStatus;
-  entryDate: Date;
+  entryDate?: Date;
   exclusionDate?: Date | null; 
   team: number;
   user: number;
