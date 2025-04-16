@@ -313,28 +313,28 @@
 
                 <template v-slot:body-cell-exitDate="props: { row: PortfolioTableRow }">
                   <q-td :props="props">
-                    <div v-if="props.row.exclusionDate">
+                    <div v-if="props.row.recordStatus === UserCommandStatus.expelled && props.row.exclusionDate">
                       {{ formatDate(props.row.exclusionDate) }}
                     </div>
-                    <div v-else class="text-positive">
-                      В команде
+                    <div v-else class="text-black">
+                      -
                     </div>
                   </q-td>
                 </template>
 
-                <template v-slot:body-cell-status="props: { row: PortfolioTableRow }">
+                <template v-slot:body-cell-recordStatus="props: { row: PortfolioTableRow }">
                   <q-td :props="props">
-                    <q-badge v-if="props.row.exclusionDate" 
-                            :color="getTeamStatusColor(props.row.team.status)"
-                            :label="formatTeamStatus(props.row.team.status)" />
-                    <q-badge v-else color="positive" label="Активен" />
+                    <q-badge 
+                      :color="props.row.recordStatus === UserCommandStatus.inTeam ? 'positive' : 'grey'"
+                      :label="formatRecordStatus(props.row.recordStatus)" 
+                    />
                   </q-td>
                 </template>
-                </q-table>
-              </q-card-section>
-            </q-card>
-          </div>
+              </q-table>
+            </q-card-section>
+          </q-card>
         </div>
+      </div>
 
         <div v-else class="text-center q-pa-md text-grey">
           <q-icon name="person_off" size="xl" />
@@ -354,6 +354,7 @@ import {
   Role,
   StatusTeam,
   Competencies,
+  UserCommandStatus,
   type Competence,
   type CompetenceGroup
 } from '../../../backend/src/common/types';
@@ -379,6 +380,7 @@ interface PortfolioTableRow {
   };
   entryDate: Date;
   exclusionDate?: Date;
+  recordStatus: UserCommandStatus;
 }
 
 const portfolioColumns: QTableProps['columns'] = [
@@ -402,12 +404,20 @@ const portfolioColumns: QTableProps['columns'] = [
     field: (row: PortfolioTableRow) => row.exclusionDate
   },
   {
-    name: 'teamStatus',
+    name: 'recordStatus',
     label: 'Статус',
     align: 'center',
-    field: (row: PortfolioTableRow) => row.team.status
+    field: (row: PortfolioTableRow) => row.recordStatus
   }
 ];
+
+const formatRecordStatus = (status: UserCommandStatus): string => {
+  const statusMap = {
+    [UserCommandStatus.inTeam]: 'В команде',
+    [UserCommandStatus.expelled]: 'Исключен'
+  };
+  return statusMap[status] || status;
+};
 
 type EditableField = 'email' | 'firstname' | 'lastname' | 'group' | 'telephone';
 
@@ -614,16 +624,17 @@ const sortedPortfolio = computed(() => {
   return userProfile.value.portfolio
     .filter(item => item.team) // Фильтруем только записи с командами
     .map(item => ({
-      ...item,
-      entryDate: new Date(item.entryDate),
-      exclusionDate: item.exclusionDate ? new Date(item.exclusionDate) : undefined,
+      id: item.id,
       team: {
         id: item.team.id,
         name: item.team.name || 'Команда без названия',
         status: item.team.status,
         user_leader: item.team.user_leader,
         user_owner: item.team.user_owner
-      }
+      },
+      entryDate: new Date(item.entryDate),
+      exclusionDate: item.exclusionDate ? new Date(item.exclusionDate) : undefined,
+      recordStatus: item.status // Используем статус из портфолио
     }))
     .sort((a, b) => b.entryDate.getTime() - a.entryDate.getTime());
 });
@@ -640,27 +651,6 @@ const getRoleInTeam = (team: { id: number; user_leader?: { id: number }; user_ow
   return 'Участник';
 };
 
-const formatTeamStatus = (status?: StatusTeam) => {
-  if (!status) return 'Неизвестно';
-  const statusMap = {
-    [StatusTeam.searchProject]: 'Поиск проекта',
-    [StatusTeam.inProgress]: 'В работе',
-    [StatusTeam.delete]: 'Удалена',
-    [StatusTeam.joinProject]: 'Подана на проект'
-  };
-  return statusMap[status] || status;
-};
-
-const getTeamStatusColor = (status?: StatusTeam) => {
-  if (!status) return 'grey';
-  switch(status) {
-    case StatusTeam.inProgress: return 'positive';
-    case StatusTeam.searchProject: return 'warning';
-    case StatusTeam.delete: return 'negative';
-    case StatusTeam.joinProject: return 'info';
-    default: return 'grey';
-  }
-};
 const formatDate = (date: Date | string) => {
   if (!date) return '-';
   const d = new Date(date);

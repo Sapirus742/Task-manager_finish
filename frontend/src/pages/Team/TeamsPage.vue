@@ -412,7 +412,10 @@ import {update as updateUser} from 'src/api/users.api';
 import {update as updateTeams} from 'src/api/team.api';
 import CreateTeamDialog from './CreateTeamDialog.vue';
 import EditTeamDialog from './EditTeamDialog.vue';
-import { create as createPortfolio, update as updatePortfolio } from 'src/api/portfolio.api';
+import { 
+      create as createPortfolio,
+      update as updatePortfolio,
+      getAll as getAllPortfolio, } from 'src/api/portfolio.api';
 import { UserCommandStatus } from '../../../../backend/src/common/types';
 import { TeamDto, PrivacyTeam, StatusProject, ProjectDto, StatusTeam} from '../../../../backend/src/common/types'; // Добавляем StatusProject
 import { useQuasar } from 'quasar';
@@ -776,30 +779,29 @@ const completeLeaveTeam = async (teamId: number) => {
     // 1. Обновляем пользователя (убираем team_id)
     await updateUser(currentUserId, { team: null });
     
-    // 2. Находим команду
-    const team = teams.value.find(t => t.id === teamId);
-    if (!team) throw new Error('Команда не найдена');
+    // 2. Получаем все портфолио пользователя через API
+    const userPortfolios = await getAllPortfolio();
 
     // 3. Находим активную запись о вступлении
-    const activePortfolio = team.portfolio?.find(
-      p => p.user?.id === currentUserId && p.status === UserCommandStatus.inTeam
+    const activePortfolio = userPortfolios.find(
+      p => p.team?.id === teamId && p.status === UserCommandStatus.inTeam
     );
 
     if (activePortfolio) {
       // Обновляем запись о вступлении - меняем статус на "исключен"
       await updatePortfolio(activePortfolio.id, {
         status: UserCommandStatus.expelled,
-        exclusionDate: new Date(),
       });
     } else {
-      // Создаем новую запись об исключении (без записи о вступлении)
+      console.log('Обновление не удалось... или запись не найдена)');
+      /* Создаем новую запись об исключении (без записи о вступлении)
       await createPortfolio({
         status: UserCommandStatus.expelled,
         team: teamId,
         user: currentUserId,
         entryDate: new Date(), 
         exclusionDate: new Date(),
-      });
+      });*/
     }
 
     // 4. Обновляем данные
@@ -819,6 +821,7 @@ const completeLeaveTeam = async (teamId: number) => {
       color: 'negative'
     });
   }
+  window.location.reload();
 };
 
 const getRegularMembers = (team: TeamDto) => {
