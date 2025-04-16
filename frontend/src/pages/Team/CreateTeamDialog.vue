@@ -114,11 +114,13 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import { useQuasar } from 'quasar';
-import { CreateTeamDto, PrivacyTeam, StatusTeam, Role, StatusProject, UpdateProjectDto } from '../../../../backend/src/common/types';
-import { create } from 'src/api/team.api';
+import { CreateTeamDto, PrivacyTeam, StatusTeam, Role, StatusProject, UpdateProjectDto, UserCommandStatus } from '../../../../backend/src/common/types';
+import { create as createTeam } from 'src/api/team.api';
 import { getAll as getAllUsers } from 'src/api/users.api';
 import { getAll as getAllProjects, update as updateProject } from 'src/api/project.api';
 import { useMainStore } from 'src/stores/main-store';
+import { create as createPortfolio } from 'src/api/portfolio.api';
+
 
 const $q = useQuasar();
 const emit = defineEmits(['create']);
@@ -303,8 +305,26 @@ const onSubmit = async () => {
     };
 
     // Создаем команду
-    const createdTeam = await create(teamData);
+    const createdTeam = await createTeam(teamData);
     if (createdTeam) {
+      // Создаем записи в портфолио для всех участников команды
+      try {
+        for (const userId of teamData.user) {
+          await createPortfolio({
+            user: userId,
+            team: createdTeam.id,
+            status: UserCommandStatus.inTeam,
+          });
+        }
+      } catch (error) {
+        console.error('Ошибка создания записей портфолио:', error);
+        $q.notify({
+          message: 'Команда создана, но не удалось создать записи портфолио',
+          color: 'warning',
+          position: 'top'
+        });
+      }
+
       // Обновляем проект только если он был выбран
       if (teamData.project) {
         $q.notify({

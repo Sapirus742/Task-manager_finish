@@ -888,7 +888,7 @@ const confirmDeleteTeam = (team: TeamDto) => {
     // Двойное подтверждение для владельца
     $q.dialog({
       title: 'Важное подтверждение',
-      message: `Вы являетесь владельцем команды "${team.name}". Удаление команды приведет к безвозвратному удалению всех данных. <br><br>Вы точно хотите продолжить?`,
+      message: `Вы являетесь владельцем команды "${team.name}". Удаление команды приведет к безвозвратному удалению всех данных и их дальнейшее отоброжение в интерфейсе сайта станет невозможным. <br><br>Вы точно хотите продолжить?`,
       html: true,
       persistent: true,
       ok: {
@@ -935,6 +935,47 @@ const deleteTeam = async (teamId: number) => {
     if (!teamToDelete) {
       $q.notify({ message: 'Команда не найдена', color: 'negative' });
       return;
+    }
+
+    // 1. Получаем всех участников команды
+    const teamMembers = [
+      teamToDelete.user_owner,
+      ...teamToDelete.user,
+      ...(teamToDelete.user_leader ? [teamToDelete.user_leader] : [])
+    ].filter((member, index, arr) => 
+      member && arr.findIndex(m => m?.id === member.id) === index
+    );
+
+    // 2. Обновляем портфолио каждого участника
+    if (teamMembers.length > 0) {
+      try {
+        const allPortfolios = await getAllPortfolio();
+        
+        for (const member of teamMembers) {
+          if (!member) continue;
+          
+          // Находим активные записи портфолио пользователя в этой команде
+          const userPortfolios = allPortfolios.filter(
+            p => p.user?.id === member.id && 
+                 p.team?.id === teamId && 
+                 p.status === UserCommandStatus.inTeam
+          );
+
+          // Обновляем каждую запись
+          for (const portfolio of userPortfolios) {
+            await updatePortfolio(portfolio.id, {
+              status: UserCommandStatus.expelled,
+              team: null,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Ошибка обновления портфолио:', error);
+        $q.notify({
+          message: 'Команда будет удалена, но не удалось обновить все записи портфолио',
+          color: 'warning'
+        });
+      }
     }
 
     // Удаление команды

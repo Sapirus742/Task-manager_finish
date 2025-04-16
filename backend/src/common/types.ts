@@ -17,6 +17,7 @@ export enum UserAccountStatus {
 export enum UserCommandStatus {
   inTeam = 'In the team',
   expelled = 'Expelled',
+  team_deleted = 'Team deleted',
 }
     
 export enum StatusProject {
@@ -338,7 +339,7 @@ export interface UpdatePortfolioDto {
   status: UserCommandStatus;
   entryDate?: Date;
   exclusionDate?: Date; 
-  team?: number;
+  team?: number | null;
   user?: number;
 }
 

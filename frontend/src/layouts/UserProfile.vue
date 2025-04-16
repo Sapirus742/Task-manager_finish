@@ -298,14 +298,32 @@
                   hide-pagination
                   class="portfolio-table"
                 >
-                  <template v-slot:body-cell-team="props: { row: PortfolioTableRow }">
-                    <q-td :props="props">
-                      <div class="text-weight-medium">{{ props.row.team.name }}</div>
-                      <div class="text-caption text-grey">
-                        {{ getRoleInTeam(props.row.team) }}
-                      </div>
-                    </q-td>
-                  </template>
+                <template v-slot:body-cell-team="props: { row: PortfolioTableRow }">
+                  <q-td :props="props">
+                    <div class="text-weight-medium">
+                      {{ props.row.team?.name || 'Команда удалена' }}
+                      <q-badge 
+                        v-if="props.row.team?.exists === false" 
+                        color="negative" 
+                        class="q-ml-xs"
+                      >
+                        Удалена
+                      </q-badge>
+                    </div>
+                    <div class="text-caption text-grey">
+                      {{ getRoleInTeam(props.row.team) }}
+                    </div>
+                  </q-td>
+                </template>
+
+                <template v-slot:body-cell-status="props: { row: PortfolioTableRow }">
+                  <q-td :props="props">
+                    <q-badge 
+                      :color="getStatusBadgeColor(props.row)"
+                      :label="getStatusText(props.row)" 
+                    />
+                  </q-td>
+                </template>
 
                   <template v-slot:body-cell-entryDate="props: { row: PortfolioTableRow }">
                     <q-td :props="props">
@@ -385,16 +403,32 @@ const getRandomAvatar = () => {
 interface PortfolioTableRow {
   id: number;
   team: {
-    id: number; // Добавляем обязательное поле
-    name: string;
-    status?: StatusTeam;
-    user_leader?: { id: number };
-    user_owner?: { id: number };
-  };
+    id: number | null;
+    name: string | null;
+    status?: StatusTeam | null;
+    user_leader?: { id: number } | null;
+    user_owner?: { id: number } | null;
+    exists?: boolean; // Флаг существования команды
+  } | null;
   entryDate: Date;
-  exclusionDate?: Date;
+  exclusionDate?: Date | null;
   recordStatus: UserCommandStatus;
+  userStatusInTeam?: 'active' | 'expelled' | 'team_deleted'; // Дополнительный статус
 }
+
+const getStatusBadgeColor = (row: PortfolioTableRow) => {
+  if (row.userStatusInTeam === 'team_deleted') return 'negative';
+  if (row.userStatusInTeam === 'expelled') return 'grey';
+  if (row.recordStatus === UserCommandStatus.inTeam) return 'positive';
+  return 'grey';
+};
+
+const getStatusText = (row: PortfolioTableRow) => {
+  if (row.userStatusInTeam === 'team_deleted') return 'Команда удалена';
+  if (row.userStatusInTeam === 'expelled') return 'Исключен';
+  if (row.recordStatus === UserCommandStatus.inTeam) return 'В команде';
+  return 'Исключен';
+};
 
 const portfolioColumns: QTableProps['columns'] = [
   {
@@ -402,7 +436,10 @@ const portfolioColumns: QTableProps['columns'] = [
     required: true,
     label: 'Команда',
     align: 'left',
-    field: (row: PortfolioTableRow) => row.team.name
+    field: (row: PortfolioTableRow) => {
+      if (!row.team) return 'Команда удалена';
+      return row.team.exists === false ? 'Команда удалена' : row.team.name || 'Команда без названия';
+    }
   },
   {
     name: 'entryDate',
@@ -414,20 +451,29 @@ const portfolioColumns: QTableProps['columns'] = [
     name: 'exitDate',
     label: 'Дата исключения',
     align: 'center',
-    field: (row: PortfolioTableRow) => row.exclusionDate
+    field: (row: PortfolioTableRow) => {
+      if (row.userStatusInTeam === 'team_deleted') return 'Команда удалена';
+      return row.exclusionDate || (row.team?.exists === false ? 'Команда удалена' : '-');
+    }
   },
   {
-    name: 'recordStatus',
+    name: 'status',
     label: 'Статус',
     align: 'center',
-    field: (row: PortfolioTableRow) => row.recordStatus
+    field: (row: PortfolioTableRow) => {
+      if (row.userStatusInTeam === 'team_deleted') return 'Команда удалена';
+      if (row.userStatusInTeam === 'expelled') return 'Исключен';
+      if (row.team?.exists === false) return 'Команда удалена';
+      return row.recordStatus === UserCommandStatus.inTeam ? 'В команде' : 'Исключен';
+    }
   }
 ];
 
 const formatRecordStatus = (status: UserCommandStatus): string => {
   const statusMap = {
     [UserCommandStatus.inTeam]: 'В команде',
-    [UserCommandStatus.expelled]: 'Исключен'
+    [UserCommandStatus.expelled]: 'Исключен',
+    [UserCommandStatus.team_deleted]: 'Команда удалена',
   };
   return statusMap[status] || status;
 };
@@ -651,25 +697,42 @@ const sortedPortfolio = computed(() => {
   if (!userProfile.value?.portfolio) return [];
   
   return userProfile.value.portfolio
-    .filter(item => item.team) // Фильтруем только записи с командами
-    .map(item => ({
-      id: item.id,
-      team: {
-        id: item.team.id,
-        name: item.team.name || 'Команда без названия',
-        status: item.team.status,
-        user_leader: item.team.user_leader,
-        user_owner: item.team.user_owner
-      },
-      entryDate: new Date(item.entryDate),
-      exclusionDate: item.exclusionDate ? new Date(item.exclusionDate) : undefined,
-      recordStatus: item.status // Используем статус из портфолио
-    }))
+    .map(item => {
+      const teamExists = item.team?.status !== StatusTeam.delete;
+      
+      let userStatus: 'active' | 'expelled' | 'team_deleted' = 'active';
+      if (item.status === UserCommandStatus.expelled) {
+        userStatus = 'expelled';
+      } else if (!teamExists) {
+        userStatus = 'team_deleted';
+      }
+
+      return {
+        id: item.id,
+        team: item.team ? {
+          id: item.team.id,
+          name: item.team.name,
+          status: item.team.status,
+          user_leader: item.team.user_leader,
+          user_owner: item.team.user_owner,
+          exists: teamExists
+        } : null,
+        entryDate: new Date(item.entryDate),
+        exclusionDate: item.exclusionDate ? new Date(item.exclusionDate) : undefined,
+        recordStatus: item.status,
+        userStatusInTeam: userStatus
+      };
+    })
     .sort((a, b) => b.entryDate.getTime() - a.entryDate.getTime());
 });
 
-const getRoleInTeam = (team: { id: number; user_leader?: { id: number }; user_owner?: { id: number } }) => {
-  if (!userProfile.value) return 'Участник';
+const getRoleInTeam = (team: { 
+  id: number | null; 
+  user_leader?: { id: number } | null; 
+  user_owner?: { id: number } | null;
+  exists?: boolean;
+} | null) => {
+  if (!userProfile.value || !team || team.exists === false) return 'Участник (команда удалена)';
   
   if (team.user_owner?.id === userProfile.value.id) {
     return 'Владелец команды';
