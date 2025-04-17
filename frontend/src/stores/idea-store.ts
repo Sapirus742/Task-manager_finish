@@ -12,6 +12,8 @@ interface CreateIdeaPayload {
   resource: string;
 }
 
+
+
 const defaultCompetence = Competencies.LANGUAGES[0];
 
 export const useIdeaStore = defineStore('idea', () => {
@@ -36,6 +38,8 @@ export const useIdeaStore = defineStore('idea', () => {
     }
   };
 
+
+  
   const createIdea = async (ideaData: CreateIdeaPayload) => {
     state.isLoading = true;
     state.error = null;
@@ -91,16 +95,13 @@ export const useIdeaStore = defineStore('idea', () => {
     }
   };
 
-  const deleteIdea = async (id: number) => {
+  const deleteIdea = async (id: number): Promise<void> => {
     state.isLoading = true;
     state.error = null;
     try {
-      const deletedIdea = await ideaApi.remove(id);
-      if (deletedIdea) {
-        state.ideas = state.ideas.filter(i => i.id !== id);
-        mainStore.idea_initiator = mainStore.idea_initiator.filter(i => i.id !== id);
-      }
-      return deletedIdea;
+      await ideaApi.remove(id);
+      state.ideas = state.ideas.filter(i => i.id !== id);
+      mainStore.idea_initiator = mainStore.idea_initiator.filter(i => i.id !== id);
     } catch (error) {
       state.error = 'Не удалось удалить идею';
       console.error('Ошибка при удалении идеи:', error);
@@ -117,8 +118,8 @@ export const useIdeaStore = defineStore('idea', () => {
       const idea = state.ideas.find(i => i.id === ideaId);
       
       if (!idea) throw new Error('Идея не найдена');
-      if (idea.status !== StatusIdea.approved) {
-        throw new Error('Можно одобрять только идеи со статусом Approved');
+      if (idea.status !== StatusIdea.endorsed) {
+        throw new Error('Можно одобрять только идеи со статусом endorsed');
       }
       if (idea.approved?.includes(userId)) {
         throw new Error('Вы уже одобрили эту идею');
@@ -130,19 +131,20 @@ export const useIdeaStore = defineStore('idea', () => {
       
       // 2. Проверяем количество одобрений
       if (updatedIdea.approved.length >= 3) {
-        // 3. Создаем объект с новым статусом
-        const endorsedIdea: IdeaDto = {
-          ...updatedIdea,
-          status: StatusIdea.endorsed
-        };
+        // 3. Обновляем статус через API
+        const approvedIdea = await ideaApi.update(ideaId, {
+          status: StatusIdea.approved
+        });
+        
+        if (!approvedIdea) throw new Error('Не удалось обновить статус идеи');
         
         // 4. Обновляем в хранилище
         const index = state.ideas.findIndex(i => i.id === ideaId);
         if (index !== -1) {
-          state.ideas[index] = endorsedIdea;
+          state.ideas[index] = approvedIdea;
         }
         
-        return endorsedIdea;
+        return approvedIdea;
       }
   
       // Обновляем локальное состояние
@@ -159,6 +161,24 @@ export const useIdeaStore = defineStore('idea', () => {
     }
   };
   
+  const endorseIdea = async (id: number): Promise<IdeaDto> => {
+    state.isLoading = true;
+    state.error = null;
+    try {
+      const response = await ideaApi.endorseIdea(id);
+      const index = state.ideas.findIndex(i => i.id === id);
+      if (index !== -1) {
+        state.ideas[index] = response;
+      }
+      return response;
+    } catch (error) {
+      state.error = error instanceof Error ? error.message : 'Не удалось утвердить идею';
+      throw error;
+    } finally {
+      state.isLoading = false;
+    }
+  };
+
   const get = async (id: number): Promise<IdeaDto | undefined> => {
     state.isLoading = true;
     state.error = null;
@@ -183,6 +203,7 @@ export const useIdeaStore = defineStore('idea', () => {
     createIdea,
     updateIdea,
     deleteIdea,
+    endorseIdea,
     approveIdea,
   };
 });

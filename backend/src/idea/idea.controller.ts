@@ -69,4 +69,11 @@ export class IdeaController {
   async remove(@Param('id') id: number): Promise<void> {
       return this.ideaService.remove(id);
   }
+
+  @Patch(':id/endorse')
+@Roles(Role.directorate)
+@UseGuards(JwtAuthGuard, RolesGuard)
+async endorseIdea(@Param('id') id: number): Promise<Idea> {
+  return this.ideaService.endorseIdea(id);
+}
 }

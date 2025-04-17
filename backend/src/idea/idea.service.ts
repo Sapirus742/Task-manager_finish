@@ -29,22 +29,32 @@ export class IdeaService {
     return idea;
   }
 
-  async addApproved(id: number, app: number): Promise <Idea> {
+  async addApproved(id: number, app: number): Promise<Idea> {
     const idea = await this.ideaRepository.findOne({
       where: { id },
       relations: ['comment', 'initiator'],
     });
-
+  
     if (!idea) {
       throw new NotFoundException(`Идея с id ${id} не найдена`);
     }
-
+  
+    if (idea.status !== StatusIdea.endorsed) {
+      throw new BadRequestException('Only endorsed ideas can be approved');
+    }
+  
     const alreadyApproved = idea.approved.includes(app);
     if (alreadyApproved) {
-        throw new BadRequestException('User  already approved this idea');
+      throw new BadRequestException('User already approved this idea');
     }
     
     idea.approved = [...idea.approved, app];
+    
+    // Проверяем количество одобрений
+    if (idea.approved.length >= 3) {
+      idea.status = StatusIdea.approved;
+    }
+    
     return this.ideaRepository.save(idea);
   }
 
@@ -99,13 +109,29 @@ export class IdeaService {
     return this.ideaRepository.save(idea);
   }
 
-  async remove(id: number): Promise<void> {
-    const idea = await this.ideaRepository.findOne({ where: { id } });
-
+  async endorseIdea(id: number): Promise<Idea> {
+    const idea = await this.ideaRepository.findOne({ 
+      where: { id },
+      relations: ['initiator', 'comment']
+    });
+    
     if (!idea) {
-        throw new NotFoundException(`Idea with id ${idea} not found`);
+      throw new NotFoundException('Idea not found');
     }
     
+    if (idea.status !== StatusIdea.new) {
+      throw new BadRequestException('Only new ideas can be endorsed');
+    }
+    
+    idea.status = StatusIdea.endorsed;
+    return this.ideaRepository.save(idea);
+  }
+
+  async remove(id: number): Promise<void> {
+    const idea = await this.ideaRepository.findOne({ where: { id } });
+    if (!idea) {
+      throw new NotFoundException(`Idea with id ${id} not found`);
+    }
     await this.ideaRepository.remove(idea);
   }
 }

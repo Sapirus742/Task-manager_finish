@@ -167,6 +167,16 @@
     </template>
   </div>
 </div>
+<div class="endorse-section q-mt-md" v-if="canEndorseIdea(idea)">
+    <q-btn 
+      icon="thumb_up" 
+      label="Утвердить идею"
+      color="positive"
+      class="q-mt-sm"
+      @click="confirmEndorseIdea(idea)"
+      :loading="isEndorsing === idea.id"
+    />
+  </div>
                 </q-card-section>
 
                 <!-- Секция комментариев -->
@@ -492,8 +502,8 @@ const filters = ref<Filter[]>([
   { label: 'Все', value: null, active: true },
   { label: 'Черновик', value: StatusIdea.draft, active: false },
   { label: 'Новая', value: StatusIdea.new, active: false },
-  { label: 'Утверждена', value: StatusIdea.approved, active: false },
-  { label: 'Одобрена', value: StatusIdea.endorsed, active: false },
+  { label: 'Утверждена', value: StatusIdea.endorsed, active: false },
+  { label: 'Одобрена', value: StatusIdea.approved, active: false },
   { label: 'Опубликована', value: StatusIdea.published, active: false },
   { label: 'Реализована', value: StatusIdea.implemented, active: false },
 ]);
@@ -526,8 +536,8 @@ const getStatusColor = (status: StatusIdea) => {
   const statusColors = {
     [StatusIdea.draft]: 'grey',
     [StatusIdea.new]: 'grey',
-    [StatusIdea.approved]: 'teal',
     [StatusIdea.endorsed]: 'green',
+    [StatusIdea.approved]: 'teal',
     [StatusIdea.published]: 'green',
     [StatusIdea.implemented]: 'purple',
   };
@@ -538,8 +548,8 @@ const getStatusLabel = (status: StatusIdea) => {
   const statusLabels = {
     [StatusIdea.draft]: 'Черновик',
     [StatusIdea.new]: 'Новая',
-    [StatusIdea.approved]: 'Одобрена',
     [StatusIdea.endorsed]: 'Утверждена',
+    [StatusIdea.approved]: 'Одобрена',
     [StatusIdea.published]: 'Опубликована',
     [StatusIdea.implemented]: 'Реализована',
   };
@@ -759,11 +769,11 @@ const canEditComment = (comment: CommentDto) => {
 
 const canApproveIdea = (idea: IdeaDto) => {
   const hasRights = mainStore.isAdmin() || mainStore.isDirectorate() || mainStore.isExpert();
-  const isApprovedStatus = idea.status === StatusIdea.approved;
+  const isEndorsedStatus = idea.status === StatusIdea.endorsed;
   const underLimit = !idea.approved || idea.approved.length < 3;
   const notApprovedYet = !isApprovedByCurrentUser(idea);
   
-  return hasRights && isApprovedStatus && underLimit && notApprovedYet;
+  return hasRights && isEndorsedStatus && underLimit && notApprovedYet;
 };
 
 const confirmApproveIdea = (idea: IdeaDto) => {
@@ -783,22 +793,15 @@ const confirmApproveIdea = (idea: IdeaDto) => {
     try {
       const result = await ideaStore.approveIdea(idea.id, mainStore.userId);
       
-      if (result?.status === StatusIdea.endorsed) {
+      if (result?.status === StatusIdea.approved) {
         $q.notify({
           type: 'positive',
-          message: 'Идея получила 3 одобрения! Статус изменен на Endorsed'
-        });
-      } else {
-        $q.notify({
-          type: 'positive',
-          message: 'Идея одобрена!'
+          message: 'Идея получила 3 одобрения! Статус изменен на Approved'
         });
       }
+      await ideaStore.fetchIdeas();
     } catch (error) {
-      $q.notify({
-        type: 'negative',
-        message: error instanceof Error ? error.message : 'Ошибка при одобрении'
-      });
+      // Ошибка уже обработана в хранилище
     }
   });
 };
@@ -817,6 +820,39 @@ const statusOptions = computed(() => {
     value: status,
   }));
 });
+
+const canEndorseIdea = (idea: IdeaDto) => {
+  return mainStore.isDirectorate() && idea.status === StatusIdea.new;
+};
+
+const isEndorsing = ref<number | null>(null);
+
+const confirmEndorseIdea = (idea: IdeaDto) => {
+  $q.dialog({
+    title: 'Подтверждение',
+    message: 'Вы точно хотите утвердить эту идею?',
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    isEndorsing.value = idea.id;
+    try {
+      await ideaStore.endorseIdea(idea.id);
+      $q.notify({ type: 'positive', message: 'Идея успешно утверждена!' });
+      await ideaStore.fetchIdeas();
+    } catch (error: unknown) {
+      let message = 'Ошибка при утверждении идеи';
+      if (error instanceof Error) {
+        message = error.message;
+      } else if (typeof error === 'object' && error !== null && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        message = axiosError.response?.data?.message || message;
+      }
+      $q.notify({ type: 'negative', message });
+    } finally {
+      isEndorsing.value = null;
+    }
+  });
+};
 </script>
 
 <style scoped>
@@ -984,6 +1020,12 @@ const statusOptions = computed(() => {
 
 .empty-state .q-icon {
   margin-bottom: 10px;
+}
+
+.endorse-section {
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+  margin-top: 16px;
 }
 
 @media (max-width: 600px) {
