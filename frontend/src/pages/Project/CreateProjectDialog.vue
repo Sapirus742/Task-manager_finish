@@ -71,6 +71,8 @@
             :rules="[(val) => !!val || 'Поле обязательно']"
             outlined
             dense
+            map-options
+            emit-value
           />
 
           <!-- Дата начала проекта -->
@@ -172,9 +174,13 @@ const stopProjectString = computed({
 // Опции для стека технологий
 const competenceOptions = Object.values(Competencies).flat();;
 
-// Опции для статуса проекта
-const statusOptions = Object.values(StatusProject);
-
+// Опции для статуса проекта с русскими названиями
+const statusOptions = [
+  { label: 'Черновик', value: StatusProject.draft },
+  { label: 'Поиск команды', value: StatusProject.searchTeam },
+  { label: 'Отбор команды', value: StatusProject.selectionTeam },
+  { label: 'Команда найдена', value: StatusProject.teamFound },
+];
 // Открытие диалога
 const openDialog = () => {
   showDialog.value = true;
