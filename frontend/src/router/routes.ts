@@ -6,7 +6,7 @@ const routes: RouteRecordRaw[] = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       // Добавляем перенаправление с корневого пути на /projects
-      { path: '', redirect: '/projects' }, // Перенаправление на /projects по умолчанию
+      { path: '', redirect: '/marketplace' }, // Перенаправление на /projects по умолчанию
       { path: 'teams', component: () => import('pages/Team/TeamsPage.vue') },
       { path: 'ideas', component: () => import('pages/Idei/IdeiPage.vue') },
       { path: 'marketplace', component: () => import('pages/Exchange/ExchangePage.vue') },

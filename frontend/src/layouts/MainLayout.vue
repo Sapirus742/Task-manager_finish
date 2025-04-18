@@ -22,7 +22,13 @@
         </q-toolbar-title>
 
         <div class="q-mr-md">
-          <q-btn flat label="Проекты" @click="goToProjects" />
+          <!-- Кнопка "Проекты" отображается только для ролей admin, directorate, customer -->
+          <q-btn
+            v-if="showProjectsButton"
+            flat
+            label="Проекты"
+            @click="goToProjects"
+          />
           <q-btn flat label="Биржа" @click="goToMarketplace" />
           <q-btn flat label="Идеи" @click="goToIdeas" />
           <q-btn flat label="Команды" @click="goToTeams" />
@@ -80,6 +86,12 @@ const formattedRoles = computed(() => {
   });
 });
 
+// Показывать кнопку "Проекты" если есть хотя бы одна из ролей: admin, directorate, customer
+const showProjectsButton = computed(() => {
+  const allowedRoles = ['admin', 'directorate', 'customer'];
+  return roles.value.some(role => allowedRoles.includes(role));
+});
+
 const onLogout = () => {
   api.logout();
   router.push({ path: '/login' });
@@ -125,6 +137,6 @@ const openUserProfile = () => {
 }
 
 .clickable-name:hover {
-  color: #1d0101; /* Цвет при наведении (например, синий) */
+  color: #1d0101; /* Цвет при наведении */
 }
 </style>

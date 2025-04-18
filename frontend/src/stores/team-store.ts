@@ -32,20 +32,25 @@ export const useTeamStore = defineStore('team', () => {
 
     const fetchTeamByProject = async (projectId: number) => {
         try {
-            isLoading.value = true;
-            error.value = null;
-            const project = await projectApi.get(projectId);
-            if (project?.teams?.[0]?.id) {
-                // Загружаем полные данные команды по ID
-                return await fetchTeam(project.teams[0].id);
-            }
-            return null;
+          isLoading.value = true;
+          error.value = null;
+          const project = await projectApi.get(projectId);
+          if (project?.teams?.[0]?.id) {
+            const team = await fetchTeam(project.teams[0].id);
+            currentTeam.value = team;
+            return team;
+          }
+          currentTeam.value = null;
+          return null;
         } catch (err) {
-            error.value = 'Не удалось загрузить команду проекта';
-            console.error('Error fetching project team:', err);
-            return null;
+          error.value = 'Не удалось загрузить команду проекта';
+          console.error('Error fetching project team:', err);
+          currentTeam.value = null;
+          return null;
+        } finally {
+          isLoading.value = false;
         }
-    };
+      };
 
     return {
         currentTeam,

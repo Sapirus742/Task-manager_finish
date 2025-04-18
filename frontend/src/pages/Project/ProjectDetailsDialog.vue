@@ -46,7 +46,7 @@
 
             <q-tab-panel name="team">
               <div class="team-section panel-content">
-                <h3 class="text-subtitle1 text-weight-bold q-mb-xs">Команды проекта</h3>
+                <h3 class="text-subtitle1 text-weight-bold q-mb-xs">Заявки от команд:</h3>
                 <template v-if="teamStore.isLoading">
                   <q-spinner color="primary" size="3em" />
                   <div>Загрузка данных о командах...</div>
@@ -70,7 +70,7 @@
                       <q-btn 
                         label="Выбрать" 
                         color="positive" 
-                        @click.stop="approveTeam(team.id)"
+                        @click.stop="approveTeam(team)"
                       />
                     </q-item-section>
                   </q-item>
@@ -124,7 +124,7 @@
                       :key="tech" 
                       color="primary" 
                       text-color="white" 
-                      size="sm"
+                      size="s"
                     >
                       {{ tech }}
                     </q-chip>
@@ -156,6 +156,44 @@
         </div>
         
         <q-btn flat label="Закрыть" color="primary" v-close-popup />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
+
+  <q-dialog v-model="showConfirmDialog" persistent>
+    <q-card style="min-width: 400px">
+      <q-card-section>
+        <div class="text-h6">Подтверждение выбора команды</div>
+      </q-card-section>
+
+      <q-card-section>
+        <p>Вы собираетесь выбрать команду <strong>"{{ selectedTeamForApproval?.name }}"</strong> для проекта.</p>
+        
+        <template v-if="mismatchReasons.length > 0">
+          <div class="text-negative q-mt-md">
+            <p><strong>Обратите внимание:</strong></p>
+            <ul>
+              <li v-for="(reason, index) in mismatchReasons" :key="index">
+                {{ reason }}
+              </li>
+            </ul>
+          </div>
+          
+          <p class="q-mt-md">Вы уверены, что хотите выбрать эту команду, несмотря на несоответствие?</p>
+        </template>
+        <template v-else>
+          <p class="q-mt-md">Вы уверены, что хотите выбрать эту команду?</p>
+        </template>
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Отмена" color="primary" v-close-popup />
+        <q-btn 
+          flat 
+          label="Подтвердить выбор" 
+          color="positive" 
+          @click="confirmTeamApproval"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -276,6 +314,11 @@ const maxHeight = ref(0);
 const teamStore = useTeamStore();
 const mainStore = useMainStore();
 
+// Переменную для диалога подтверждения
+const showConfirmDialog = ref(false);
+const selectedTeamForApproval = ref<TeamDto | null>(null);
+const mismatchReasons = ref<string[]>([]);
+
 // Добавляем переменные для управления диалогом команды
 const showTeamDetails = ref(false);
 const selectedTeam = ref<TeamDto | null>(null);
@@ -328,11 +371,52 @@ const openTeamDetailsDialog = (team: TeamDto) => {
   showTeamDetails.value = true;
 };
 
-const approveTeam = async (teamId: number) => {
-  try {
-    const otherTeams = project.value?.teams?.filter(t => t.id !== teamId) || [];
+const approveTeam = async (team: TeamDto) => {
+  selectedTeamForApproval.value = team;
+  mismatchReasons.value = [];
+  
+  // Проверяем соответствие критериям
+  if (project.value) {
+    // Проверка технологий
+    if (project.value.stack && project.value.stack.length > 0) {
+      const teamTechs = getTeamCompetencies(team);
+      const missingTechs = project.value.stack.filter(tech => 
+        !teamTechs.includes(tech)
+      );
+      
+      if (missingTechs.length > 0) {
+        mismatchReasons.value.push(
+          `Команда не имеет следующих требуемых технологий: ${missingTechs.join(', ')}`
+        );
+      }
+    }
     
-    await updateTeam(teamId, { 
+    // Проверка количества участников
+    if (project.value.maxUsers) {
+      const maxUsers = parseInt(project.value.maxUsers);
+      const teamSize = team.user?.length || 0;
+      
+      if (!isNaN(maxUsers) && teamSize > maxUsers) {
+        mismatchReasons.value.push(
+          `В команде ${teamSize} участников, что превышает максимально допустимое количество (${maxUsers})`
+        );
+      }
+    }
+  }
+  
+  showConfirmDialog.value = true;
+};
+
+// Функция для подтверждения выбора
+const confirmTeamApproval = async () => {
+  if (!selectedTeamForApproval.value?.id || !project.value?.id) return;
+  
+  try {
+    const otherTeams = project.value?.teams?.filter(t => 
+      t.id !== selectedTeamForApproval.value?.id
+    ) || [];
+    
+    await updateTeam(selectedTeamForApproval.value.id, { 
       status: StatusTeam.inProgress 
     });
     
@@ -347,20 +431,24 @@ const approveTeam = async (teamId: number) => {
       }
     }));
     
-    if (project.value?.id) {
-      await updateProject(project.value.id, {
-        status: StatusProject.teamFound
-      });
-    }
+    await updateProject(project.value.id, {
+      status: StatusProject.teamFound
+    });
     
-    if (project.value?.id) {
-      await teamStore.fetchTeamByProject(project.value.id);
-    }
+    await teamStore.fetchTeamByProject(project.value.id);
     
     $q.notify({
       message: 'Команда успешно выбрана для проекта',
       color: 'positive'
     });
+    
+    showConfirmDialog.value = false;
+    
+    // Обновление с задержкой 3 секунд
+    setTimeout(() => {
+      window.location.reload();
+    }, 3000);
+
   } catch (error) {
     console.error('Ошибка выбора команды:', error);
     $q.notify({
@@ -368,7 +456,6 @@ const approveTeam = async (teamId: number) => {
       color: 'negative'
     });
   }
-  window.location.reload();
 };
 
 const getRegularMembers = (team: TeamDto) => {
@@ -384,6 +471,7 @@ const getStatusColor = (status?: string) => {
   switch (status) {
     case StatusProject.searchTeam: return 'orange';
     case StatusProject.teamFound: return 'green';
+    case StatusProject.selectionTeam: return 'blue';
     default: return 'grey';
   }
 };
@@ -450,10 +538,8 @@ defineExpose({ open });
 
 <style scoped>
 .pending-team-item {
-  margin-bottom: 8px;
-  border: 1px solid #e0e0e0;
   border-radius: 4px;
-  background-color: #f9f9f9;
+  background-color: #f1f1f1;
   transition: background-color 0.2s;
 }
 
@@ -533,6 +619,9 @@ defineExpose({ open });
 
 .panel-content {
   padding-bottom: 20px;
+  :deep(*) {
+    border-color: transparent !important;
+  }
 }
 
 .members-container {

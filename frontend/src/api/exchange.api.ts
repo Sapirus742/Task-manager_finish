@@ -45,3 +45,13 @@ export async function remove(id: number): Promise<ExchangeDto | undefined> {
   }
   return;
 }
+export async function updateExchangeProjects(
+  id: number,
+  projectIds: number[]
+): Promise<ExchangeDto | undefined> {
+  const response = await api.patch(`/exchange/${id}/projects`, { projects: projectIds });
+  if (response.status == 200) {
+    return response.data;
+  }
+  return;
+}

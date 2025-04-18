@@ -76,10 +76,27 @@ export const useExchangeStore = defineStore('exchange', () => {
     }
   };
 
+  const updateExchangeProjects = async (id: number, projectIds: number[]) => {
+    isLoading.value = true;
+    try {
+      const updatedExchange = await api.updateExchangeProjects(id, projectIds);
+      if (updatedExchange) {
+        const index = exchanges.value.findIndex(e => e.id === id);
+        if (index !== -1) {
+          exchanges.value[index] = updatedExchange;
+        }
+        return updatedExchange;
+      }
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   return {
     exchanges,
     currentExchange,
     isLoading,
+    updateExchangeProjects,
     fetchAllExchanges,
     fetchExchange,
     createExchange,

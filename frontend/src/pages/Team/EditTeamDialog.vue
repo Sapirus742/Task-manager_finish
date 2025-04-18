@@ -359,6 +359,7 @@ const handleStatusChange = async (newStatus: StatusTeam) => {
 const filteredProjectOptions = computed(() => {
   return allProjects.value.filter(project => 
     project.status === StatusProject.searchTeam || 
+    project.status === StatusProject.selectionTeam ||
     project.id === editedTeam.value.project?.id
   );
 });

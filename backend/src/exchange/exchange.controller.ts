@@ -47,4 +47,14 @@ export class ExchangeController {
   async remove(@Param('id') id: number): Promise<void> {
       return this.exchangeService.remove(id);
   }
+
+  @Patch(':id/projects')
+@Roles(Role.admin, Role.directorate)
+@UseGuards(JwtAuthGuard, RolesGuard)
+async updateProjects(
+  @Param('id') id: number,
+  @Body() body: { projects: number[] }
+): Promise<Exchange> {
+  return this.exchangeService.update(id, { projects: body.projects });
+}
 }

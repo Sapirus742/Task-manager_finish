@@ -273,6 +273,53 @@
               </q-card-section>
             </q-card>
 
+            <!-- Идеи -->
+            <q-card class="section-card q-mt-md">
+              <q-card-section>
+                <div class="row items-center justify-between">
+                  <div class="text-h6">Идеи</div>
+                </div>
+                <q-separator class="q-my-sm" />
+
+                <div v-if="isIdeasLoading" class="text-center q-pa-md">
+                  <q-spinner size="md" color="primary" />
+                  <div>Загрузка идей...</div>
+                </div>
+
+                <div v-else-if="ideasError" class="text-center q-pa-md text-negative">
+                  <q-icon name="error" size="md" />
+                  <div class="q-mt-md">{{ ideasError }}</div>
+                </div>
+
+                <q-table
+                  v-else
+                  :rows="ideas"
+                  :columns="ideaColumns"
+                  row-key="id"
+                  flat
+                  bordered
+                  hide-pagination
+                  class="portfolio-table"
+                >
+                  <template v-slot:body-cell-status="props: { row: IdeaDto }">
+                    <q-td :props="props">
+                      <q-badge 
+                        :color="getIdeaStatusColor(props.row.status)"
+                        :label="formatIdeaStatus(props.row.status)" 
+                      />
+                    </q-td>
+                  </template>
+
+                  <template v-slot:body-cell-createdAt="props: { row: IdeaDto }">
+                    <q-td :props="props">
+                      <div>{{ formatDate(props.row.createdAt) }}</div>
+                    </q-td>
+                  </template>
+
+                </q-table>
+              </q-card-section>
+            </q-card>
+
             <!-- Портфолио -->
             <q-card v-if="sortedPortfolio.length" class="section-card q-mt-md">
               <q-card-section>
@@ -375,18 +422,24 @@ import {
   StatusTeam,
   Competencies,
   UserCommandStatus,
+  StatusIdea,
+  IdeaDto,
   type Competence,
   type CompetenceGroup
 } from '../../../backend/src/common/types';
 import { update } from '../api/users.api';
 import { QTableProps, useQuasar  } from 'quasar';
-import {getAll as PortfolioGetAll} from '../api/portfolio.api'
+import {getAll as PortfolioGetAll} from '../api/portfolio.api';
+import {getAll as IdeaGetAll} from '../api/idea.api';
 
 const isOpen = ref(false);
 const isPortfolioLoading = ref(false);
 const mainStore = useMainStore();
 const profileStore = useProfileStore();
 const $q = useQuasar();
+const ideas = ref<IdeaDto[]>([]);
+const isIdeasLoading = ref(false);
+const ideasError = ref<string | null>(null);
 
 const { userProfile, isLoading, error } = storeToRefs(profileStore);
 
@@ -428,6 +481,76 @@ const getStatusText = (row: PortfolioTableRow) => {
   if (row.userStatusInTeam === 'expelled') return 'Исключен';
   if (row.recordStatus === UserCommandStatus.inTeam) return 'В команде';
   return 'Исключен';
+};
+
+// Колонки для таблицы идей
+const ideaColumns: QTableProps['columns'] = [
+  {
+    name: 'name',
+    required: true,
+    label: 'Название идеи',
+    align: 'left',
+    field: (row: IdeaDto) => row.name
+  },
+  {
+    name: 'createdAt',
+    label: 'Дата создания',
+    align: 'center',
+    field: (row: IdeaDto) => row.createdAt
+  },
+  {
+    name: 'status',
+    label: 'Статус',
+    align: 'center',
+    field: (row: IdeaDto) => row.status
+  }
+];
+
+// Функция форматирования статуса
+const formatIdeaStatus = (status: StatusIdea): string => {
+  const statusMap = {
+    [StatusIdea.draft]: 'Черновик',
+    [StatusIdea.new]: 'Новая',
+    [StatusIdea.approved]: 'Одобрена',
+    [StatusIdea.endorsed]: 'Утверждена',
+    [StatusIdea.published]: 'Опубликована',
+    [StatusIdea.implemented]: 'Реализована',
+    [StatusIdea.fordeletion]: 'На удалении'
+  };
+  return statusMap[status] || status;
+};
+
+// Функция для цвета статуса
+const getIdeaStatusColor = (status: StatusIdea): string => {
+  const statusColors = {
+    [StatusIdea.draft]: 'grey',
+    [StatusIdea.new]: 'blue',
+    [StatusIdea.approved]: 'teal',
+    [StatusIdea.endorsed]: 'green',
+    [StatusIdea.published]: 'purple',
+    [StatusIdea.implemented]: 'positive',
+    [StatusIdea.fordeletion]: 'negative'
+  };
+  return statusColors[status] || 'grey';
+};
+
+// Метод для загрузки идей
+const loadIdeas = async () => {
+  try {
+    isIdeasLoading.value = true;
+    ideasError.value = null;
+    
+    // Загружаем все идеи и фильтруем по текущему пользователю
+    const allIdeas = await IdeaGetAll();
+    ideas.value = allIdeas.filter(idea => 
+      idea.initiator.id === mainStore.userId
+    );
+  } catch (error) {
+    ideasError.value = 'Не удалось загрузить идеи';
+    console.error('Ошибка загрузки идей:', error);
+  } finally {
+    isIdeasLoading.value = false;
+  }
 };
 
 const portfolioColumns: QTableProps['columns'] = [
@@ -792,6 +915,10 @@ const loadProfile = async () => {
       console.log('userProfile существует:', !!userProfile.value);
       console.log('portfolio существует:', !!userProfile.value?.portfolio);
       console.log('Количество записей:', userProfile.value?.portfolio?.length || 0);
+
+      // 5. Загружаем идеи
+      console.log('Загрузка идей пользователя...');
+      await loadIdeas();
       
     } catch (err) {
       console.error('Ошибка загрузки профиля:', err);
@@ -827,6 +954,7 @@ defineExpose({ open });
   display: flex;
   flex-direction: column;
   border-radius: 12px;
+  background-color: #e9e9e9;
 }
 
 .profile-header {
