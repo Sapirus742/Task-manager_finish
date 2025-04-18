@@ -34,6 +34,7 @@ export enum StatusIdea {
   endorsed = 'Endorsed',
   published = 'Published',
   implemented = 'Implemented',
+  fordeletion = 'Fordeletion',
 }
     
 export enum StatusTeam {

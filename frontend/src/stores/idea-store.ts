@@ -100,59 +100,36 @@ export const useIdeaStore = defineStore('idea', () => {
     state.error = null;
     try {
       await ideaApi.remove(id);
-      state.ideas = state.ideas.filter(i => i.id !== id);
-      mainStore.idea_initiator = mainStore.idea_initiator.filter(i => i.id !== id);
+      // Обновляем статус в локальном хранилище
+      const idea = state.ideas.find(i => i.id === id);
+      if (idea) {
+        idea.status = StatusIdea.fordeletion;
+      }
     } catch (error) {
-      state.error = 'Не удалось удалить идею';
-      console.error('Ошибка при удалении идеи:', error);
+      state.error = 'Не удалось пометить идею на удаление';
+      console.error('Ошибка при пометке на удаление:', error);
       throw error;
     } finally {
       state.isLoading = false;
     }
   };
 
-  const approveIdea = async (ideaId: number, userId: number): Promise<IdeaDto> => {
+  const approveIdea = async (ideaId: number, userId: number): Promise<{ idea: IdeaDto; shouldNotify?: boolean }> => {
     state.isLoading = true;
     state.error = null;
     try {
-      const idea = state.ideas.find(i => i.id === ideaId);
-      
-      if (!idea) throw new Error('Идея не найдена');
-      if (idea.status !== StatusIdea.endorsed) {
-        throw new Error('Можно одобрять только идеи со статусом endorsed');
-      }
-      if (idea.approved?.includes(userId)) {
-        throw new Error('Вы уже одобрили эту идею');
-      }
-  
-      // 1. Добавляем одобрение через API
       const updatedIdea = await ideaApi.addApproved(ideaId, userId);
-      if (!updatedIdea) throw new Error('Не удалось обновить идею');
       
-      // 2. Проверяем количество одобрений
-      if (updatedIdea.approved.length >= 3) {
-        // 3. Обновляем статус через API
-        const approvedIdea = await ideaApi.update(ideaId, {
-          status: StatusIdea.approved
-        });
-        
-        if (!approvedIdea) throw new Error('Не удалось обновить статус идеи');
-        
-        // 4. Обновляем в хранилище
-        const index = state.ideas.findIndex(i => i.id === ideaId);
-        if (index !== -1) {
-          state.ideas[index] = approvedIdea;
-        }
-        
-        return approvedIdea;
-      }
-  
       // Обновляем локальное состояние
       const index = state.ideas.findIndex(i => i.id === ideaId);
       if (index !== -1) {
         state.ideas[index] = updatedIdea;
       }
-      return updatedIdea;
+      
+      return {
+        idea: updatedIdea,
+        shouldNotify: updatedIdea.status === StatusIdea.published
+      };
     } catch (error) {
       state.error = error instanceof Error ? error.message : 'Не удалось одобрить идею';
       throw error;

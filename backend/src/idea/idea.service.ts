@@ -52,7 +52,7 @@ export class IdeaService {
     
     // Проверяем количество одобрений
     if (idea.approved.length >= 3) {
-      idea.status = StatusIdea.approved;
+      idea.status = StatusIdea.published; // Меняем сразу на Published
     }
     
     return this.ideaRepository.save(idea);
@@ -132,6 +132,11 @@ export class IdeaService {
     if (!idea) {
       throw new NotFoundException(`Idea with id ${id} not found`);
     }
-    await this.ideaRepository.remove(idea);
+  
+    // Вместо удаления меняем статус
+    idea.status = StatusIdea.fordeletion;
+    await this.ideaRepository.save(idea);
+    
+    
   }
 }

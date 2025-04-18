@@ -29,7 +29,7 @@
 
         <div class="filters">
           <q-chip
-            v-for="filter in filters"
+            v-for="filter in availableFilters"
             :key="filter.label"
             :label="filter.label"
             :color="filter.active ? 'primary' : 'grey-5'"
@@ -180,60 +180,66 @@
                 </q-card-section>
 
                 <!-- Секция комментариев -->
-                <q-card-section class="comment-section col-4">
-                  <div class="comment-header">
-                    <h3>Комментарии</h3>
-                    <q-btn 
-                      label="Добавить комментарий" 
-                      color="primary" 
-                      @click="openCommentDialog(idea.id)"
-                      size="sm"
-                    />
-                  </div>
-                          
-                  <div v-if="commentStore.isLoading" class="text-center q-my-md">
-                    <q-spinner size="2em" />
-                  </div>
-                  
-                  <div v-else>
-                    <div 
-                      v-for="comment in commentStore.comments" 
-                      :key="comment.id" 
-                      class="comment-item q-mb-sm"
-                    >
-                      <div class="comment-content">
-                        <div class="comment-text">{{ comment.comment }}</div>
-                        <div class="comment-meta">
-                          <span>{{ comment.users.firstname }} {{ comment.users.lastname }}</span>
-                          <span>{{ formatDate(comment.createdAt.toString()) }}</span>
-                        </div>
-                      </div>
-                      <div class="comment-actions" v-if="canEditComment(comment) || canApproveIdea(idea)">
-                        
-                        <q-btn 
-                          v-if="canEditComment(comment)"
-                          icon="edit" 
-                          flat 
-                          dense 
-                          size="sm"
-                          @click="openEditCommentDialog(comment)"
-                        />
-                        <q-btn 
-                          v-if="canEditComment(comment)"
-                          icon="delete" 
-                          flat 
-                          dense 
-                          size="sm"
-                          @click="confirmDeleteComment(comment.id)"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div v-if="commentStore.comments.length === 0" class="text-grey q-mt-md">
-                      Нет комментариев
-                    </div>
-                  </div>
-                </q-card-section>
+                <q-card-section class="col-4 comment-container">
+  <div class="comment-header">
+    <h3>Комментарии</h3>
+    <q-btn 
+      v-if="canAddComment(idea)"
+      label="Добавить комментарий" 
+      color="primary" 
+      @click="openCommentDialog(idea.id)"
+      size="sm"
+    >
+      <q-tooltip v-if="!canAddComment(idea)">
+        {{ getCommentRestrictionMessage(idea) }}
+      </q-tooltip>
+    </q-btn>
+  </div>
+  
+  <div v-if="canViewCommentsSection(idea)" class="comment-section">
+    <div v-if="commentStore.isLoading" class="text-center q-my-md">
+      <q-spinner size="2em" />
+    </div>
+    
+    <div v-else>
+      <div 
+        v-for="comment in commentStore.comments" 
+        :key="comment.id" 
+        class="comment-item q-mb-sm"
+      >
+        <div class="comment-content">
+          <div class="comment-text">{{ comment.comment }}</div>
+          <div class="comment-meta">
+            <span>{{ comment.users.firstname }} {{ comment.users.lastname }}</span>
+            <span>{{ formatDate(comment.createdAt.toString()) }}</span>
+          </div>
+        </div>
+        <div class="comment-actions" v-if="canEditComment(comment) || canApproveIdea(idea)">
+          <q-btn 
+            v-if="canEditComment(comment)"
+            icon="edit" 
+            flat 
+            dense 
+            size="sm"
+            @click="openEditCommentDialog(comment)"
+          />
+          <q-btn 
+            v-if="canEditComment(comment)"
+            icon="delete" 
+            flat 
+            dense 
+            size="sm"
+            @click="confirmDeleteComment(comment.id)"
+          />
+        </div>
+      </div>
+      
+      <div v-if="commentStore.comments.length === 0" class="text-grey q-mt-md">
+        Нет комментариев
+      </div>
+    </div>
+  </div>
+</q-card-section>
               </div>
             </div>
           </q-slide-transition>
@@ -438,7 +444,7 @@ const commentStore = useCommentStore();
 
 interface Filter {
   label: string;
-  value: StatusIdea | null;
+  value: StatusIdea | 'my' | null;
   active: boolean;
 }
 
@@ -486,6 +492,16 @@ const newIdea = ref<NewIdeaForm>({
   resource: '',
 });
 
+const canViewCommentsSection = (idea: IdeaDto) => {
+  // Показываем секцию если:
+  // 1. Есть комментарии ИЛИ
+  // 2. Пользователь может добавить комментарий ИЛИ
+  // 3. Это администратор
+  return (idea.comment && idea.comment.length > 0) ||
+         canAddComment(idea) ||
+         mainStore.isAdmin();
+};
+
 const editIdea = ref<EditIdeaForm>({
   id: 0,
   name: '',
@@ -498,39 +514,74 @@ const editIdea = ref<EditIdeaForm>({
 
 const currentComment = ref<CommentForm>({ comment: '' });
 
-const filters = ref<Filter[]>([
-  { label: 'Все', value: null, active: true },
-  { label: 'Черновик', value: StatusIdea.draft, active: false },
-  { label: 'Новая', value: StatusIdea.new, active: false },
-  { label: 'Утверждена', value: StatusIdea.endorsed, active: false },
-  { label: 'Одобрена', value: StatusIdea.approved, active: false },
-  { label: 'Опубликована', value: StatusIdea.published, active: false },
-  { label: 'Реализована', value: StatusIdea.implemented, active: false },
-]);
+const getCommentRestrictionMessage = (idea: IdeaDto) => {
+  if (idea.status === StatusIdea.new && !mainStore.isDirectorate()) {
+    return 'Только дирекция может комментировать новые идеи';
+  }
+  
+  if (idea.status === StatusIdea.endorsed && !mainStore.isExpert()) {
+    return 'Только эксперты могут комментировать утверждённые идеи';
+  }
+  
+  return 'У вас нет прав на комментирование этой идеи';
+};
 
+const availableFilters = computed<Filter[]>(() => {
+  // Базовые фильтры для всех ролей
+  const baseFilters: Filter[] = [
+    { label: 'Мои', value: 'my', active: activeFilter.value === 'my' },
+    { label: 'Черновики', value: StatusIdea.draft, active: activeFilter.value === StatusIdea.draft },
+    { label: 'Опубликованные', value: StatusIdea.published, active: activeFilter.value === StatusIdea.published }
+  ];
 
+  if (mainStore.isExpert()) {
+    return [
+      ...baseFilters,
+      { label: 'Утверждённые', value: StatusIdea.endorsed, active: activeFilter.value === StatusIdea.endorsed }
+    ];
+  }
+
+  if (mainStore.isAdmin() || mainStore.isDirectorate()) {
+    return [
+      ...baseFilters,
+      { label: 'Новые', value: StatusIdea.new, active: activeFilter.value === StatusIdea.new },
+      { label: 'Утверждённые', value: StatusIdea.endorsed, active: activeFilter.value === StatusIdea.endorsed },
+      { label: 'Одобренные', value: StatusIdea.approved, active: activeFilter.value === StatusIdea.approved },
+      { label: 'Реализованные', value: StatusIdea.implemented, active: activeFilter.value === StatusIdea.implemented },
+      { label: 'На удалении', value: StatusIdea.fordeletion, active: activeFilter.value === StatusIdea.fordeletion }
+    ];
+  }
+
+  // Для студентов и заказчиков - только базовые фильтры
+  return baseFilters;
+});
+
+const activeFilter = ref<StatusIdea | 'my' | null>(null);
 
 const toggleFilter = (filter: Filter) => {
-  filters.value.forEach((f) => (f.active = f === filter));
+  activeFilter.value = filter.value;
 };
 
 const filteredIdeas = computed(() => {
-  const activeFilter = filters.value.find((f) => f.active);
   let filtered = ideaStore.ideas;
 
-  if (activeFilter?.value) {
-    filtered = filtered.filter((idea) => idea.status === activeFilter.value);
+  if (activeFilter.value === 'my') {
+    filtered = filtered.filter(idea => idea.initiator.id === mainStore.userId);
+  } else if (activeFilter.value) {
+    filtered = filtered.filter(idea => idea.status === activeFilter.value);
   }
 
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase();
-    filtered = filtered.filter((idea) =>
+    filtered = filtered.filter(idea =>
       idea.name.toLowerCase().includes(query)
     );
   }
 
   return filtered;
 });
+
+
 
 const getStatusColor = (status: StatusIdea) => {
   const statusColors = {
@@ -540,6 +591,7 @@ const getStatusColor = (status: StatusIdea) => {
     [StatusIdea.approved]: 'teal',
     [StatusIdea.published]: 'green',
     [StatusIdea.implemented]: 'purple',
+    [StatusIdea.fordeletion]: 'grey',
   };
   return statusColors[status] || 'grey';
 };
@@ -552,6 +604,7 @@ const getStatusLabel = (status: StatusIdea) => {
     [StatusIdea.approved]: 'Одобрена',
     [StatusIdea.published]: 'Опубликована',
     [StatusIdea.implemented]: 'Реализована',
+    [StatusIdea.fordeletion]: 'На удаление',
   };
   return statusLabels[status] || status;
 };
@@ -710,6 +763,15 @@ const handleSaveComment = async () => {
   if (!currentComment.value.ideaId) return;
   
   try {
+    // Получаем текущую идею для проверки статуса
+    const idea = ideaStore.ideas.find(i => i.id === currentComment.value.ideaId);
+    if (!idea) throw new Error('Идея не найдена');
+    
+    // Дополнительная проверка прав на комментирование
+    if (!canAddComment(idea)) {
+      throw new Error('У вас нет прав на добавление комментария');
+    }
+    
     if (isEditingComment.value && currentComment.value.id) {
       await commentStore.updateComment(
         currentComment.value.id,
@@ -722,11 +784,15 @@ const handleSaveComment = async () => {
         users: mainStore.userId
       });
     }
+    
     showCommentDialog.value = false;
     await commentStore.fetchComments(currentComment.value.ideaId);
     $q.notify({ type: 'positive', message: 'Комментарий сохранён' });
-  } catch {
-    $q.notify({ type: 'negative', message: 'Ошибка сохранения комментария' });
+  } catch (error) {
+    $q.notify({ 
+      type: 'negative', 
+      message: error instanceof Error ? error.message : 'Ошибка сохранения комментария' 
+    });
   }
 };
 
@@ -763,12 +829,38 @@ const canDeleteIdea = (idea: IdeaDto) => {
         (mainStore.userId === idea.initiator.id && idea.status !== StatusIdea.published);
 };
 
+const canAddComment = (idea: IdeaDto) => {
+  // Дирекция может комментировать "Новые" идеи
+  if (mainStore.isDirectorate() && idea.status === StatusIdea.new) {
+    return true;
+  }
+  // Эксперты могут комментировать "Утвержденные" идеи
+  if (mainStore.isExpert() && idea.status === StatusIdea.endorsed) {
+    return true;
+  }
+  // Админы могут всегда
+  if (mainStore.isAdmin()) {
+    return true;
+  }
+  return false;
+};
+
 const canEditComment = (comment: CommentDto) => {
-  return mainStore.isAdmin() || comment.users.id === mainStore.userId;
+  // Автор комментария может его редактировать
+  if (comment.users.id === mainStore.userId) {
+    return true;
+  }
+  
+  // Админы могут редактировать любые комментарии
+  if (mainStore.isAdmin()) {
+    return true;
+  }
+  
+  return false;
 };
 
 const canApproveIdea = (idea: IdeaDto) => {
-  const hasRights = mainStore.isAdmin() || mainStore.isDirectorate() || mainStore.isExpert();
+  const hasRights = mainStore.isAdmin() || mainStore.isExpert();
   const isEndorsedStatus = idea.status === StatusIdea.endorsed;
   const underLimit = !idea.approved || idea.approved.length < 3;
   const notApprovedYet = !isApprovedByCurrentUser(idea);
@@ -791,15 +883,14 @@ const confirmApproveIdea = (idea: IdeaDto) => {
     }
   }).onOk(async () => {
     try {
-      const result = await ideaStore.approveIdea(idea.id, mainStore.userId);
+      const { shouldNotify } = await ideaStore.approveIdea(idea.id, mainStore.userId);
       
-      if (result?.status === StatusIdea.approved) {
+      if (shouldNotify) {
         $q.notify({
           type: 'positive',
-          message: 'Идея получила 3 одобрения! Статус изменен на Approved'
+          message: 'Идея получила 3 одобрения и была опубликована!'
         });
       }
-      await ideaStore.fetchIdeas();
     } catch (error) {
       // Ошибка уже обработана в хранилище
     }
@@ -946,8 +1037,12 @@ const confirmEndorseIdea = (idea: IdeaDto) => {
 }
 
 .comment-section {
-  border-left: 1px solid #eee;
+  border-left: none; /* Убираем границу */
   padding: 16px;
+}
+
+.comment-section:not(:empty) {
+  border-left: 1px solid #eee;
 }
 
 .comment-header {
