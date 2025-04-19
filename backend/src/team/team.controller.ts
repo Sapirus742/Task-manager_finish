@@ -36,7 +36,7 @@ export class TeamController {
   }
 
   @Post()
-  @Roles(Role.admin, Role.customer, Role.directorate)
+  @Roles(Role.admin, Role.customer, Role.directorate, Role.user)
   @UseGuards(JwtAuthGuard, RolesGuard)
   async create(@Body() team: CreateTeamDto): Promise<Team> {
     return this.teamService.create(
@@ -59,7 +59,7 @@ export class TeamController {
   }
  
   @Delete(':id')
-  @Roles(Role.admin, Role.customer, Role.directorate) 
+  @Roles(Role.admin, Role.customer, Role.directorate, Role.user) 
   @UseGuards(JwtAuthGuard, RolesGuard)
   async remove(@Param('id') id: number): Promise<void> {
       return this.teamService.remove(id);
