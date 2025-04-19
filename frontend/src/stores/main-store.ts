@@ -175,7 +175,7 @@ export const useMainStore = defineStore('main', () => {
   };
 
   const canCreateTeam = () => {
-    return isAdmin() || isDirectorate();
+    return isAdmin() || isDirectorate() || isUser();
   };
 
   const canJoinTeam = (team?: TeamDto) => {
