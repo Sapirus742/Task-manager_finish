@@ -214,6 +214,7 @@ import { CreateExchangeDto, ExchangeDto, ProjectDto, StatusProject, StatusTeam }
 import AgileProject from 'src/pages/Exchange/AgileProject.vue';
 import AgileProjectButton from 'src/pages/Exchange/AgileProjectButton.vue';
 import { useTeamStore } from 'src/stores/team-store';
+import { debounce } from 'quasar';
 
 const exchangeStore = useExchangeStore();
 const projectStore = useProjectStore();
@@ -244,9 +245,11 @@ const openAgileProject = (project: ProjectDto | undefined) => {
 
 const agileButtonStates = reactive<Record<number, { visible: boolean; loading: boolean }>>({});
 // Проверка доступа к Agile доске
-const checkAgileButtonVisibility = async (project: ProjectDto) => {
+const checkAgileButtonVisibility = debounce(async (project: ProjectDto) => {
   if (!agileButtonStates[project.id]) {
     agileButtonStates[project.id] = { visible: false, loading: true };
+  } else if (agileButtonStates[project.id].loading) {
+    return; // Уже проверяется, не начинать новую проверку
   } else {
     agileButtonStates[project.id].loading = true;
   }
@@ -270,8 +273,8 @@ const checkAgileButtonVisibility = async (project: ProjectDto) => {
       return;
     }
 
-    // Загружаем команду проекта
-    const team = await teamStore.fetchTeamByProject(project.id);
+    // Загружаем команду проекта с обработкой ошибок
+    const team = await teamStore.fetchTeamByProject(project.id).catch(() => null);
     if (!team) {
       agileButtonStates[project.id].visible = false;
       return;
@@ -296,24 +299,24 @@ const checkAgileButtonVisibility = async (project: ProjectDto) => {
   } finally {
     agileButtonStates[project.id].loading = false;
   }
-};
+}, 200);
 
 // Реакция на изменение пользователя или команды
-watch(() => mainStore.userId, () => {
+watch(() => mainStore.userId, debounce(() => {
   if (activeExchange.value?.projects) {
     activeExchange.value.projects.forEach(project => {
       checkAgileButtonVisibility(project);
     });
   }
-});
+}, 300000));
 
-watch(() => teamStore.currentTeam, () => {
+watch(() => teamStore.currentTeam, debounce(() => {
   if (activeExchange.value?.projects) {
     activeExchange.value.projects.forEach(project => {
       checkAgileButtonVisibility(project);
     });
   }
-}, { deep: true });
+}, 300000), { deep: true });
 
 // При монтировании компонента или изменении проектов
 watch(() => activeExchange.value?.projects, (projects) => {
