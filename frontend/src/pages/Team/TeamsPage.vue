@@ -385,7 +385,7 @@
         />
 
         <q-btn 
-          v-if="mainStore.canDeleteTeam(selectedTeam)"
+          v-if="mainStore.canDeleteTeam(selectedTeam) && selectedTeam?.status === StatusTeam.delete"
           flat 
           label="Удалить" 
           :color="mainStore.getCurrentUser().id === selectedTeam.user_owner?.id ? 'deep-orange' : 'negative'" 
