@@ -1,5 +1,3 @@
-import { DataSource } from "typeorm";
-
 export enum Role {
   admin = 'admin',
   user = 'user',
@@ -47,6 +45,13 @@ export enum StatusTeam {
 export enum PrivacyTeam {
   open = 'Open',
   close = 'Close',
+}
+
+export enum TypeAgile {
+  backlog = 'Backlog',
+  sprintBacklog = 'Sprint backlog',
+  inProgress = 'In progress',
+  completed = 'Completed',
 }
     
 // types.ts
@@ -208,6 +213,7 @@ export interface CreateUserDto {
 
 export interface UpdateUserDto {
   id?: number;
+  avatar_id?: string;
   email?: string;
   firstname?: string;
   lastname?: string;
@@ -221,7 +227,8 @@ export interface UpdateUserDto {
   portfolio?: number[];
   idea_initiator?: number[];
   project_initiator?: number[];
-  comment?: number[]
+  comment?: number[];
+  message?: number[];
   team?: number | null;
 }
 
@@ -254,6 +261,19 @@ export interface UpdateProjectDto {
   customer?: string;
   exchange?: string;
   initiator?: number;
+}
+
+export interface CreateAgileDto {
+  name: string;
+  type: TypeAgile;
+  project: number;
+}
+
+export interface UpdateAgileDto {
+  name?: string;
+  type?: TypeAgile;
+  project?: number;
+  message?: number[];
 }
 
 export interface CreateExchangeDto {
@@ -306,6 +326,18 @@ export interface UpdateCommentDto {
   idea?: number;
 }
 
+export interface CreateMessageDto {
+  message: string;
+  users: number;
+  agile: number;
+}
+
+export interface UpdateMessageDto {
+  message?: string;
+  users?: number;
+  agile?: number;
+}
+
 export interface CreateTeamDto {
   name: string,        
   description: string,        
@@ -346,6 +378,7 @@ export interface UpdatePortfolioDto {
 
 export type SecuredUser = {
   id: number;
+  avatar_id: string;
   email: string;
   firstname: string;
   lastname: string;
@@ -360,7 +393,8 @@ export type SecuredUser = {
   portfolio: PortfolioDto[];
   idea_initiator: IdeaDto[];
   project_initiator: ProjectDto[];
-  comment: CommentDto[]
+  comment: CommentDto[];
+  message: MessageDto[];
   team: TeamDto | null;
 };
 
@@ -387,8 +421,18 @@ export type ProjectDto = {
   maxUsers: string;
   exchange: ExchangeDto;
   teams: TeamDto[];
+  agile: AgileDto[];
   customer: string; 
   initiator: SecuredUser; 
+};
+
+export type AgileDto = {
+  id: number;
+  name: string;
+  type: TypeAgile;
+  createdAt: Date;
+  project: ProjectDto;
+  message: MessageDto[];
 };
 
 export type ExchangeDto = {
@@ -420,6 +464,14 @@ export type CommentDto = {
   comment: string;
   users: SecuredUser;
   idea: IdeaDto;
+};
+
+export type MessageDto = {
+  id: number;
+  createdAt: Date; 
+  message: string;
+  users: SecuredUser;
+  agile: AgileDto;
 };
 
 export type TeamDto = {

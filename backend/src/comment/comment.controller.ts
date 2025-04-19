@@ -35,24 +35,24 @@ export class CommentController {
   }
   
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   async create(@Body() comments: CreateCommentDto): Promise<Comments> {
     return this.commentService.create(
-        comments.comment,
-        comments.users,
-        comments.idea,
+      comments.comment,
+      comments.users,
+      comments.idea,
     );
   }
   
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   async update(@Param('id') id: number, @Body() updateCommentDto: UpdateCommentDto): Promise<Comments> {
-      return this.commentService.update(id, updateCommentDto);
+    return this.commentService.update(id, updateCommentDto);
   }
  
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard)
   async remove(@Param('id') id: number): Promise<void> {
-      return this.commentService.remove(id);
+    return this.commentService.remove(id);
   }
 }

@@ -15,6 +15,7 @@ import { Competence, ProjectDto, StatusProject } from 'src/common/types';
 import { Team } from './team.entity';
 import { Idea } from './idea.entity';
 import { Exchange } from './exchange.entity';
+import { Agile } from './agile.entity';
 
 @Entity()
 export class Project {
@@ -65,6 +66,9 @@ export class Project {
     @OneToMany(() => Team, (team) => team.project)
     teams: Team[];
 
+    @OneToMany(() => Agile, (agile) => agile.project)
+    agile: Agile[];
+
     @ManyToOne(() => Exchange, (exchange) => exchange.projects, { onDelete: 'SET NULL' })
     exchange: Exchange;
 
@@ -85,6 +89,7 @@ export class Project {
             stopProject: this.stopProject,
             maxUsers: this.maxUsers,
             teams: this.teams.map(team => team.getTeamDto()), 
+            agile: this.agile.map(agile => agile.getAgileDto()),
             customer: this.customer,
             exchange: this.exchange.getExchangeDto(),
             initiator: this.initiator.getSecuredDto(),

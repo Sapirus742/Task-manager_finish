@@ -91,7 +91,7 @@ export class IdeaService {
     const idea = await this.ideaRepository.findOne({ where: { id }, relations: ['comment', 'initiator'] });
 
     if (!idea) {
-        throw new NotFoundException(`Идея с id ${idea} не найдена`);
+        throw new NotFoundException(`Идея с id ${id} не найдена`);
     }
 
     // Обновите другие поля

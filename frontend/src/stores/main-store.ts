@@ -13,6 +13,7 @@ import {
   IdeaDto,
   PrivacyTeam,
   StatusTeam,
+  MessageDto,
 } from '../../../backend/src/common/types';
 import { useProfileStore } from './profile-store';
 import { useTeamStore } from './team-store';
@@ -21,6 +22,7 @@ import { useIdeaStore } from './idea-store';
 export const useMainStore = defineStore('main', () => {
   const state = reactive({
     userId: 0,
+    avatar_id: 'unknown',
     username: 'unknown',
     firstname: 'unknown',
     lastname: 'unknown',
@@ -36,6 +38,7 @@ export const useMainStore = defineStore('main', () => {
     project_initiator: [] as ProjectDto[],
     team: null as TeamDto | null,
     comment: [] as CommentDto[],
+    message: [] as MessageDto[],
     idea_initiator: [] as IdeaDto[],
   });
 
@@ -112,6 +115,7 @@ export const useMainStore = defineStore('main', () => {
   const getCurrentUser = (): SecuredUser => {
     return {
       id: state.userId,
+      avatar_id: state.avatar_id,
       email: state.username,
       firstname: state.firstname,
       lastname: state.lastname,
@@ -127,6 +131,7 @@ export const useMainStore = defineStore('main', () => {
       project_initiator: state.project_initiator,
       team: state.team,
       comment: state.comment,
+      message: state.message,
       idea_initiator: state.idea_initiator,
 
     };
