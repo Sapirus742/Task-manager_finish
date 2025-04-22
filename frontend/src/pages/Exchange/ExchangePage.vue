@@ -78,7 +78,7 @@
             class="col-12 col-md-6 col-lg-4"
           >
             <q-card class="project-card">
-              <q-card-section>
+              <q-card-section @click="openProjectDetails(project)" style="cursor: pointer;">
                 <div class="text-h6">{{ project.name }}</div>
                 <div class="text-caption text-grey q-mt-sm">
                   {{ project.customer }}
@@ -106,12 +106,12 @@
 
               <q-card-actions align="right">
                 <AgileProjectButton
-                v-if="agileButtonStates[project.id]"
-                :project="project"
-                :visible="agileButtonStates[project.id]?.visible ?? false"
-                :loading="agileButtonStates[project.id]?.loading ?? false"
-                @click="openAgileProject(project)"
-              />
+                  v-if="agileButtonStates[project.id]"
+                  :project="project"
+                  :visible="agileButtonStates[project.id]?.visible ?? false"
+                  :loading="agileButtonStates[project.id]?.loading ?? false"
+                  @click="openAgileProject(project)"
+                />
               </q-card-actions>
             </q-card>
           </div>
@@ -164,6 +164,10 @@
               type="date"
               class="q-mb-sm"
             />
+            <q-card-actions align="right">
+              <q-btn flat label="Отмена" color="primary" v-close-popup />
+              <q-btn type="submit" label="Создать" color="primary" />
+            </q-card-actions>
           </q-form>
         </q-card-section>
       </q-card>
@@ -201,6 +205,9 @@
 
     <!-- AgileProject компонент -->
     <AgileProject ref="agileProject" />
+
+    <!-- Диалог деталей проекта -->
+    <ProjectDetailsDialog ref="projectDetailsDialog" />
   </q-page>
 </template>
 
@@ -215,6 +222,7 @@ import AgileProject from 'src/pages/Exchange/AgileProject.vue';
 import AgileProjectButton from 'src/pages/Exchange/AgileProjectButton.vue';
 import { useTeamStore } from 'src/stores/team-store';
 import { debounce } from 'quasar';
+import ProjectDetailsDialog from 'src/pages/Project/ProjectDetailsDialog.vue';
 
 const exchangeStore = useExchangeStore();
 const projectStore = useProjectStore();
@@ -228,6 +236,8 @@ const showCreateDialog = ref(false);
 const showAddProjectsDialog = ref(false);
 const activeExchange = ref<ExchangeDto | null>(null);
 const selectedProjects = ref<number[]>([]);
+const projectDetailsDialog = ref();
+const agileProject = ref();
 
 const newExchange = ref<Omit<CreateExchangeDto, 'startExchange' | 'stopExchange'> & {
   startExchange: string;
@@ -238,55 +248,54 @@ const newExchange = ref<Omit<CreateExchangeDto, 'startExchange' | 'stopExchange'
   stopExchange: new Date().toISOString().split('T')[0],
 });
 
+const agileButtonStates = reactive<Record<number, { visible: boolean; loading: boolean }>>({});
+
+// Методы
+const openProjectDetails = (project: ProjectDto) => {
+  projectDetailsDialog.value?.open(project);
+};
+
 const openAgileProject = (project: ProjectDto | undefined) => {
   if (!project) return;
   agileProject.value?.open(project);
 };
 
-const agileButtonStates = reactive<Record<number, { visible: boolean; loading: boolean }>>({});
-// Проверка доступа к Agile доске
 const checkAgileButtonVisibility = debounce(async (project: ProjectDto) => {
   if (!agileButtonStates[project.id]) {
     agileButtonStates[project.id] = { visible: false, loading: true };
   } else if (agileButtonStates[project.id].loading) {
-    return; // Уже проверяется, не начинать новую проверку
+    return;
   } else {
     agileButtonStates[project.id].loading = true;
   }
   
   try {
-    // Доступ для админа и дирекции
     if (mainStore.isAdmin() || mainStore.isDirectorate()) {
       agileButtonStates[project.id].visible = true;
       return;
     }
 
-    // Проверка что пользователь является заказчиком проекта
     if (mainStore.isCustomer() && project.initiator?.id === mainStore.userId) {
       agileButtonStates[project.id].visible = true;
       return;
     }
 
-    // Проверка что проект в статусе teamFound
     if (project.status !== StatusProject.teamFound) {
       agileButtonStates[project.id].visible = false;
       return;
     }
 
-    // Загружаем команду проекта с обработкой ошибок
     const team = await teamStore.fetchTeamByProject(project.id).catch(() => null);
     if (!team) {
       agileButtonStates[project.id].visible = false;
       return;
     }
     
-    // Проверка статуса команды
     if (team.status !== StatusTeam.inProgress) {
       agileButtonStates[project.id].visible = false;
       return;
     }
 
-    // Проверка что пользователь участник команды
     const userId = mainStore.userId;
     agileButtonStates[project.id].visible = (
       (team.user_owner && team.user_owner.id === userId) ||
@@ -301,14 +310,14 @@ const checkAgileButtonVisibility = debounce(async (project: ProjectDto) => {
   }
 }, 200);
 
-// Реакция на изменение пользователя или команды
+// Watchers
 watch(() => mainStore.userId, debounce(() => {
   if (activeExchange.value?.projects) {
     activeExchange.value.projects.forEach(project => {
       checkAgileButtonVisibility(project);
     });
   }
-}, 300000));
+}, 300));
 
 watch(() => teamStore.currentTeam, debounce(() => {
   if (activeExchange.value?.projects) {
@@ -316,9 +325,8 @@ watch(() => teamStore.currentTeam, debounce(() => {
       checkAgileButtonVisibility(project);
     });
   }
-}, 300000), { deep: true });
+}, 300), { deep: true });
 
-// При монтировании компонента или изменении проектов
 watch(() => activeExchange.value?.projects, (projects) => {
   if (projects) {
     projects.forEach(project => {
@@ -340,18 +348,13 @@ const stopDateString = computed({
 
 const exchanges = computed(() => exchangeStore.exchanges);
 
-// Обновленное вычисляемое свойство для доступных проектов с учетом проектов на других биржах
 const availableProjects = computed(() => {
-  // Получаем все проекты, которые уже на каких-то биржах
   const projectsOnExchanges = new Set(
     exchangeStore.exchanges.flatMap(ex => ex.projects.map(p => p.id))
   );
   
   return projectStore.projects.filter(p => 
-    // Проект доступен если:
-    // 1. Он еще не на какой-либо бирже
     !projectsOnExchanges.has(p.id) ||
-    // ИЛИ 2. Он уже на текущей выбранной бирже (чтобы можно было убрать)
     (activeExchange.value?.projects.some(ep => ep.id === p.id))
   );
 });
@@ -365,8 +368,6 @@ const canEditExchange = (exchange: ExchangeDto) => {
          (mainStore.isDirectorate() && exchange.projects.some(p => p.initiator.id === mainStore.userId));
 };
 
-const agileProject = ref();
-
 const formatDateRange = (start: Date, end: Date) => {
   return `${new Date(start).toLocaleDateString()} - ${new Date(end).toLocaleDateString()}`;
 };
@@ -375,6 +376,7 @@ const setActiveExchange = (exchange: ExchangeDto) => {
   activeExchange.value = exchange;
 };
 
+// Хук жизненного цикла
 onMounted(async () => {
   await exchangeStore.fetchAllExchanges();
   await projectStore.fetchAllProjects();
@@ -433,12 +435,10 @@ const onCreateSubmit = async () => {
   }
 };
 
-// Обновленный метод добавления проектов с проверкой на проекты, уже добавленные в другие биржи
 const addProjectsToExchange = async () => {
   if (!activeExchange.value) return;
   
   try {
-    // Фильтруем проекты, которые уже на других биржах
     const projectsToAdd = selectedProjects.value.filter(projectId => {
       const currentExchangeId = activeExchange.value?.id;
       if (!currentExchangeId) return false;
@@ -496,5 +496,15 @@ const addProjectsToExchange = async () => {
 
 .project-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.text-h6 {
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.text-h6:hover {
+  color: var(--q-primary);
 }
 </style>
