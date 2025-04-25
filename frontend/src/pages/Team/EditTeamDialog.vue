@@ -124,11 +124,11 @@
               v-model="editedTeam.leader"
               label="Тимлид"
               :options="editedTeam.members"
-              :rules="[(val) => editedTeam.status === StatusTeam.delete || !!val || 'Необходимо выбрать тимлида']"
               outlined
               option-label="fullName"
               emit-value 
               map-options
+              class="q-mb-md"
             >
               <template v-slot:option="scope">
                 <q-item v-bind="scope.itemProps">
@@ -699,7 +699,7 @@ defineExpose({
 
 .relative-position {
   position: relative;
-  padding-bottom: 10px;
+
 }
 
 .tooltip-wrapper:hover .custom-tooltip {

@@ -53,7 +53,6 @@
             multiple
             use-chips
             :options="filteredUserOptions"
-            :rules="[(val) => val.length > 0 || 'Добавьте хотя бы одного участника']"
             outlined
             option-value="id"
             option-label="fullName"
@@ -63,6 +62,7 @@
             input-debounce="300"
             @filter="filterUsers"
             clearable
+            class="q-mb-md"
           >
             <template v-slot:no-option>
               <q-item>
@@ -78,13 +78,14 @@
             v-model="newTeam.user_leader"
             label="Тимлид"
             :options="newTeam.user.length ? userOptions.filter(u => newTeam.user.includes(u.id)) : []"
-            :rules="[(val) => !!val || 'Выберите тимлида']"
             outlined
             option-value="id"
             option-label="fullName"
             emit-value
             map-options
             :disable="!newTeam.user.length"
+            clearable
+            class="q-mb-md"
           />
 
           <!-- Проект -->
@@ -287,8 +288,7 @@ const onSubmit = async () => {
     loading.value = true;
     
     // Обновленная валидация (без проверки проекта)
-    if (!newTeam.value.name || !newTeam.value.description || 
-        newTeam.value.user.length === 0 || !newTeam.value.user_leader) {
+    if (!newTeam.value.name || !newTeam.value.description) {
       $q.notify({
         message: 'Заполните все обязательные поля',
         color: 'warning',
