@@ -339,7 +339,8 @@
                 <q-separator class="q-my-sm"/>
 
                 <!-- Владелец -->
-                <div v-if="selectedTeam.user_owner" class="member-item owner">
+                <div v-if="selectedTeam.user_owner" class="member-item owner"
+                @click="openUserProfile(selectedTeam.user_owner.id)">
                   <div class="member-info">
                     <div class="member-name">
                       {{ selectedTeam.user_owner.firstname }} {{ selectedTeam.user_owner.lastname }}
@@ -359,7 +360,8 @@
 
                 <!-- Тимлид (если не владелец) -->
                 <div v-if="selectedTeam.user_leader && !isLeaderAlsoOwner" 
-                     class="member-item leader">
+                     class="member-item leader"
+                     @click="openUserProfile(selectedTeam.user_leader.id)">
                   <div class="member-info">
                     <div class="member-name">
                       {{ selectedTeam.user_leader.firstname }} {{ selectedTeam.user_leader.lastname }}
@@ -379,7 +381,8 @@
                 <!-- Обычные участники -->
                 <div v-for="user in regularMembers" 
                      :key="user.id" 
-                     class="member-item">
+                     class="member-item"
+                     @click.stop="openUserProfile(user.id)">
                   <div class="member-info">
                     <div class="member-name">
                       {{ user.firstname }} {{ user.lastname }}
@@ -448,6 +451,13 @@
     <CreateTeamDialog ref="createTeamDialog" @create="addTeam" />
   </q-page>
   <EditTeamDialog ref="editTeamDialog" @update="updateTeam" />
+  <teleport to="body">
+    <UserProfileOpen 
+      v-if="selectedUserId" 
+      :userId="selectedUserId" 
+      v-model="isProfileOpen"
+    />
+  </teleport>
 </template>
 
 <script setup lang="ts">
@@ -466,6 +476,7 @@ import {
 import { UserCommandStatus } from '../../../../backend/src/common/types';
 import { TeamDto, PrivacyTeam, StatusProject, ProjectDto, StatusTeam} from '../../../../backend/src/common/types'; // Добавляем StatusProject
 import { useQuasar } from 'quasar';
+import UserProfileOpen from 'src/pages/UserProfileOpen.vue';
 
 // Хранилище
 const mainStore = useMainStore();
@@ -490,6 +501,15 @@ type SortDirection = 'asc' | 'desc';
 // Состояние сортировки
 const sortField = ref<SortField>('name');
 const sortDirection = ref<SortDirection>('asc');
+
+const selectedUserId = ref<number | null>(null);
+const isProfileOpen = ref(false);
+
+const openUserProfile = (userId: number) => {
+  console.log('Opening profile for user:', userId); 
+  selectedUserId.value = userId;
+  isProfileOpen.value = true;
+};
 
 // Фильтрация и сортировка команд
 const filteredTeams = computed(() => {
@@ -1268,6 +1288,17 @@ const updateTeam = async (updatedTeam: TeamDto) => {
 }
 .q-btn--disabled.join-btn {
   opacity: 0.7 !important;
+}
+
+.team-owner,
+.member-item {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.team-owner:hover,
+.member-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .member-item.leader {

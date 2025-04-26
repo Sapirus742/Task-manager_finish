@@ -255,7 +255,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useProfileStore } from 'src/stores/profile-store';
 import { 
@@ -273,10 +273,19 @@ const props = defineProps({
   userId: {
     type: Number,
     required: true
+  },
+  modelValue: { // Добавляем modelValue для v-model
+    type: Boolean,
+    default: false
   }
 });
+const emit = defineEmits([
+  'update:modelValue', // Исправляем название события
+  'update:userId'
+]);
 
-const isOpen = ref(false);
+
+const isOpen = ref(props.modelValue);
 const isPortfolioLoading = ref(false);
 const profileStore = useProfileStore();
 //const $q = useQuasar();
@@ -545,7 +554,36 @@ const loadProfile = async () => {
   }
 };
 
-const open = () => {
+// Следим за изменениями userId
+watch(() => props.userId, (newId) => {
+  console.log('UserId changed:', newId);
+});
+
+// Следим за изменениями modelValue (v-model)
+watch(() => props.modelValue, (newVal) => {
+  console.log('ModelValue changed:', newVal);
+  isOpen.value = newVal;
+});
+
+// Следим за isOpen
+watch(isOpen, (newVal) => {
+  console.log('isOpen changed:', newVal);
+});
+
+// Синхронизация с v-model
+watch(isOpen, (val) => {
+  emit('update:modelValue', val);
+});
+
+// Автоматическая загрузка профиля при открытии
+watch(() => props.userId, (newVal) => {
+  if (newVal && isOpen.value) {
+    loadProfile();
+  }
+}, { immediate: true });
+
+const open = (newUserId: number) => {
+  emit('update:userId', newUserId);
   isOpen.value = true;
   loadProfile();
 };

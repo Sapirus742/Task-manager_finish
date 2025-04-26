@@ -108,7 +108,7 @@
                 <AgileProjectButton
                   v-if="agileButtonStates[project.id]"
                   :project="project"
-                  :visible="agileButtonStates[project.id]?.visible ?? false"
+                  :visible="false"
                   :loading="agileButtonStates[project.id]?.loading ?? false"
                   @click="openAgileProject(project)"
                 />
@@ -261,14 +261,18 @@ const openAgileProject = (project: ProjectDto | undefined) => {
 };
 
 const checkAgileButtonVisibility = debounce(async (project: ProjectDto) => {
+  if (!project.id) return;
+
+  // Если состояние уже загружается, пропускаем вызов
+  if (agileButtonStates[project.id]?.loading) return;
+
+  // Инициализация состояния, если его нет
   if (!agileButtonStates[project.id]) {
     agileButtonStates[project.id] = { visible: false, loading: true };
-  } else if (agileButtonStates[project.id].loading) {
-    return;
   } else {
     agileButtonStates[project.id].loading = true;
   }
-  
+
   try {
     if (mainStore.isAdmin() || mainStore.isDirectorate()) {
       agileButtonStates[project.id].visible = true;
@@ -290,7 +294,7 @@ const checkAgileButtonVisibility = debounce(async (project: ProjectDto) => {
       agileButtonStates[project.id].visible = false;
       return;
     }
-    
+
     if (team.status !== StatusTeam.inProgress) {
       agileButtonStates[project.id].visible = false;
       return;
@@ -308,32 +312,21 @@ const checkAgileButtonVisibility = debounce(async (project: ProjectDto) => {
   } finally {
     agileButtonStates[project.id].loading = false;
   }
-}, 200);
+}, 20000);
 
-// Watchers
-watch(() => mainStore.userId, debounce(() => {
-  if (activeExchange.value?.projects) {
-    activeExchange.value.projects.forEach(project => {
-      checkAgileButtonVisibility(project);
-    });
-  }
-}, 300));
-
-watch(() => teamStore.currentTeam, debounce(() => {
-  if (activeExchange.value?.projects) {
-    activeExchange.value.projects.forEach(project => {
-      checkAgileButtonVisibility(project);
-    });
-  }
-}, 300), { deep: true });
-
-watch(() => activeExchange.value?.projects, (projects) => {
-  if (projects) {
-    projects.forEach(project => {
-      checkAgileButtonVisibility(project);
-    });
-  }
-}, { immediate: true });
+watch(
+  () => [mainStore.userId, teamStore.currentTeam, activeExchange.value?.projects],
+  () => {
+    if (activeExchange.value?.projects) {
+      activeExchange.value.projects.forEach(project => {
+        if (!agileButtonStates[project.id]?.loading) {
+          checkAgileButtonVisibility(project);
+        }
+      });
+    }
+  },
+  { immediate: true }
+);
 
 // Вычисляемые свойства
 const startDateString = computed({

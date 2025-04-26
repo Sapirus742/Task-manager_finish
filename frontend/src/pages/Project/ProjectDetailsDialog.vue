@@ -7,7 +7,8 @@
         </div>
 
         <!-- Блок с инициатором -->
-        <div class="initiator-section q-mb-md">
+        <div class="initiator-section q-mb-md"
+        @click="project?.initiator?.id && openUserProfile(project.initiator.id)">
           <q-icon name="person" size="sm" class="q-mr-sm" />
           <span class="text-weight-bold">Инициатор: </span>
           <span>{{ project?.initiator?.firstname }} {{ project?.initiator?.lastname }}</span>
@@ -228,7 +229,8 @@
         </div>
         
         <!-- Владелец команды -->
-        <div class="team-owner q-mb-md" v-if="selectedTeam.user_owner">
+        <div class="team-owner q-mb-md" v-if="selectedTeam.user_owner"
+        @click="openUserProfile(selectedTeam.user_owner.id)">
           <q-icon name="person" class="q-mr-sm" />
           <strong>Создал: </strong>&nbsp;
           <span>{{ selectedTeam.user_owner.firstname }} {{ selectedTeam.user_owner.lastname }}</span>
@@ -243,7 +245,8 @@
         <!-- Блок участников -->
         <div class="members-container q-pa-sm bg-grey-2 rounded-borders">
           <!-- Владелец -->
-          <div class="member-item owner" v-if="selectedTeam.user_owner">
+          <div class="member-item owner" v-if="selectedTeam.user_owner"
+          @click="openUserProfile(selectedTeam.user_owner.id)">
               <div class="member-info">
                 <span class="member-name">
                   {{ selectedTeam.user_owner?.firstname }} {{ selectedTeam.user_owner?.lastname }}
@@ -259,6 +262,7 @@
           <div 
             v-if="selectedTeam.user_leader && selectedTeam.user_leader.id !== selectedTeam.user_owner?.id"
             class="member-item leader q-mb-xs"
+            @click="openUserProfile(selectedTeam.user_leader.id)"
           >
             <div class="member-info">
               <span class="member-name">
@@ -276,6 +280,7 @@
             v-for="member in getRegularMembers(selectedTeam)" 
             :key="member.id" 
             class="member-item q-mb-xs"
+            @click="openUserProfile(member.id)"
           >
             <div class="member-info">
               <span class="member-name">
@@ -294,6 +299,14 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
+  <teleport to="body">
+  <UserProfileOpen 
+    v-if="selectedUserId" 
+    :key="selectedUserId"
+    :userId="selectedUserId" 
+    v-model="isProfileOpen"
+  />
+</teleport>
 </template>
 
 <script setup lang="ts">
@@ -305,6 +318,7 @@ import { useQuasar } from 'quasar';
 import { useMainStore } from 'src/stores/main-store';
 import { update as updateTeam } from 'src/api/team.api'; 
 import { update as updateProject, get as getProject } from 'src/api/project.api'; 
+import UserProfileOpen from 'src/pages/UserProfileOpen.vue';
 
 const $q = useQuasar();
 const showDialog = ref(false);
@@ -313,6 +327,14 @@ const tab = ref('description');
 const maxHeight = ref(0);
 const teamStore = useTeamStore();
 const mainStore = useMainStore();
+
+const selectedUserId = ref<number | null>(null);
+const isProfileOpen = ref(false);
+
+const openUserProfile = (userId: number) => {
+  selectedUserId.value = userId;
+  isProfileOpen.value = true;
+};
 
 // Переменную для диалога подтверждения
 const showConfirmDialog = ref(false);
@@ -565,6 +587,17 @@ defineExpose({ open });
   max-width: 90vw;
   display: flex;
   flex-direction: column;
+}
+
+.team-owner,
+.member-item {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.team-owner:hover,
+.member-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .initiator-section {
