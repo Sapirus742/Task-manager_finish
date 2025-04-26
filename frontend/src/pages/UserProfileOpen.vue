@@ -268,7 +268,7 @@ import {
 import { QTableProps } from 'quasar';
 import { getAll as PortfolioGetAll } from '../api/portfolio.api';
 import { getAll as IdeaGetAll } from '../api/idea.api';
-
+ 
 const props = defineProps({
   userId: {
     type: Number,
@@ -582,9 +582,10 @@ watch(() => props.userId, (newVal) => {
   }
 }, { immediate: true });
 
-const open = (newUserId: number) => {
-  emit('update:userId', newUserId);
+const open = () => {
+  emit('update:userId', props.userId);
   isOpen.value = true;
+  console.log(props.userId);
   loadProfile();
 };
 

@@ -453,10 +453,9 @@
   <EditTeamDialog ref="editTeamDialog" @update="updateTeam" />
   <teleport to="body">
     <UserProfileOpen 
-      v-if="selectedUserId" 
-      :userId="selectedUserId" 
-      v-model="isProfileOpen"
-    />
+      ref ="userProfileOpenRef" 
+      :userId="selectedUserId"
+     />
   </teleport>
 </template>
 
@@ -502,13 +501,15 @@ type SortDirection = 'asc' | 'desc';
 const sortField = ref<SortField>('name');
 const sortDirection = ref<SortDirection>('asc');
 
-const selectedUserId = ref<number | null>(null);
-const isProfileOpen = ref(false);
+const selectedUserId = ref<number>(0);
+//const isProfileOpen = ref(false);
+
+const userProfileOpenRef = ref();
 
 const openUserProfile = (userId: number) => {
-  console.log('Opening profile for user:', userId); 
-  selectedUserId.value = userId;
-  isProfileOpen.value = true;
+  console.log('Opening profile for user:', userId);
+  selectedUserId.value = userId; 
+  userProfileOpenRef.value?.open();
 };
 
 // Фильтрация и сортировка команд
