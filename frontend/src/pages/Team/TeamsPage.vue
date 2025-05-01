@@ -531,7 +531,7 @@ type SortDirection = 'asc' | 'desc';
 const sortField = ref<SortField>('name');
 const sortDirection = ref<SortDirection>('asc');
 
-const selectedUserId = ref<number | null>(null);
+const selectedUserId = ref<number>(0);
 //const isProfileOpen = ref(false);
 
 const userProfileOpenRef = ref();
