@@ -1,10 +1,12 @@
 <template>
-  <q-dialog v-model="showDialog" persistent>
+  <q-dialog 
+    v-model="showDialog"
+    @update:model-value="val => !val && closeDialog()"
+  >
     <q-card class="create-project-dialog bg-grey-2 q-pa-md">
       <q-card-section class="text-h6 text-primary">Создать новый проект</q-card-section>
 
       <q-card-section>
-        <!-- Форма для ввода данных -->
         <q-form @submit="onSubmit" class="q-gutter-md">
           <!-- Название проекта -->
           <q-input
@@ -100,7 +102,10 @@
             v-model="newProject.maxUsers"
             label="Максимальное количество участников"
             type="number"
-            :rules="[(val) => !!val || 'Поле обязательно']"
+            :rules="[
+              (val) => !!val || 'Поле обязательно',
+              (val) => val > 0 || 'Должно быть больше 0'
+            ]"
             outlined
             dense
           />
@@ -116,7 +121,13 @@
 
           <!-- Кнопки -->
           <q-card-actions align="right">
-            <q-btn flat label="Отмена" color="negative" v-close-popup />
+            <q-btn 
+              flat 
+              label="Отмена" 
+              color="negative" 
+              v-close-popup
+              @click="closeDialog"
+            />
             <q-btn type="submit" label="Создать" color="primary" />
           </q-card-actions>
         </q-form>
@@ -128,35 +139,30 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Competencies, CreateProjectDto, StatusProject } from '../../../../backend/src/common/types';
-import { create } from 'src/api/project.api'; // Импортируем метод для создания проекта
-import { useMainStore } from 'src/stores/main-store'; // Импортируем хранилище
+import { create } from 'src/api/project.api';
+import { useMainStore } from 'src/stores/main-store';
 
-// Пропсы и эмиты
 const emit = defineEmits(['create']);
 
-// Состояние диалога
 const showDialog = ref(false);
-
-// Хранилище
 const mainStore = useMainStore();
 
-// Данные нового проекта
 const newProject = ref<CreateProjectDto>({
   name: '',
   problem: '',
   solution: '',
-  result: '', // Добавлено поле "Результат"
+  result: '',
   resource: '',
   stack: [],
-  status: StatusProject.searchTeam, // Статус проекта
-  startProject: new Date(), // Дата начала проекта (тип Date)
-  stopProject: new Date(), // Дата окончания проекта (тип Date)
-  maxUsers: '', // По умолчанию число 1
+  status: StatusProject.searchTeam,
+  startProject: new Date(),
+  stopProject: new Date(),
+  maxUsers: '',
   customer: '',
-  initiator: mainStore.userId, // Используем ID залогиненного пользователя
+  initiator: mainStore.userId,
 });
 
-// Строковые представления дат для v-model
+// Строковые представления дат
 const startProjectString = computed({
   get: () => newProject.value.startProject.toISOString().split('T')[0],
   set: (value) => {
@@ -171,30 +177,27 @@ const stopProjectString = computed({
   },
 });
 
-// Опции для стека технологий
-const competenceOptions = Object.values(Competencies).flat();;
-
-// Опции для статуса проекта с русскими названиями
+// Опции для селектов
+const competenceOptions = Object.values(Competencies).flat();
 const statusOptions = [
   { label: 'Черновик', value: StatusProject.draft },
   { label: 'Поиск команды', value: StatusProject.searchTeam },
   { label: 'Отбор команды', value: StatusProject.selectionTeam },
   { label: 'Команда найдена', value: StatusProject.teamFound },
 ];
-// Открытие диалога
+
+// Методы управления диалогом
 const openDialog = () => {
   showDialog.value = true;
 };
 
-// Закрытие диалога
 const closeDialog = () => {
-  window.location.reload();
+  showDialog.value = false;
 };
 
 // Отправка формы
 const onSubmit = async () => {
   try {
-    // Проверяем, что все обязательные поля заполнены
     if (
       !newProject.value.name ||
       !newProject.value.problem ||
@@ -210,23 +213,20 @@ const onSubmit = async () => {
       return;
     }
 
-    // Отправляем данные на сервер
     const projectData: CreateProjectDto = {
       ...newProject.value,
     };
 
     const createdProject = await create(projectData);
     if (createdProject) {
-      // Оповещаем родительский компонент о создании проекта
       emit('create', createdProject);
-      closeDialog(); // Закрываем диалог после успешного создания
+      closeDialog();
     }
   } catch (error) {
     console.error('Ошибка при создании проекта:', error);
   }
 };
 
-// Экспортируем методы для использования в родительском компоненте
 defineExpose({
   openDialog,
   closeDialog,

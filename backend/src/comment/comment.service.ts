@@ -68,4 +68,12 @@ export class CommentService {
 
     await this.commentRepository.remove(comment);
   }
+
+  async findByIdeaId(ideaId: number): Promise<Comments[]> {
+    return this.commentRepository.find({
+      where: { idea: { id: ideaId } },
+      relations: ['users', 'idea'],
+      order: { createdAt: 'DESC' } // Сортировка по дате
+    });
+  }
 }

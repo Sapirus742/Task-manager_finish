@@ -1,146 +1,189 @@
 <template>
-  <q-dialog v-model="showDialog" persistent>
+  <q-dialog 
+  v-model="showDialog"
+  @update:model-value="val => !val && closeDialog()"
+>
     <q-card class="project-details-card">
       <q-card-section>
-        <div class="project-title-wrapper">
-          <h2 class="text-h5 text-weight-bold q-mb-md project-title">{{ project?.name }}</h2>
-        </div>
+        <div class="project-header">
+          <div class="project-title-wrapper">
+            <h2 class="text-h5 text-weight-bold q-mb-sm project-title">{{ project?.name }}</h2>
+            <q-badge 
+              :color="getStatusColor(project?.status)" 
+              class="status-badge"
+            >
+              {{ getStatusLabel(project?.status) }}
+            </q-badge>
+          </div>
 
-        <!-- Блок с инициатором -->
-        <div class="initiator-section q-mb-md"
-        @click="project?.initiator?.id && openUserProfile(project.initiator.id)">
-          <q-icon name="person" size="sm" class="q-mr-sm" />
-          <span class="text-weight-bold">Инициатор: </span>
-          <span>{{ project?.initiator?.firstname }} {{ project?.initiator?.lastname }}</span>
-          <q-chip v-if="project?.initiator?.roles" size="sm" color="primary" text-color="white">
-            {{ project.initiator.roles.join(', ') }}
-          </q-chip>
+          <div class="project-meta">
+            <div class="initiator-section"
+                 @click="project?.initiator?.id && openUserProfile(project.initiator.id)">
+              <q-icon name="person" size="sm" class="q-mr-xs" />
+              <span class="text-weight-medium">Инициатор:</span>
+              <span>{{ project?.initiator?.firstname }} {{ project?.initiator?.lastname }}</span>
+            </div>
+
+            <div class="date-section">
+              <q-icon name="event" size="sm" class="q-mr-xs" />
+              <span>{{ formatDate(project?.startProject) }} — {{ formatDate(project?.stopProject) }}</span>
+            </div>
+          </div>
         </div>
 
         <q-tabs 
           v-model="tab" 
-          dense 
-          active-color="primary" 
-          indicator-color="primary" 
-          class="q-mb-md"
+          dense
+          class="q-mt-md"
+          active-color="primary"
+          indicator-color="primary"
+          align="left"
         >
           <q-tab name="description" label="Описание" />
           <q-tab name="team" label="Команда" />
           <q-tab name="details" label="Детали" />
         </q-tabs>
 
+        <q-separator />
+
         <div class="panels-container">
-          <q-tab-panels v-model="tab" animated style="height: 100%;">
-            <!-- Вкладка с описанием проекта -->
+          <q-tab-panels v-model="tab" animated>
+            <!-- Вкладка Описание -->
             <q-tab-panel name="description">
-              <div class="description-section panel-content">
-                <h3 class="text-subtitle1 text-weight-bold q-mb-xs">Проблема</h3>
-                <p class="q-mb-sm">{{ project?.problem || 'Не указана' }}</p>
+              <div class="description-section">
+                <div class="detail-block">
+                  <h3 class="section-title">Проблема</h3>
+                  <p class="section-content">{{ project?.problem || 'Не указана' }}</p>
+                </div>
                 
-                <h3 class="text-subtitle1 text-weight-bold q-mb-xs">Решение</h3>
-                <p class="q-mb-sm">{{ project?.solution || 'Не указано' }}</p>
+                <div class="detail-block">
+                  <h3 class="section-title">Решение</h3>
+                  <p class="section-content">{{ project?.solution || 'Не указано' }}</p>
+                </div>
                 
-                <h3 class="text-subtitle1 text-weight-bold q-mb-xs">Ожидаемый результат</h3>
-                <p>{{ project?.result || 'Не указан' }}</p>
+                <div class="detail-block">
+                  <h3 class="section-title">Ожидаемый результат</h3>
+                  <p class="section-content">{{ project?.result || 'Не указан' }}</p>
+                </div>
               </div>
             </q-tab-panel>
 
+            <!-- Вкладка Команда -->
             <q-tab-panel name="team">
-              <div class="team-section panel-content">
-                <h3 class="text-subtitle1 text-weight-bold q-mb-xs">Заявки от команд:</h3>
+              <div class="team-section">
+                <h3 class="section-title q-mb-md">Заявки от команд</h3>
+                
                 <template v-if="teamStore.isLoading">
-                  <q-spinner color="primary" size="3em" />
-                  <div>Загрузка данных о командах...</div>
-                </template>
-                
-                <!-- Список команд, подавших заявку -->
-                <q-list bordered separator v-if="pendingTeams.length > 0">
-                  <q-item
-                    v-for="team in pendingTeams"
-                    :key="team.id"
-                    clickable
-                    class="pending-team-item"
-                    @click="openTeamDetailsDialog(team)"
-                  >
-                    <q-item-section>
-                      <q-item-label>{{ team.name }}</q-item-label>
-                      <q-item-label caption>{{ team.description }}</q-item-label>
-                    </q-item-section>
-                    
-                    <q-item-section side v-if="canApproveTeam">
-                      <q-btn 
-                        label="Выбрать" 
-                        color="positive" 
-                        @click.stop="approveTeam(team)"
-                      />
-                    </q-item-section>
-                  </q-item>
-                </q-list>
-                
-                <!-- Текущая команда проекта -->
-                <template v-if="currentTeam && project?.status === StatusProject.teamFound">
-                  <div class="current-team-section q-mt-md">
-                    <h4 class="text-subtitle1 text-weight-bold q-mb-sm">Текущая команда проекта</h4>
-                    
-                    <div class="team-name q-mb-md">
-                      <q-icon name="groups" class="q-mr-sm" />
-                      <strong>Команда:</strong> {{ currentTeam.name }}
-                      <q-chip size="s" :color="currentTeam.privacy === 'Close' ? 'negative' : 'positive'" text-color="white">
-                        {{ currentTeam.privacy === 'Close' ? 'Закрытая' : 'Открытая' }}
-                      </q-chip>
-                      <q-chip size="s" color="info" text-color="white">
-                        {{ currentTeam.status }}
-                      </q-chip>
-                    </div>
-                    
-                    <!-- Описание команды -->
-                    <div v-if="currentTeam.description" class="q-mb-md">
-                      <h4 class="text-subtitle2 text-weight-bold q-mb-xs">Описание команды:</h4>
-                      <p>{{ currentTeam.description }}</p>
-                    </div>
-
-                    <q-btn
-                      label="Просмотреть команду"
-                      color="primary"
-                      @click="openTeamDetailsDialog(currentTeam)"
-                      class="q-mb-md"
-                    />
+                  <div class="loading-state">
+                    <q-spinner color="primary" size="3em" />
+                    <div>Загрузка данных о командах...</div>
                   </div>
                 </template>
                 
-                <div v-else-if="pendingTeams.length === 0" class="text-grey">
-                  Нет заявок от команд
-                </div>
+                <template v-else>
+                  <q-list bordered separator v-if="pendingTeams.length > 0" class="team-list">
+                    <q-item
+                      v-for="team in pendingTeams"
+                      :key="team.id"
+                      clickable
+                      class="pending-team-item"
+                      @click="openTeamDetailsDialog(team)"
+                    >
+                      <q-item-section>
+                        <q-item-label class="team-name">{{ team.name }}</q-item-label>
+                        <q-item-label caption class="team-description">{{ team.description }}</q-item-label>
+                      </q-item-section>
+                      
+                      <q-item-section side v-if="canApproveTeam">
+                        <q-btn 
+                          label="Выбрать" 
+                          color="positive" 
+                          size="sm"
+                          @click.stop="approveTeam(team)"
+                        />
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                  
+                  <template v-if="currentTeam && project?.status === StatusProject.teamFound">
+                    <div class="current-team-section">
+                      <h4 class="section-title">Текущая команда проекта</h4>
+                      
+                      <div class="detail-block q-mb-md">
+                        <div class="team-meta">
+                          <q-icon name="groups" class="q-mr-sm" />
+                          <span class="text-weight-medium">Название:</span>
+                          <span>{{ currentTeam.name }}</span>
+                        </div>
+                        
+                        <div class="team-tags q-mt-sm">
+                          <q-chip size="sm" :color="currentTeam.privacy === 'Close' ? 'negative' : 'positive'" text-color="white">
+                            {{ currentTeam.privacy === 'Close' ? 'Закрытая' : 'Открытая' }}
+                          </q-chip>
+                          <q-chip size="sm" color="info" text-color="white">
+                            {{ currentTeam.status }}
+                          </q-chip>
+                        </div>
+                      </div>
+                      
+                      <div class="detail-block" v-if="currentTeam.description">
+                        <h4 class="section-title">Описание команды</h4>
+                        <p class="section-content">{{ currentTeam.description }}</p>
+                      </div>
+
+                      <q-btn
+                        label="Просмотреть команду"
+                        color="primary"
+                        @click="openTeamDetailsDialog(currentTeam)"
+                        class="q-mt-md"
+                      />
+                    </div>
+                  </template>
+                  
+                  <div v-else-if="pendingTeams.length === 0" class="empty-state">
+                    <q-icon name="info" size="sm" />
+                    <span>Нет заявок от команд</span>
+                  </div>
+                </template>
               </div>
             </q-tab-panel>
 
-            <!-- Вкладка с техническими деталями -->
+            <!-- Вкладка Детали -->
             <q-tab-panel name="details">
-              <div class="details-section panel-content">
-                <h3 class="text-subtitle1 text-weight-bold q-mb-xs">Технологии</h3>
-                <div class="tech-stack q-mb-sm">
-                  <template v-if="project?.stack?.length">
-                    <q-chip 
-                      v-for="tech in project.stack" 
-                      :key="tech" 
-                      color="primary" 
-                      text-color="white" 
-                      size="s"
-                    >
-                      {{ tech }}
-                    </q-chip>
-                  </template>
-                  <span v-else class="text-grey">Не указаны</span>
+              <div class="details-section">
+                <div class="detail-block">
+                  <h3 class="section-title">Технологии</h3>
+                  <div class="tech-stack">
+                    <template v-if="project?.stack?.length">
+                      <q-chip 
+                        v-for="tech in project.stack" 
+                        :key="tech" 
+                        color="primary" 
+                        text-color="white" 
+                        size="sm"
+                        class="tech-tag"
+                      >
+                        {{ tech }}
+                      </q-chip>
+                    </template>
+                    <span v-else class="text-grey">Не указаны</span>
+                  </div>
                 </div>
                 
-                <h3 class="text-subtitle1 text-weight-bold q-mb-xs">Ресурсы</h3>
-                <p class="q-mb-sm">{{ project?.resource || 'Не указаны' }}</p>
+                <div class="detail-block">
+                  <h3 class="section-title">Ресурсы</h3>
+                  <p class="section-content">{{ project?.resource || 'Не указаны' }}</p>
+                </div>
                 
-                <h3 class="text-subtitle1 text-weight-bold q-mb-xs">Заказчик</h3>
-                <p class="q-mb-sm">{{ project?.customer || 'Не указан' }}</p>
+                <div class="detail-block">
+                  <h3 class="section-title">Заказчик</h3>
+                  <p class="section-content">{{ project?.customer || 'Не указан' }}</p>
+                </div>
                 
-                <h3 class="text-subtitle1 text-weight-bold q-mb-xs">Максимальное количество участников</h3>
-                <p>{{ project?.maxUsers || 'Не указано' }}</p>
+                <div class="detail-block">
+                  <h3 class="section-title">Участники</h3>
+                  <p class="section-content">{{ project?.maxUsers || 'Не указано' }}</p>
+                </div>
               </div>
             </q-tab-panel>
           </q-tab-panels>
@@ -148,19 +191,12 @@
       </q-card-section>
 
       <q-card-actions class="footer-actions">
-        <q-badge :color="getStatusColor(project?.status)" class="status-badge">
-          {{ project?.status }}
-        </q-badge>
-        
-        <div class="date-center">
-          {{ formatDate(project?.startProject) }} - {{ formatDate(project?.stopProject) }}
-        </div>
-        
         <q-btn flat label="Закрыть" color="primary" v-close-popup />
       </q-card-actions>
     </q-card>
   </q-dialog>
 
+  <!-- Диалог подтверждения выбора команды -->
   <q-dialog v-model="showConfirmDialog" persistent>
     <q-card style="min-width: 400px">
       <q-card-section>
@@ -199,19 +235,17 @@
     </q-card>
   </q-dialog>
 
-  <!-- Диалог для просмотра команды -->
+  <!-- Диалог просмотра команды -->
   <q-dialog v-model="showTeamDetails">
     <q-card v-if="selectedTeam" class="team-details-card">
       <q-card-section>
         <h2 class="team-heading">{{ selectedTeam.name }}</h2>
 
-        <!-- Описание команды -->
         <div class="team-description q-mb-md" v-if="selectedTeam.description">
           <strong>Описание:</strong>&nbsp;
           <p>{{ selectedTeam.description }}</p>
         </div>
 
-        <!-- Блок с компетенциями команды -->
         <div v-if="getTeamCompetencies(selectedTeam).length > 0" class="q-mb-md">
           <div class="text-subtitle2 q-mb-xs">Компетенции команды:</div>
           <div class="competencies-container">
@@ -220,7 +254,7 @@
               :key="index"
               color="primary"
               text-color="white"
-              size="s"
+              size="sm"
               class="q-mr-xs q-mb-xs"
             >
               {{ competency }}
@@ -228,7 +262,6 @@
           </div>
         </div>
         
-        <!-- Владелец команды -->
         <div class="team-owner q-mb-md" v-if="selectedTeam.user_owner"
         @click="openUserProfile(selectedTeam.user_owner.id)">
           <q-icon name="person" class="q-mr-sm" />
@@ -236,15 +269,12 @@
           <span>{{ selectedTeam.user_owner.firstname }} {{ selectedTeam.user_owner.lastname }}</span>
         </div>
 
-        <!-- Подпись "Команда" -->
         <div class="team-label q-mb-sm">
           <q-icon name="people" class="q-mr-sm" />
           <strong>Команда:</strong>
         </div>
 
-        <!-- Блок участников -->
         <div class="members-container q-pa-sm bg-grey-2 rounded-borders">
-          <!-- Владелец -->
           <div class="member-item owner" v-if="selectedTeam.user_owner"
           @click="openUserProfile(selectedTeam.user_owner.id)">
               <div class="member-info">
@@ -258,7 +288,6 @@
               </div>
             </div>
 
-          <!-- Тимлид (если не владелец) -->
           <div 
             v-if="selectedTeam.user_leader && selectedTeam.user_leader.id !== selectedTeam.user_owner?.id"
             class="member-item leader q-mb-xs"
@@ -275,7 +304,6 @@
             </div>
           </div>
 
-          <!-- Остальные участники -->
           <div 
             v-for="member in getRegularMembers(selectedTeam)" 
             :key="member.id" 
@@ -299,14 +327,15 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
+  
   <teleport to="body">
-  <UserProfileOpen 
-    v-if="selectedUserId" 
-    :key="selectedUserId"
-    :userId="selectedUserId" 
-    v-model="isProfileOpen"
-  />
-</teleport>
+    <UserProfileOpen 
+      v-if="selectedUserId" 
+      :key="selectedUserId"
+      :userId="selectedUserId" 
+      v-model="isProfileOpen"
+    />
+  </teleport>
 </template>
 
 <script setup lang="ts">
@@ -336,12 +365,10 @@ const openUserProfile = (userId: number) => {
   isProfileOpen.value = true;
 };
 
-// Переменную для диалога подтверждения
 const showConfirmDialog = ref(false);
 const selectedTeamForApproval = ref<TeamDto | null>(null);
 const mismatchReasons = ref<string[]>([]);
 
-// Добавляем переменные для управления диалогом команды
 const showTeamDetails = ref(false);
 const selectedTeam = ref<TeamDto | null>(null);
 
@@ -350,21 +377,27 @@ const currentTeam = computed<TeamDto | null>(() => {
   return project.value?.teams?.[0] || null;
 });
 
-// Функция для получения уникальных компетенций команды
+const getStatusLabel = (status?: string) => {
+  switch (status) {
+    case StatusProject.searchTeam: return 'Поиск команды';
+    case StatusProject.teamFound: return 'Команда найдена';
+    case StatusProject.selectionTeam: return 'Отбор команды';
+    case StatusProject.draft: return 'Черновик';
+    default: return status || 'Неизвестно';
+  }
+};
+
 const getTeamCompetencies = (team: TeamDto): string[] => {
   const competencies = new Set<string>();
   
-  // Добавляем компетенции владельца
   if (team.user_owner?.competence?.length) {
     team.user_owner.competence.forEach(c => competencies.add(c));
   }
   
-  // Добавляем компетенции тимлида
   if (team.user_leader?.competence?.length) {
     team.user_leader.competence.forEach(c => competencies.add(c));
   }
   
-  // Добавляем компетенции участников
   team.user?.forEach(member => {
     if (member.competence?.length) {
       member.competence.forEach(c => competencies.add(c));
@@ -387,7 +420,6 @@ const canApproveTeam = computed(() => {
          project.value?.initiator.id === mainStore.userId;
 });
 
-// Функция для открытия диалога с деталями команды
 const openTeamDetailsDialog = (team: TeamDto) => {
   selectedTeam.value = team;
   showTeamDetails.value = true;
@@ -397,9 +429,7 @@ const approveTeam = async (team: TeamDto) => {
   selectedTeamForApproval.value = team;
   mismatchReasons.value = [];
   
-  // Проверяем соответствие критериям
   if (project.value) {
-    // Проверка технологий
     if (project.value.stack && project.value.stack.length > 0) {
       const teamTechs = getTeamCompetencies(team);
       const missingTechs = project.value.stack.filter(tech => 
@@ -413,7 +443,6 @@ const approveTeam = async (team: TeamDto) => {
       }
     }
     
-    // Проверка количества участников
     if (project.value.maxUsers) {
       const maxUsers = parseInt(project.value.maxUsers);
       const teamSize = team.user?.length || 0;
@@ -429,7 +458,6 @@ const approveTeam = async (team: TeamDto) => {
   showConfirmDialog.value = true;
 };
 
-// Функция для подтверждения выбора
 const confirmTeamApproval = async () => {
   if (!selectedTeamForApproval.value?.id || !project.value?.id) return;
   
@@ -466,7 +494,6 @@ const confirmTeamApproval = async () => {
     
     showConfirmDialog.value = false;
     
-    // Обновление с задержкой 3 секунд
     setTimeout(() => {
       window.location.reload();
     }, 3000);
@@ -494,6 +521,7 @@ const getStatusColor = (status?: string) => {
     case StatusProject.searchTeam: return 'orange';
     case StatusProject.teamFound: return 'green';
     case StatusProject.selectionTeam: return 'blue';
+    case StatusProject.draft: return 'grey';
     default: return 'grey';
   }
 };
@@ -513,6 +541,10 @@ const calculateMaxHeight = () => {
     });
     maxHeight.value = max;
   });
+};
+
+const closeDialog = () => {
+  showDialog.value = false;
 };
 
 const open = async (projectData: ProjectDto) => {
@@ -559,140 +591,169 @@ defineExpose({ open });
 </script>
 
 <style scoped>
-.pending-team-item {
-  border-radius: 4px;
-  background-color: #f1f1f1;
-  transition: background-color 0.2s;
-}
-
-.pending-team-item:hover {
-  background-color: #f0f0f0;
-}
-
-.pending-team-item .q-item {
-  padding: 12px 16px;
-}
-
-.member-item {
-  padding: 8px 16px;
-  border-bottom: 1px solid #eee;
-}
-
-.member-item:last-child {
-  border-bottom: none;
-}
-
 .project-details-card {
-  width: 750px;
+  width: 800px;
   max-width: 90vw;
   display: flex;
   flex-direction: column;
 }
 
-.team-owner,
-.member-item {
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.team-owner:hover,
-.member-item:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-.initiator-section {
-  display: flex;
-  align-items: center;
-  padding: 8px 12px;
-  background: #f5f5f5;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  gap: 8px;
+.project-header {
+  margin-bottom: 16px;
 }
 
 .project-title-wrapper {
-  display: block;
-  width: 100%;
-  word-break: break-word;
-  hyphens: auto;
-}
-
-.panels-container {
-  min-height: 300px;
-  height: v-bind(maxHeight + 'px');
-  position: relative;
-}
-
-.footer-actions {
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
-  padding: 8px 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.project-title {
+  margin: 0;
+  line-height: 1.3;
 }
 
 .status-badge {
   font-size: 0.75rem;
-  padding: 6px 10px;
+  padding: 4px 8px;
+  border-radius: 4px;
 }
 
-.date-center {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 0.8rem;
-  color: #666;
+.project-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.initiator-section,
+.date-section {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.initiator-section:hover {
+  color: #1976d2;
+}
+
+.panels-container {
+  min-height: 400px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.detail-block {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+
+.detail-block:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-color: #bdbdbd;
+}
+
+.section-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.section-content {
+  font-size: 0.95rem;
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 0;
 }
 
 .tech-stack {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
+  margin-top: 8px;
 }
 
-.panel-content {
-  padding-bottom: 20px;
-  :deep(*) {
-    border-color: transparent !important;
-  }
+.tech-tag {
+  font-size: 0.8rem;
 }
 
-.members-container {
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
+.team-list {
+  border-radius: 8px;
+  overflow: hidden;
 }
 
-.member-item {
-  padding: 8px;
-  border-bottom: 1px solid #e0e0e0;
+.pending-team-item {
   transition: background-color 0.2s;
 }
 
-.member-item:last-child {
-  border-bottom: none;
-}
-
-.member-item.leader {
-  background-color: rgba(25, 118, 210, 0.05);
-  border-left: 3px solid #1976d2;
-}
-
-.member-item.owner {
-  background-color: rgba(0, 150, 136, 0.05);
-  border-left: 3px solid #009688;
-  marker: none;
+.pending-team-item:hover {
+  background-color: #f5f5f5;
 }
 
 .team-name {
+  font-weight: 500;
+}
+
+.team-description {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.current-team-section {
+  margin-top: 24px;
+}
+
+.team-meta {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px;
-  background: #f5f5f5;
-  border-radius: 6px;
+  margin-bottom: 4px;
 }
 
-/* Стили для диалога команды */
+.team-tags {
+  display: flex;
+  gap: 8px;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  color: #666;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  color: #666;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.footer-actions {
+  border-top: 1px solid #e0e0e0;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Team details dialog styles */
 .team-details-card {
   width: 600px;
   max-width: 90vw;
@@ -712,21 +773,36 @@ defineExpose({ open });
 .team-owner {
   display: flex;
   align-items: center;
+  padding: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-radius: 4px;
+}
+
+.team-owner:hover {
+  background-color: #f5f5f5;
 }
 
 .team-label {
   display: flex;
   align-items: center;
   font-size: 1.1rem;
+  margin-bottom: 8px;
 }
 
 .members-container {
   border: 1px solid #e0e0e0;
+  border-radius: 8px;
 }
 
 .member-item {
-  padding: 8px;
-  border-radius: 4px;
+  padding: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.member-item:hover {
+  background-color: #f5f5f5;
 }
 
 .member-item.owner {
@@ -753,33 +829,25 @@ defineExpose({ open });
   font-size: 0.9em;
 }
 
-@media (max-width: 800px) {
-  .project-details-card {
-    width: 90vw;
+.competencies-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .project-meta {
+    flex-direction: column;
+    gap: 8px;
   }
   
   .panels-container {
-    min-height: 200px;
-    height: auto;
-    max-height: 60vh;
+    min-height: 300px;
+    max-height: 50vh;
   }
   
-  .date-center {
-    position: static;
-    transform: none;
-    order: -1;
-    width: 100%;
-    text-align: center;
-    margin-bottom: 8px;
-  }
-  
-  .footer-actions {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-  
-  .team-name {
-    flex-wrap: wrap;
+  .detail-block {
+    padding: 12px;
   }
 }
 </style>

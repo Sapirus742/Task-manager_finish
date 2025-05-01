@@ -12,8 +12,7 @@ export const useCommentStore = defineStore('comment', () => {
   const fetchComments = async (ideaId: number) => {
     isLoading.value = true;
     try {
-      const allComments = await commentApi.getAll();
-      comments.value = allComments.filter(c => c.idea.id === ideaId);
+      comments.value = await commentApi.getByIdeaId(ideaId); // Новый метод в API
     } catch (err) {
       error.value = 'Ошибка загрузки комментариев';
     } finally {

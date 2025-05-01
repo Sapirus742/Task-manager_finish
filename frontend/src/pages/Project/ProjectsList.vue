@@ -12,9 +12,18 @@
         class="project-card"
         v-for="project in projects"
         :key="project.id"
+        @click="$emit('open-details', project)"
       >
-        <div @click="$emit('open-details', project)">
+        <div>
           <h2 class="project-heading"><strong>{{ project.name }}</strong></h2>
+          
+          <!-- Блок статуса проекта -->
+          <div class="project-status q-mb-sm">
+            <q-badge :color="getStatusColor(project.status)">
+              {{ getStatusLabel(project.status) }}
+            </q-badge>
+          </div>
+          
           <p class="project-description">{{ project.solution }}</p>
 
           <div class="project-initiator">
@@ -22,7 +31,7 @@
             <strong>Заказчик:&nbsp;</strong> {{ project.customer }}
           </div>
 
-          <div class="project-status">
+          <div class="project-status-info">
             <div class="status-item">
               <q-icon name="people" class="q-mr-sm" />
               <span>Команда до {{ project.maxUsers }} человек</span>
@@ -58,6 +67,7 @@
 import type { ProjectDto, SecuredUser } from '../../../../backend/src/common/types';
 import { Role } from '../../../../backend/src/common/types';
 
+
 const props = defineProps<{
   projects: ProjectDto[];
   loading?: boolean;
@@ -65,6 +75,27 @@ const props = defineProps<{
 }>();
 
 defineEmits(['open-details', 'delete-project']);
+
+// Функции для работы со статусом проекта
+const getStatusColor = (status?: string) => {
+  switch (status) {
+    case 'searchTeam': return 'orange';
+    case 'teamFound': return 'green';
+    case 'selectionTeam': return 'blue';
+    case 'draft': return 'grey';
+    default: return 'grey';
+  }
+};
+
+const getStatusLabel = (status?: string) => {
+  switch (status) {
+    case 'searchTeam': return 'Поиск команды';
+    case 'teamFound': return 'Команда найдена';
+    case 'selectionTeam': return 'Отбор команды';
+    case 'draft': return 'Черновик';
+    default: return status || 'Неизвестно';
+  }
+};
 
 const canDeleteProject = (project: ProjectDto) => {
   if (!props.currentUser) return false;
@@ -122,8 +153,8 @@ const getTechClass = (tech: string) => {
   margin-bottom: 8px;
 }
 
-.project-heading strong {
-  font-weight: bold;
+.project-status {
+  margin-bottom: 12px;
 }
 
 .project-description {
@@ -137,11 +168,7 @@ const getTechClass = (tech: string) => {
   font-weight: bold;
 }
 
-.project-initiator strong {
-  margin-right: 4px;
-}
-
-.project-status {
+.project-status-info {
   margin-top: 10px;
   display: flex;
   gap: 20px;
