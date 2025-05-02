@@ -45,3 +45,11 @@ export async function remove(id: number): Promise<CommentDto | undefined> {
   }
   return;
 }
+
+export async function getByIdeaId(ideaId: number): Promise<CommentDto[]> {
+  const response = await api.get(`/comment/idea/${ideaId}`);
+  if (response.status == 200) {
+    return response.data;
+  }
+  return [];
+}

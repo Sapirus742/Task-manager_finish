@@ -55,4 +55,10 @@ export class CommentController {
   async remove(@Param('id') id: number): Promise<void> {
     return this.commentService.remove(id);
   }
+
+  @Get('idea/:ideaId')
+@UseGuards(JwtAuthGuard)
+async findByIdeaId(@Param('ideaId') ideaId: number): Promise<Comments[]> {
+  return this.commentService.findByIdeaId(ideaId);
+}
 }

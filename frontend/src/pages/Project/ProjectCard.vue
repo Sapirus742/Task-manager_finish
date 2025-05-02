@@ -1,32 +1,37 @@
 <template>
   <div class="project-card" @click="$emit('click')">
     <div class="card-content">
-      <!-- Верхняя часть (название и решение) -->
-      <div class="top-section">
-        <div class="text-h6 q-mb-sm">{{ project.name }}</div>
-        <div class="solution q-mb-sm">
-          {{ truncateSolution(project.solution) }}
-        </div>
+      <!-- Заголовок и статус в одной строке -->
+      <div class="title-row">
+        <h3 class="project-title">{{ project.name }}</h3>
+        <q-badge 
+          :color="statusColor" 
+          class="status-badge"
+          :label="statusLabel"
+        />
       </div>
 
-      <!-- Нижняя часть (прижата к низу) -->
-      <div class="bottom-section">
-        <!-- Строка с инициатором и участниками (теперь выше технологий) -->
-        <div class="initiator-meta q-mb-sm">
-          <div class="initiator">
-            <q-icon name="person" size="sm" class="q-mr-xs" />
-            {{ project.customer }}
+      <!-- Основное содержание -->
+      <div class="content-section">
+        <p class="project-description">
+          {{ truncateSolution(project.solution) }}
+        </p>
+
+        <div class="meta-info">
+          <div class="meta-item">
+            <q-icon name="person_outline" />
+            <span>{{ project.customer || 'Не указан' }}</span>
           </div>
-          <div class="members">
-            <q-icon name="people" size="sm" class="q-mr-xs" />
-            {{ project.teams?.length || 0 }}/{{ project.maxUsers }}
+          
+          <div class="meta-item">
+            <q-icon name="groups" />
+            <span>{{ teamCountText }}</span>
           </div>
         </div>
 
-        <!-- Стек технологий (теперь ниже инициатора) -->
-        <div class="tech-stack q-mb-sm">
-          <q-chip 
-            v-for="tech in project.stack" 
+        <div class="tech-stack">
+          <q-chip
+            v-for="tech in displayedTechStack"
             :key="tech"
             size="sm"
             color="primary"
@@ -34,17 +39,21 @@
           >
             {{ tech }}
           </q-chip>
+          <q-chip 
+            v-if="hasExtraTechs" 
+            size="sm" 
+            color="grey-4" 
+            text-color="grey-8"
+          >
+            +{{ project.stack.length - 3 }}
+          </q-chip>
         </div>
+      </div>
 
-        <!-- Даты и статус -->
-        <div class="footer-row">
-          <div class="date-range">
-            {{ formatDate(project.startProject) }} - {{ formatDate(project.stopProject) }}
-          </div>
-          <q-badge :color="statusColor" class="status-badge">
-            {{ project.status }}
-          </q-badge>
-        </div>
+      <!-- Футер с датами -->
+      <div class="date-range">
+        <q-icon name="event" size="sm" />
+        <span>{{ dateRangeText }}</span>
       </div>
     </div>
   </div>
@@ -61,17 +70,52 @@ const props = defineProps<{
 
 defineEmits(['click']);
 
-const statusColor = computed(() => {
-  return props.project.status === StatusProject.searchTeam ? 'orange' : 'green';
+// Вычисляемые свойства
+const statusColor = computed(() => ({
+  [StatusProject.draft]: 'grey-6',
+  [StatusProject.searchTeam]: 'orange',
+  [StatusProject.selectionTeam]: 'blue',
+  [StatusProject.teamFound]: 'green'
+}[props.project.status] || 'grey'));
+
+const statusLabel = computed(() => ({
+  [StatusProject.draft]: 'Черновик',
+  [StatusProject.searchTeam]: 'Поиск команды',
+  [StatusProject.selectionTeam]: 'Отбор',
+  [StatusProject.teamFound]: 'Команда найдена'
+}[props.project.status] || props.project.status));
+
+const displayedTechStack = computed(() => 
+  props.project.stack?.slice(0, 3) || []);
+
+const hasExtraTechs = computed(() => 
+  props.project.stack?.length > 3);
+
+const teamCountText = computed(() => {
+  const current = props.project.teams?.length || 0;
+  const max = parseInt(props.project.maxUsers) || 0;
+  return max > 0 ? `${current}/${max}` : current.toString();
 });
 
-const formatDate = (date: Date) => {
-  const d = new Date(date);
-  return `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth()+1).toString().padStart(2, '0')}.${d.getFullYear()}`;
+const dateRangeText = computed(() => {
+  const start = formatDate(props.project.startProject);
+  const end = formatDate(props.project.stopProject);
+  return `${start} — ${end}`;
+});
+
+// Вспомогательные функции
+const formatDate = (date?: Date) => {
+  if (!date) return 'н/д';
+  return new Date(date).toLocaleDateString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
 };
 
-const truncateSolution = (solution: string) => {
-  const maxLength = 80;
+const truncateSolution = (solution?: string) => {
+  if (!solution) return 'Описание отсутствует';
+  const maxLength = 120;
   return solution.length > maxLength 
     ? `${solution.substring(0, maxLength)}...` 
     : solution;
@@ -85,15 +129,17 @@ const truncateSolution = (solution: string) => {
   padding: 16px;
   background: #fff;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.2s ease;
   height: 100%;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .project-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-color: #bdbdbd;
 }
 
 .card-content {
@@ -102,31 +148,58 @@ const truncateSolution = (solution: string) => {
   height: 100%;
 }
 
-.top-section {
+.title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.project-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.3;
+  color: #333;
+}
+
+.status-badge {
+  font-size: 0.7rem;
+  padding: 4px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.content-section {
+  flex-grow: 1;
+  margin-bottom: 12px;
+}
+
+.project-description {
+  color: #555;
+  line-height: 1.4;
+  margin-bottom: 16px;
+  font-size: 0.9rem;
+}
+
+.meta-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 16px;
 }
 
-.bottom-section {
-  margin-top: auto; /* Прижимаем к низу */
-}
-
-.solution {
-  font-size: 0.9rem;
-  color: #444;
-  line-height: 1.3;
-}
-
-.initiator-meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.8rem;
-  color: #555;
-  margin-bottom: 12px; /* Отступ перед технологиями */
-}
-
-.initiator-meta div {
+.meta-item {
   display: flex;
   align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.meta-item q-icon {
+  color: #9e9e9e;
 }
 
 .tech-stack {
@@ -136,22 +209,28 @@ const truncateSolution = (solution: string) => {
   margin-bottom: 12px;
 }
 
-.footer-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 8px;
-  border-top: 1px solid #f0f0f0;
-  font-size: 0.8rem;
-}
-
 .date-range {
-  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #757575;
+  padding-top: 8px;
+  border-top: 1px solid #f5f5f5;
+  margin-top: auto;
 }
 
-.status-badge {
-  font-size: 0.75rem;
-  padding: 4px 8px;
-  border-radius: 4px;
+@media (max-width: 600px) {
+  .project-card {
+    padding: 12px;
+  }
+  
+  .project-title {
+    font-size: 1rem;
+  }
+  
+  .meta-info {
+    gap: 8px;
+  }
 }
 </style>

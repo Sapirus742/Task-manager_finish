@@ -45,3 +45,15 @@ export async function remove(id: number): Promise<AgileDto | undefined> {
   }
   return;
 }
+
+export async function updateStatus(
+  id: number, 
+  status: string
+): Promise<AgileDto> {
+  const response = await api.patch(`/agile/${id}/status`, { status });
+  return response.data;
+}
+
+
+
+

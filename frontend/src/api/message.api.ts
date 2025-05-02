@@ -1,5 +1,5 @@
 import { api } from './axios';
-import { CreateMessageDto, MessageDto, UpdateMessageDto } from '../common/types';
+import { CreateMessageDto, MessageDto, UpdateMessageDto } from '../../../backend/src/common/types';
 
 export async function getAll(): Promise<MessageDto[]> {
   const response = await api.get('/message');
@@ -44,9 +44,4 @@ export async function remove(id: number): Promise<MessageDto | undefined> {
     return response.data;
   }
   return;
-}
-
-export async function getByAgileId(agileId: number): Promise<MessageDto[]> {
-  const response = await api.get(`/message?agileId=${agileId}`);
-  return response.data;
 }

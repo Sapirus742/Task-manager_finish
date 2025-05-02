@@ -34,14 +34,14 @@ export class AgileController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
-  async create(@Body() agile: CreateAgileDto): Promise<Agile> {
-    return this.agileService.create(
-      agile.name,
-      agile.type,
-      agile.project,
-    );
-  }
+@UseGuards(JwtAuthGuard)
+async create(@Body() agile: CreateAgileDto): Promise<Agile> {
+  return this.agileService.create(
+    agile.name,
+    agile.type, // Теперь тип есть в DTO
+    agile.project.id // Обращаемся к id внутри объекта project
+  );
+}
   
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
