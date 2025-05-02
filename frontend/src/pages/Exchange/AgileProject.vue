@@ -1,373 +1,496 @@
 <template>
-  <q-dialog v-model="showDialog" maximized>
-    <q-card class="full-height">
-      <q-card-section class="row items-center q-pb-none">
-        <div class="text-h6">Agile доска проекта</div>
-        <q-space />
-        <q-btn icon="close" flat round dense v-close-popup />
-      </q-card-section>
-
-      <q-card-section class="q-pt-none full-height">
-        <div class="row full-height q-col-gutter-md">
-          <div 
-            v-for="column in columns" 
-            :key="column.status" 
-            class="col"
-          >
-            <q-card class="full-height column">
-              <q-card-section class="q-pa-sm" :class="column.headerClass">
-                <div class="text-subtitle1 text-center">
-                  {{ column.title }}
-                  <q-btn
-                    round
-                    dense
-                    flat
-                    icon="add"
-                    size="sm"
-                    @click="openCreateAgileDialog(column.status)"
-                  />
-                </div>
-              </q-card-section>
-              
-              <q-scroll-area class="col">
-                <div class="q-pa-sm column q-gutter-y-sm">
-                  <q-card
-                    v-for="agileItem in getAgileItemsByStatus(column.status)"
-                    :key="agileItem.id"
-                    class="cursor-pointer"
-                    draggable
-                    @dragstart="startDrag($event, agileItem)"
-                    @drop="onDrop($event, column.status)"
-                    @dragover.prevent
-                    @dragenter.prevent
+    <q-dialog v-model="showDialog" maximized>
+      <q-card class="full-height">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">{{ project?.name }} - Agile доска</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+  
+        <q-card-section class="q-pt-none full-height">
+          <div class="row full-height">
+            <!-- Боковая панель спринтов -->
+            <div class="col-2 q-pr-md">
+              <q-scroll-area class="full-height">
+                <q-list bordered separator>
+                  <q-item-label header>Спринты</q-item-label>
+                  <q-item 
+                    v-for="sprint in sprints" 
+                    :key="sprint.id"
+                    clickable
+                    v-ripple
+                    :active="activeSprint === sprint.id"
+                    @click="activeSprint = sprint.id"
                   >
-                    <q-card-section class="q-pa-sm">
-                      <div class="text-weight-bold">{{ agileItem.name }}</div>
-                      <div class="text-caption q-mt-xs">
-                        <q-icon name="comment" />
-                        {{ getMessageCount(agileItem.id) }} сообщений
-                      </div>
+                    <q-item-section>
+                      <q-item-label>Sprint {{ sprint.id }}</q-item-label>
+                      <q-item-label caption>{{ sprint.date }}</q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-scroll-area>
+            </div>
+  
+            <!-- Основные колонки -->
+            <div class="col-10">
+              <div class="row q-col-gutter-xs full-height">
+                <!-- Колонка Бэклог -->
+                <div class="col">
+                  <q-card class="full-height column">
+                    <q-card-section class="bg-blue-1 q-pa-sm">
+                      <div class="text-subtitle1 text-center">Бэклог</div>
                     </q-card-section>
-
-                    <q-card-actions align="right">
-                      <q-btn
-                        flat
-                        round
+                    
+                    <q-scroll-area class="col">
+                      <div class="q-pa-sm column q-gutter-y-xs">
+                        <q-card 
+                          v-for="(task, index) in backlogTasks" 
+                          :key="'backlog-'+index"
+                          class="cursor-pointer"
+                          draggable
+                          @dragstart="startDrag($event, 'backlog', index)"
+                          @drop="onDrop($event, 'backlog')"
+                          @dragover.prevent
+                          @dragenter.prevent
+                        >
+                          <q-card-section class="q-pa-sm">
+                            <div>{{ task.text }}</div>
+                            <div v-if="task.tags" class="q-mt-xs">
+                              <q-badge 
+                                v-for="(tag, i) in task.tags" 
+                                :key="i"
+                                :color="getTagColor(tag)"
+                                class="q-mr-xs"
+                              >
+                                {{ tag }}
+                              </q-badge>
+                            </div>
+                          </q-card-section>
+                        </q-card>
+                      </div>
+                    </q-scroll-area>
+                    
+                    <q-card-section class="q-pa-sm">
+                      <q-input 
+                        v-model="newBacklogTask" 
+                        placeholder="+ Add task" 
                         dense
-                        icon="edit"
-                        @click.stop="openEditAgileDialog(agileItem)"
-                      />
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="delete"
-                        color="negative"
-                        @click.stop="confirmDeleteAgile(agileItem.id)"
-                      />
-                      <q-btn
-                        flat
-                        round
-                        dense
-                        icon="chat"
-                        @click.stop="openMessagesPanel(agileItem)"
-                      />
-                    </q-card-actions>
+                        borderless
+                        @keyup.enter="addTask('backlog')"
+                      >
+                        <template v-slot:append>
+                          <q-btn 
+                            icon="add" 
+                            size="sm" 
+                            dense 
+                            flat 
+                            round
+                            @click="addTask('backlog')"
+                          />
+                        </template>
+                      </q-input>
+                    </q-card-section>
                   </q-card>
                 </div>
-              </q-scroll-area>
-            </q-card>
-          </div>
-        </div>
-      </q-card-section>
-    </q-card>
-  </q-dialog>
-
-  <q-dialog v-model="showAgileDialog">
-    <q-card style="min-width: 400px">
-      <q-card-section>
-        <div class="text-h6">
-          {{ editingAgile ? 'Редактировать тему' : 'Новая тема' }}
-        </div>
-      </q-card-section>
-
-      <q-card-section>
-        <q-form @submit.prevent="submitAgileForm">
-          <q-input
-            v-model="agileForm.name"
-            label="Название темы"
-            :rules="[val => !!val || 'Обязательное поле']"
-            class="q-mb-sm"
-          />
-          <q-select
-            v-model="agileForm.status"
-            :options="statusOptions"
-            label="Статус"
-            emit-value
-            map-options
-            class="q-mb-sm"
-          />
-          <q-input
-            v-model="agileForm.description"
-            label="Описание"
-            type="textarea"
-            autogrow
-            class="q-mb-sm"
-          />
-          <q-card-actions align="right">
-            <q-btn flat label="Отмена" color="primary" v-close-popup />
-            <q-btn type="submit" label="Сохранить" color="primary" />
-          </q-card-actions>
-        </q-form>
-      </q-card-section>
-    </q-card>
-  </q-dialog>
-
-  <q-drawer v-model="showMessagesPanel" side="right" bordered :width="400">
-    <q-scroll-area class="fit">
-      <q-card flat>
-        <q-card-section>
-          <div class="text-h6">{{ currentAgileItem?.name }}</div>
-          <div class="text-caption">{{ currentAgileItem?.description }}</div>
-        </q-card-section>
-
-        <q-card-section class="q-pt-none">
-          <div class="q-pa-md">
-            <div v-for="message in messages" :key="message.id" class="q-mb-md">
-              <q-card flat bordered>
-                <q-card-section>
-                  <div class="text-caption">{{ message.authorName }} • {{ formatDate(message.createdAt.toString()) }}</div>
-                  <div class="q-mt-sm">{{ message.content }}</div>
-                </q-card-section>
-              </q-card>
+  
+                <!-- Колонка Бэклог спринта -->
+                <div class="col">
+                  <q-card class="full-height column">
+                    <q-card-section class="bg-green-1 q-pa-sm">
+                      <div class="text-subtitle1 text-center">Бэклог спринта</div>
+                    </q-card-section>
+                    
+                    <q-scroll-area class="col">
+                      <div class="q-pa-sm column q-gutter-y-xs">
+                        <q-card 
+                          v-for="(task, index) in sprintTasks" 
+                          :key="'sprint-'+index"
+                          class="cursor-pointer"
+                          draggable
+                          @dragstart="startDrag($event, 'sprint', index)"
+                          @drop="onDrop($event, 'sprint')"
+                          @dragover.prevent
+                          @dragenter.prevent
+                        >
+                          <q-card-section class="q-pa-sm">
+                            <div>{{ task.text }}</div>
+                            <div v-if="task.tags" class="q-mt-xs">
+                              <q-badge 
+                                v-for="(tag, i) in task.tags" 
+                                :key="i"
+                                :color="getTagColor(tag)"
+                                class="q-mr-xs"
+                              >
+                                {{ tag }}
+                              </q-badge>
+                            </div>
+                            <div v-if="task.progress" class="text-caption text-grey q-mt-xs">
+                              {{ task.progress }}
+                            </div>
+                          </q-card-section>
+                        </q-card>
+                      </div>
+                    </q-scroll-area>
+                    
+                    <q-card-section class="q-pa-sm">
+                      <q-input 
+                        v-model="newSprintTask" 
+                        placeholder="+ Add task" 
+                        dense
+                        borderless
+                        @keyup.enter="addTask('sprint')"
+                      >
+                        <template v-slot:append>
+                          <q-btn 
+                            icon="add" 
+                            size="sm" 
+                            dense 
+                            flat 
+                            round
+                            @click="addTask('sprint')"
+                          />
+                        </template>
+                      </q-input>
+                    </q-card-section>
+                  </q-card>
+                </div>
+  
+                <!-- Колонка В процессе -->
+                <div class="col">
+                  <q-card class="full-height column">
+                    <q-card-section class="bg-orange-1 q-pa-sm">
+                      <div class="text-subtitle1 text-center">В процессе</div>
+                    </q-card-section>
+                    
+                    <q-scroll-area class="col">
+                      <div class="q-pa-sm column q-gutter-y-xs">
+                        <q-card 
+                          v-for="(task, index) in inProgressTasks" 
+                          :key="'progress-'+index"
+                          class="cursor-pointer"
+                          draggable
+                          @dragstart="startDrag($event, 'progress', index)"
+                          @drop="onDrop($event, 'progress')"
+                          @dragover.prevent
+                          @dragenter.prevent
+                        >
+                          <q-card-section class="q-pa-sm">
+                            <div>{{ task.text }}</div>
+                            <div v-if="task.tags" class="q-mt-xs">
+                              <q-badge 
+                                v-for="(tag, i) in task.tags" 
+                                :key="i"
+                                :color="getTagColor(tag)"
+                                class="q-mr-xs"
+                              >
+                                {{ tag }}
+                              </q-badge>
+                            </div>
+                          </q-card-section>
+                        </q-card>
+                      </div>
+                    </q-scroll-area>
+                    
+                    <q-card-section class="q-pa-sm">
+                      <q-input 
+                        v-model="newProgressTask" 
+                        placeholder="+ Add task" 
+                        dense
+                        borderless
+                        @keyup.enter="addTask('progress')"
+                      >
+                        <template v-slot:append>
+                          <q-btn 
+                            icon="add" 
+                            size="sm" 
+                            dense 
+                            flat 
+                            round
+                            @click="addTask('progress')"
+                          />
+                        </template>
+                      </q-input>
+                    </q-card-section>
+                  </q-card>
+                </div>
+  
+                <!-- Колонка Завершено -->
+                <div class="col">
+                  <q-card class="full-height column">
+                    <q-card-section class="bg-grey-3 q-pa-sm">
+                      <div class="text-subtitle1 text-center">Завершено</div>
+                    </q-card-section>
+                    
+                    <q-scroll-area class="col">
+                      <div class="q-pa-sm column q-gutter-y-xs">
+                        <q-card 
+                          v-for="(task, index) in doneTasks" 
+                          :key="'done-'+index"
+                          class="cursor-pointer"
+                          draggable
+                          @dragstart="startDrag($event, 'done', index)"
+                          @drop="onDrop($event, 'done')"
+                          @dragover.prevent
+                          @dragenter.prevent
+                        >
+                          <q-card-section class="q-pa-sm">
+                            <div>{{ task.text }}</div>
+                            <div v-if="task.tags" class="q-mt-xs">
+                              <q-badge 
+                                v-for="(tag, i) in task.tags" 
+                                :key="i"
+                                :color="getTagColor(tag)"
+                                class="q-mr-xs"
+                              >
+                                {{ tag }}
+                              </q-badge>
+                            </div>
+                            <div v-if="task.progress" class="text-caption text-grey q-mt-xs">
+                              {{ task.progress }}
+                            </div>
+                          </q-card-section>
+                        </q-card>
+                      </div>
+                    </q-scroll-area>
+                    
+                    <q-card-section class="q-pa-sm">
+                      <q-input 
+                        v-model="newDoneTask" 
+                        placeholder="+ Add task" 
+                        dense
+                        borderless
+                        @keyup.enter="addTask('done')"
+                      >
+                        <template v-slot:append>
+                          <q-btn 
+                            icon="add" 
+                            size="sm" 
+                            dense 
+                            flat 
+                            round
+                            @click="addTask('done')"
+                          />
+                        </template>
+                      </q-input>
+                    </q-card-section>
+                  </q-card>
+                </div>
+              </div>
             </div>
-
-            <q-input
-              v-model="newMessage"
-              placeholder="Написать сообщение..."
-              type="textarea"
-              autogrow
-              @keyup.enter="sendMessage"
-            >
-              <template v-slot:after>
-                <q-btn
-                  round
-                  dense
-                  flat
-                  icon="send"
-                  @click="sendMessage"
-                />
-              </template>
-            </q-input>
           </div>
         </q-card-section>
       </q-card>
-    </q-scroll-area>
-  </q-drawer>
-</template>
-
-<script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useAgileStore } from 'src/stores/agile.store';
-import { useMessageStore } from 'src/stores/message.store';
-import { useQuasar } from 'quasar';
-import { AgileDto, CreateAgileDto, TypeAgile  } from '../../../../backend/src/common/types';
-
-const $q = useQuasar();
-const agileStore = useAgileStore();
-const messageStore = useMessageStore();
-
-const props = defineProps<{
-  projectId: number; // Получаем ID проекта через props
-}>();
-
-const currentProjectId = ref(props.projectId); // Инициализируем ref
-
-const showDialog = ref(false);
-const showAgileDialog = ref(false);
-const showMessagesPanel = ref(false);
-const editingAgile = ref(false);
-const currentAgileItem = ref<AgileDto | null>(null);
-const newMessage = ref('');
-
-const columns = [
-  { status: 'todo', title: 'To Do', headerClass: 'bg-blue-1' },
-  { status: 'in_progress', title: 'In Progress', headerClass: 'bg-orange-1' },
-  { status: 'done', title: 'Done', headerClass: 'bg-green-1' },
-];
-
-const statusOptions = columns.map(col => ({
-  label: col.title,
-  value: col.status
-}));
-
-const agileForm = ref({
-  id: null as number | null,
-  name: '',
-  status: 'todo',
-  description: ''
-});
-
-const messages = computed(() => messageStore.messages);
-
-const open = () => {
-  showDialog.value = true;
-  agileStore.fetchAll();
-};
-
-const getAgileItemsByStatus = (status: string) => {
-  return agileStore.agileItems.filter(item => item.status === status);
-};
-
-const getMessageCount = (agileId: number) => {
-  return messageStore.messages.filter(msg => msg.agile.id === agileId).length;
-};
-
-const openCreateAgileDialog = (status: string) => {
-  agileForm.value = {
-    id: null,
-    name: '',
-    status,
-    description: ''
-  };
-  editingAgile.value = false;
-  showAgileDialog.value = true;
-};
-
-const openEditAgileDialog = (agileItem: AgileDto) => {
-  agileForm.value = { 
-    id: agileItem.id,
-    name: agileItem.name,
-    status: agileItem.status,
-    description: agileItem.description || ''
-  };
-  editingAgile.value = true;
-  showAgileDialog.value = true;
-};
-
-const submitAgileForm = async () => {
-  try {
-    if (editingAgile.value && agileForm.value.id) {
-      await agileStore.updateItem(agileForm.value.id, {
-        name: agileForm.value.name,
-        status: agileForm.value.status,
-        description: agileForm.value.description
-      });
-    } else {
-      // Создаем объект, соответствующий CreateAgileDto
-      const newAgile: CreateAgileDto = {
-        name: agileForm.value.name,
-        type: TypeAgile.backlog, // или другой тип из enum
-        project: { id: currentProjectId.value },
-        status: agileForm.value.status,
-        description: agileForm.value.description
-      };
-      await agileStore.createItem(newAgile);
-    }
-    showAgileDialog.value = false;
-  } catch (error) {
-    $q.notify({
-      type: 'negative',
-      message: 'Ошибка при сохранении темы'
-    });
-  }
-};
-
-const confirmDeleteAgile = (id: number) => {
-  $q.dialog({
-    title: 'Подтверждение',
-    message: 'Вы уверены, что хотите удалить эту тему?',
-    cancel: true
-  }).onOk(async () => {
-    try {
-      await agileStore.deleteItem(id);
-      $q.notify({
-        type: 'positive',
-        message: 'Тема успешно удалена'
-      });
-    } catch (error) {
-      $q.notify({
-        type: 'negative',
-        message: 'Ошибка при удалении темы'
-      });
-    }
-  });
-};
-
-const openMessagesPanel = async (agileItem: AgileDto) => {
-  currentAgileItem.value = agileItem;
-  await messageStore.fetchMessages(agileItem.id);
-  showMessagesPanel.value = true;
-};
-
-const sendMessage = async () => {
-  if (!newMessage.value.trim() || !currentAgileItem.value?.id) return;
+    </q-dialog>
+  </template>
   
-  try {
-    await messageStore.createMessage({
-      content: newMessage.value,
-      agileId: currentAgileItem.value.id,
-      authorName: 'Текущий пользователь'
-    });
+  <script setup lang="ts">
+  import { ref } from 'vue';
+  import type { ProjectDto } from '../../../../backend/src/common/types';
+  
+  // Типы
+  type TagName = 'Frontend' | 'Функционал' | 'Красота' | 'Формальность' | 'Прочее';
+  
+  interface Task {
+    text: string;
+    tags?: TagName[];
+    progress?: string;
+  }
+  
+  interface Sprint {
+    id: number;
+    date: string;
+  }
+  
+  // Состояние
+  const showDialog = ref(false);
+  const project = ref<ProjectDto | null>(null);
+  const activeSprint = ref(1);
+  
+  const sprints = ref<Sprint[]>([
+    { id: 1, date: '01.05 - 14.05' },
+    { id: 2, date: '15.05 - 28.05' },
+    { id: 3, date: '29.05 - 11.06' },
+    { id: 4, date: '12.06 - 25.06' },
+    { id: 5, date: '26.06 - 09.07' },
+    { id: 6, date: '10.07 - 23.07' },
+    { id: 7, date: '24.07 - 06.08' },
+    { id: 8, date: '07.08 - 20.08' }
+  ]);
+  
+  const tagColors: Record<TagName, string> = {
+    'Frontend': 'blue',
+    'Функционал': 'green',
+    'Красота': 'pink',
+    'Формальность': 'grey',
+    'Прочее': 'orange'
+  };
+  
+  const getTagColor = (tag: string): string => {
+    return tagColors[tag as TagName] || 'grey';
+  };
+  
+  // Задачи
+  const backlogTasks = ref<Task[]>([
+    { 
+      text: 'Создать цепочки статусов для всех объектов', 
+      tags: ['Функционал', 'Прочее'] 
+    },
+    { 
+      text: 'Расписать все права и возможности ролей', 
+      tags: ['Функционал'] 
+    }
+  ]);
+  
+  const sprintTasks = ref<Task[]>([
+    { 
+      text: 'Оформление Биржи', 
+      tags: ['Прочее'],
+      progress: '1/1'
+    },
+    { 
+      text: 'Фикс идей', 
+      tags: ['Прочее'],
+      progress: '1/2'
+    }
+  ]);
+  
+  const inProgressTasks = ref<Task[]>([
+    { 
+      text: 'Проверка заявок на проект', 
+      tags: ['Frontend', 'Красота'] 
+    }
+  ]);
+  
+  const doneTasks = ref<Task[]>([
+    { 
+      text: 'Функционал профиля', 
+      tags: ['Frontend'],
+      progress: '1/0'
+    },
+    { 
+      text: 'Оформление команд', 
+      tags: ['Прочее', 'Красота'],
+      progress: '1/0'
+    }
+  ]);
+  
+  // Новые задачи
+  const newBacklogTask = ref('');
+  const newSprintTask = ref('');
+  const newProgressTask = ref('');
+  const newDoneTask = ref('');
+  
+  // Перетаскивание
+  const draggedItem = ref<{
+    column: string,
+    index: number
+  } | null>(null);
+  
+  const open = (projectData: ProjectDto) => {
+    project.value = projectData;
+    showDialog.value = true;
+  };
+  
+  const addTask = (column: string) => {
+    let text = '';
+    let tasks: Task[] = [];
     
-    newMessage.value = '';
-  } catch (error) {
-    $q.notify({
-      type: 'negative',
-      message: 'Ошибка при отправке сообщения'
-    });
-  }
-};
-
-const startDrag = (event: DragEvent, item: AgileDto) => {
-  event.dataTransfer?.setData('agileItem', JSON.stringify(item));
-};
-
-const onDrop = async (event: DragEvent, newStatus: string) => {
-  const itemData = event.dataTransfer?.getData('agileItem');
-  if (!itemData) return;
+    switch(column) {
+      case 'backlog':
+        text = newBacklogTask.value;
+        tasks = backlogTasks.value;
+        break;
+      case 'sprint':
+        text = newSprintTask.value;
+        tasks = sprintTasks.value;
+        break;
+      case 'progress':
+        text = newProgressTask.value;
+        tasks = inProgressTasks.value;
+        break;
+      case 'done':
+        text = newDoneTask.value;
+        tasks = doneTasks.value;
+        break;
+    }
+    
+    if (text.trim()) {
+      tasks.push({ text });
+      switch(column) {
+        case 'backlog': newBacklogTask.value = ''; break;
+        case 'sprint': newSprintTask.value = ''; break;
+        case 'progress': newProgressTask.value = ''; break;
+        case 'done': newDoneTask.value = ''; break;
+      }
+    }
+  };
   
-  try {
-    const item = JSON.parse(itemData) as AgileDto;
-    await agileStore.updateItem(item.id, { status: newStatus });
-  } catch (error) {
-    $q.notify({
-      type: 'negative',
-      message: 'Ошибка при перемещении темы'
-    });
+  const startDrag = (event: DragEvent, column: string, index: number) => {
+    draggedItem.value = { column, index };
+    event.dataTransfer?.setData('text/plain', '');
+  };
+  
+  const onDrop = (event: DragEvent, targetColumn: string) => {
+    if (!draggedItem.value) return;
+    
+    const { column, index } = draggedItem.value;
+    let task: Task | undefined;
+    
+    // Удаляем задачу из исходной колонки
+    switch(column) {
+      case 'backlog': 
+        task = backlogTasks.value.splice(index, 1)[0]; 
+        break;
+      case 'sprint': 
+        task = sprintTasks.value.splice(index, 1)[0]; 
+        break;
+      case 'progress': 
+        task = inProgressTasks.value.splice(index, 1)[0]; 
+        break;
+      case 'done': 
+        task = doneTasks.value.splice(index, 1)[0]; 
+        break;
+    }
+    
+    // Добавляем задачу в целевую колонку
+    if (task) {
+      switch(targetColumn) {
+        case 'backlog': backlogTasks.value.push(task); break;
+        case 'sprint': sprintTasks.value.push(task); break;
+        case 'progress': inProgressTasks.value.push(task); break;
+        case 'done': doneTasks.value.push(task); break;
+      }
+    }
+    
+    draggedItem.value = null;
+  };
+  
+  defineExpose({ open });
+  </script>
+  
+  <style scoped>
+  .full-height {
+    height: calc(100vh - 50px);
   }
-};
-
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleString();
-};
-
-defineExpose({ open });
-</script>
-
-<style scoped>
-.full-height {
-  height: calc(100vh - 50px);
-}
-
-.q-card {
-  min-width: 200px;
-}
-
-.q-scroll-area {
-  height: calc(100% - 50px);
-}
-
-.cursor-pointer {
-  cursor: grab;
-}
-
-.cursor-pointer:active {
-  cursor: grabbing;
-}
-
-.q-drawer {
-  width: 400px;
-  max-width: 80vw;
-}
-</style>
+  
+  .q-card {
+    min-width: 200px;
+  }
+  
+  .q-scroll-area {
+    height: calc(100% - 50px);
+  }
+  
+  .cursor-pointer {
+    cursor: grab;
+  }
+  
+  .cursor-pointer:active {
+    cursor: grabbing;
+  }
+  
+  .q-badge {
+    font-size: 0.7em;
+    padding: 2px 5px;
+  }
+  </style>

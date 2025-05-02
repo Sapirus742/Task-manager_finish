@@ -45,8 +45,3 @@ export async function remove(id: number): Promise<MessageDto | undefined> {
   }
   return;
 }
-
-export async function getByAgileId(agileId: number): Promise<MessageDto[]> {
-  const response = await api.get(`/message?agileId=${agileId}`);
-  return response.data;
-}

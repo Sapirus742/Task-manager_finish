@@ -263,21 +263,17 @@ export interface UpdateProjectDto {
   initiator?: number;
 }
 
-export class CreateAgileDto {
-  constructor(
-    public name: string,
-    public type: TypeAgile,
-    public project: { id: number },
-    public status?: string,
-    public description?: string
-  ) {}
+export interface CreateAgileDto {
+  name: string;
+  type: TypeAgile;
+  project: number;
 }
 
 export interface UpdateAgileDto {
   name?: string;
-  status?: string;
-  description?: string;
-  message?: number[]; // Добавляем поле для сообщений
+  type?: TypeAgile;
+  project?: number;
+  message?: number[];
 }
 
 export interface CreateExchangeDto {
@@ -331,9 +327,9 @@ export interface UpdateCommentDto {
 }
 
 export interface CreateMessageDto {
-  content: string;
-  authorName: string;
-  agileId: number;
+  message: string;
+  users: number;
+  agile: number;
 }
 
 export interface UpdateMessageDto {
@@ -430,14 +426,14 @@ export type ProjectDto = {
   initiator: SecuredUser; 
 };
 
-export interface AgileDto {
+export type AgileDto = {
   id: number;
   name: string;
-  status: string; // 'todo' | 'in_progress' | 'done'
-  description?: string;
+  type: TypeAgile;
   createdAt: Date;
-  messages?: MessageDto[];
-}
+  project: ProjectDto;
+  message: MessageDto[];
+};
 
 export type ExchangeDto = {
   id: number;
@@ -470,15 +466,13 @@ export type CommentDto = {
   idea: IdeaDto;
 };
 
-export interface MessageDto {
+export type MessageDto = {
   id: number;
-  content: string;
-  authorName: string;
-  createdAt: Date;
-  agile: {
-    id: number;
-  };
-}
+  createdAt: Date; 
+  message: string;
+  users: SecuredUser;
+  agile: AgileDto;
+};
 
 export type TeamDto = {
   id: number;  
