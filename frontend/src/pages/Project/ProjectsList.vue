@@ -17,13 +17,6 @@
         <div>
           <h2 class="project-heading"><strong>{{ project.name }}</strong></h2>
           
-          <!-- Блок статуса проекта -->
-          <div class="project-status q-mb-sm">
-            <q-badge :color="getStatusColor(project.status)">
-              {{ getStatusLabel(project.status) }}
-            </q-badge>
-          </div>
-          
           <p class="project-description">{{ project.solution }}</p>
 
           <div class="project-initiator">
@@ -47,6 +40,13 @@
             >
               {{ tech }}
             </q-chip>
+          </div>
+
+          <!-- Блок статуса проекта -->
+          <div class="project-status q-mb-sm">
+            <q-badge :color="getStatusColor(project.status)">
+              {{ getStatusLabel(project.status) }}
+            </q-badge>
           </div>
         </div>
 
@@ -79,11 +79,10 @@ defineEmits(['open-details', 'delete-project']);
 // Функции для работы со статусом проекта
 const getStatusColor = (status?: string) => {
   switch (status) {
-    case 'searchTeam': return 'orange';
-    case 'teamFound': return 'green';
-    case 'selectionTeam': return 'blue';
+    case 'Search for team': return 'orange';
+    case 'Team found': return 'green';
+    case 'Selection team': return 'blue';
     case 'draft': return 'grey';
-    default: return 'grey';
   }
 };
 
