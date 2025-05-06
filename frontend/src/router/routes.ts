@@ -10,6 +10,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'teams', component: () => import('pages/Team/TeamsPage.vue') },
       { path: 'ideas', component: () => import('pages/Idei/IdeiPage.vue') },
       { path: 'marketplace', component: () => import('pages/Exchange/ExchangePage.vue') },
+      { path: 'admin', component: () => import('pages/AdminPage.vue')},
       { path: 'projects', component: () => import('pages/Project/IndexPage.vue') },
       { path: 'users', component: () => import('pages/UsersPage.vue') },
       { path: 'users/:id', component: () => import('pages/UserEditPage.vue') },

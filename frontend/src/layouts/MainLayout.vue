@@ -22,6 +22,13 @@
         </q-toolbar-title>
 
         <div class="q-mr-md">
+          <!-- Кнопка "Админка" только для администраторов -->
+          <q-btn
+            v-if="showAdminButton"
+            flat
+            label="Админка"
+            @click="goToAdmin"
+          />
           <!-- Кнопка "Проекты" отображается только для ролей admin, directorate, customer -->
           <q-btn
             v-if="showProjectsButton"
@@ -92,6 +99,12 @@ const showProjectsButton = computed(() => {
   return roles.value.some(role => allowedRoles.includes(role));
 });
 
+// Показывать кнопку "Админка" если роль: админ
+const showAdminButton = computed(() => {
+  const allowedRoles = ['admin'];
+  return roles.value.some(role => allowedRoles.includes(role));
+});
+
 const onLogout = () => {
   api.logout();
   router.push({ path: '/login' });
@@ -99,6 +112,11 @@ const onLogout = () => {
 
 const goToProjects = () => {
   router.push('/projects');
+};
+
+// Переход в админку
+const goToAdmin = () => {
+  router.push('/admin');
 };
 
 const goToMarketplace = () => {

@@ -443,14 +443,18 @@ const ideasError = ref<string | null>(null);
 
 const { userProfile, isLoading, error } = storeToRefs(profileStore);
 
-// Случайный аватар
+// Аватар
 const avatarImage = ref<string>('');
 
-// Функция для получения случайного аватара
-const getRandomAvatar = () => {
-  const avatarCount = 3; // Количество аватаров в папке
-  const randomNum = Math.floor(Math.random() * avatarCount) + 1;
-  return `/ava/${randomNum}.png`; // Путь к аватару
+// Функция для получения аватара на основе ролей
+const getAvatarByRoles = (roles: Role[]): string => {
+  if (roles.includes(Role.admin) || roles.includes(Role.directorate)) {
+    return '/ava/2.png'; // Аватар для админов и дирекции
+  }
+  if (roles.includes(Role.expert) || roles.includes(Role.customer)) {
+    return '/ava/3.png'; // Аватар для экспертов и заказчиков
+  }
+  return '/ava/1.png'; // Аватар для обычных пользователей
 };
 
 interface PortfolioTableRow {
@@ -883,14 +887,16 @@ const loadProfile = async () => {
       console.log('Загрузка данных профиля для userId:', mainStore.userId);
       isLoading.value = true;
       error.value = '';
-
-      // Устанавливаем случайный аватар
-      avatarImage.value = getRandomAvatar();
       
       // 1. Загружаем профиль
       console.log('Загрузка профиля через profileStore...');
       await profileStore.fetchUserProfile(mainStore.userId);
       console.log('Профиль загружен:', userProfile.value);
+
+      // Устанавливаем аватар на основе ролей
+      if (userProfile.value?.roles) {
+        avatarImage.value = getAvatarByRoles(userProfile.value.roles);
+      }
       
       // 2. Загружаем все портфолио
       console.log('Загрузка всех портфолио...');
