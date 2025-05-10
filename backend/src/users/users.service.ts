@@ -9,7 +9,6 @@ import { Portfolio } from 'src/orm/portfolio.entity';
 import { Project } from 'src/orm/project.entity';
 import { Idea } from 'src/orm/idea.entity';
 import { Comments } from 'src/orm/comment.entity';
-import { Message } from 'src/orm/message.entity';
 
 @Injectable()
 export class UsersService {
@@ -26,21 +25,19 @@ export class UsersService {
     private readonly ideaRepository: Repository<Idea>,
     @InjectRepository(Comments)
     private readonly commentsRepository: Repository<Comments>,
-    @InjectRepository(Message)
-    private readonly messageRepository: Repository<Message>,
   ) {}
 
   async findOne(username: string): Promise<User | null> {
     return this.userRepository.findOne({ 
       where: { email: username },
-      relations: ['team_leader','team_owner','portfolio','idea_initiator','project_initiator','comment','message','team'],
+      relations: ['team_leader','team_owner','portfolio','idea_initiator','project_initiator','comment','team'],
     });
   }
 
   async findOneById(id: number): Promise<User | any> {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['team_leader','team_owner','portfolio','idea_initiator','project_initiator','comment','message','team','idea_initiator.project'],
+      relations: ['team_leader','team_owner','portfolio','idea_initiator','project_initiator','comment','team','idea_initiator.project'],
     });
     return user;
   }
@@ -65,7 +62,7 @@ export class UsersService {
   }
 
   async findAll(): Promise<User[]> {
-    return this.userRepository.find({ relations: ['team_leader','team_owner','portfolio','idea_initiator','project_initiator','comment','message','team'] });
+    return this.userRepository.find({ relations: ['team_leader','team_owner','portfolio','idea_initiator','project_initiator','comment','team'] });
   }
 
   async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
@@ -101,10 +98,6 @@ export class UsersService {
       user.comment = commentsInitiators; // Установите связь
     }
 
-    if (updateUserDto.message) {
-      const messageInitiators = await this.messageRepository.find({where: {id: In(updateUserDto.message)}});
-      user.message = messageInitiators; // Установите связь
-    }
     return this.userRepository.save(user);
   }
 }

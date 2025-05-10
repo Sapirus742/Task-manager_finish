@@ -20,8 +20,6 @@ import { CommentModule } from './comment/comment.module';
 import { Exchange } from './orm/exchange.entity';
 import { ExchangeModule } from './exchange/exchange.module';
 import { Agile } from './orm/agile.entity';
-import { Message } from './orm/message.entity';
-import { MessageModule } from './message/message.module';
 import { AgileModule } from './agile/agile.module';
  
 
@@ -29,7 +27,6 @@ import { AgileModule } from './agile/agile.module';
 
   imports: [
     AgileModule,
-    MessageModule,
     ExchangeModule,
     CommentModule,
     IdeaModule,
@@ -52,7 +49,7 @@ import { AgileModule } from './agile/agile.module';
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_DATABASE'),
         cache: true,
-        entities: [User, Team, Comments, Idea, Portfolio, Project, Exchange, Agile, Message],
+        entities: [User, Team, Comments, Idea, Portfolio, Project, Exchange, Agile],
         maxQueryExecutionTime: 5000,
         extra: {
           max: 50,
@@ -62,7 +59,7 @@ import { AgileModule } from './agile/agile.module';
       }),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([User, Team, Comments, Idea, Portfolio, Project, Exchange, Agile, Message]),
+    TypeOrmModule.forFeature([User, Team, Comments, Idea, Portfolio, Project, Exchange, Agile]),
   ],
   controllers: [AppController],
   providers: [AppService],

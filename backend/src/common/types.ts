@@ -228,7 +228,6 @@ export interface UpdateUserDto {
   idea_initiator?: number[];
   project_initiator?: number[];
   comment?: number[];
-  message?: number[];
   team?: number | null;
 }
 
@@ -273,7 +272,6 @@ export interface UpdateAgileDto {
   name?: string;
   type?: TypeAgile;
   project?: number;
-  message?: number[];
 }
 
 export interface CreateExchangeDto {
@@ -394,7 +392,6 @@ export type SecuredUser = {
   idea_initiator: IdeaDto[];
   project_initiator: ProjectDto[];
   comment: CommentDto[];
-  message: MessageDto[];
   team: TeamDto | null;
 };
 
@@ -432,7 +429,6 @@ export type AgileDto = {
   type: TypeAgile;
   createdAt: Date;
   project: ProjectDto;
-  message: MessageDto[];
 };
 
 export type ExchangeDto = {
