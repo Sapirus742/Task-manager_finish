@@ -106,9 +106,8 @@
 
               <q-card-actions align="right">
                 <AgileProjectButton
-                  v-if="agileButtonStates[project.id]"
                   :project="project"
-                  :visible="false"
+                  :visible="true"
                   :loading="agileButtonStates[project.id]?.loading ?? false"
                   @click="openAgileProject(project)"
                 />
@@ -212,22 +211,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch, reactive } from 'vue';
+import { ref, onMounted, computed, reactive } from 'vue';
 import { useExchangeStore } from 'src/stores/exchange-store';
 import { useProjectStore } from 'src/stores/project-store';
 import { useMainStore } from 'src/stores/main-store';
 import { useQuasar } from 'quasar';
-import { CreateExchangeDto, ExchangeDto, ProjectDto, StatusProject, StatusTeam } from '../../../../backend/src/common/types';
+import { CreateExchangeDto, ExchangeDto, ProjectDto } from '../../../../backend/src/common/types';
 import AgileProject from 'src/pages/Exchange/AgileProject.vue';
 import AgileProjectButton from 'src/pages/Exchange/AgileProjectButton.vue';
-import { useTeamStore } from 'src/stores/team-store';
-import { debounce } from 'quasar';
+
+
 import ProjectDetailsDialog from 'src/pages/Project/ProjectDetailsDialog.vue';
 
 const exchangeStore = useExchangeStore();
 const projectStore = useProjectStore();
 const mainStore = useMainStore();
-const teamStore = useTeamStore();
 const $q = useQuasar();
 
 // Состояние
@@ -260,74 +258,6 @@ const openAgileProject = (project: ProjectDto | undefined) => {
   agileProject.value?.open(project);
 };
 
-const checkAgileButtonVisibility = debounce(async (project: ProjectDto) => {
-  if (!project.id) return;
-
-  // Если состояние уже загружается, пропускаем вызов
-  if (agileButtonStates[project.id]?.loading) return;
-
-  // Инициализация состояния, если его нет
-  if (!agileButtonStates[project.id]) {
-    agileButtonStates[project.id] = { visible: false, loading: true };
-  } else {
-    agileButtonStates[project.id].loading = true;
-  }
-
-  try {
-    if (mainStore.isAdmin() || mainStore.isDirectorate()) {
-      agileButtonStates[project.id].visible = true;
-      return;
-    }
-
-    if (mainStore.isCustomer() && project.initiator?.id === mainStore.userId) {
-      agileButtonStates[project.id].visible = true;
-      return;
-    }
-
-    if (project.status !== StatusProject.teamFound) {
-      agileButtonStates[project.id].visible = false;
-      return;
-    }
-
-    const team = await teamStore.fetchTeamByProject(project.id).catch(() => null);
-    if (!team) {
-      agileButtonStates[project.id].visible = false;
-      return;
-    }
-
-    if (team.status !== StatusTeam.inProgress) {
-      agileButtonStates[project.id].visible = false;
-      return;
-    }
-
-    const userId = mainStore.userId;
-    agileButtonStates[project.id].visible = (
-      (team.user_owner && team.user_owner.id === userId) ||
-      (team.user_leader && team.user_leader.id === userId) ||
-      (team.user && team.user.some(member => member.id === userId))
-    );
-  } catch (error) {
-    console.error('Error checking team access:', error);
-    agileButtonStates[project.id].visible = false;
-  } finally {
-    agileButtonStates[project.id].loading = false;
-  }
-}, 20000);
-
-watch(
-  () => [mainStore.userId, teamStore.currentTeam, activeExchange.value?.projects],
-  () => {
-    if (activeExchange.value?.projects) {
-      activeExchange.value.projects.forEach(project => {
-        if (!agileButtonStates[project.id]?.loading) {
-          checkAgileButtonVisibility(project);
-        }
-      });
-    }
-  },
-  { immediate: true }
-);
-
 // Вычисляемые свойства
 const startDateString = computed({
   get: () => newExchange.value.startExchange,
@@ -357,7 +287,7 @@ const canCreateExchange = computed(() => {
 });
 
 const canEditExchange = (exchange: ExchangeDto) => {
-  return mainStore.isDirectorate() || mainStore.isAdmin() ||
+  return mainStore.isAdmin() || mainStore.isDirectorate() ||
          (mainStore.isDirectorate() && exchange.projects.some(p => p.initiator.id === mainStore.userId));
 };
 
