@@ -13,7 +13,6 @@ import {
   IdeaDto,
   PrivacyTeam,
   StatusTeam,
-  MessageDto,
 } from '../../../backend/src/common/types';
 import { useProfileStore } from './profile-store';
 import { useTeamStore } from './team-store';
@@ -38,7 +37,6 @@ export const useMainStore = defineStore('main', () => {
     project_initiator: [] as ProjectDto[],
     team: null as TeamDto | null,
     comment: [] as CommentDto[],
-    message: [] as MessageDto[],
     idea_initiator: [] as IdeaDto[],
   });
 
@@ -131,7 +129,6 @@ export const useMainStore = defineStore('main', () => {
       project_initiator: state.project_initiator,
       team: state.team,
       comment: state.comment,
-      message: state.message,
       idea_initiator: state.idea_initiator,
 
     };

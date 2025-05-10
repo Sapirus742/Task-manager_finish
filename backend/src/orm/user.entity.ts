@@ -23,7 +23,6 @@ import { Idea } from './idea.entity';
 import { Portfolio } from './portfolio.entity';
 import { Comments } from './comment.entity';
 import { Project } from './project.entity';
-import { Message } from './message.entity';
   
 @Entity()
 export class User {
@@ -82,9 +81,6 @@ export class User {
   @OneToMany(() => Comments, (comment) => comment.users)
   comment: Comments[];
 
-  @OneToMany(() => Message, (message) => message.users)
-  message: Message[];
-
   @ManyToOne(() => Team, (team) => team.user, { onDelete: 'SET NULL' })
   team: Team;
   
@@ -107,7 +103,6 @@ export class User {
       idea_initiator: this.idea_initiator.map(idea_initiator => idea_initiator.getIdeaDto()),
       project_initiator: this.project_initiator.map(project_initiator => project_initiator.getProjectDto()),
       comment: this.comment.map(comment => comment.getCommentDto()),
-      message: this.message.map(message => message.getMessageDto()),
       team: this.team.getTeamDto(),
     };
   }
