@@ -92,12 +92,36 @@ export const useExchangeStore = defineStore('exchange', () => {
     }
   };
 
+const removeProjectFromExchange = async (exchangeId: number, projectId: number) => {
+  isLoading.value = true;
+  try {
+    const exchange = exchanges.value.find(e => e.id === exchangeId);
+    if (exchange) {
+      const updatedProjects = exchange.projects.filter(p => p.id !== projectId);
+      const updatedExchange = await api.updateExchangeProjects(exchangeId, updatedProjects.map(p => p.id));
+      if (updatedExchange) {
+        const index = exchanges.value.findIndex(e => e.id === exchangeId);
+        if (index !== -1) {
+          exchanges.value[index] = updatedExchange;
+        }
+        if (currentExchange.value?.id === exchangeId) {
+          currentExchange.value = updatedExchange;
+        }
+        return updatedExchange;
+      }
+    }
+  } finally {
+    isLoading.value = false;
+  }
+};
+
   return {
     exchanges,
     currentExchange,
     isLoading,
     updateExchangeProjects,
     fetchAllExchanges,
+    removeProjectFromExchange,
     fetchExchange,
     createExchange,
     updateExchange,

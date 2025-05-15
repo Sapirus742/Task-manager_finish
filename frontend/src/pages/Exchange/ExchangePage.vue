@@ -111,6 +111,15 @@
                   :loading="agileButtonStates[project.id]?.loading ?? false"
                   @click="openAgileProject(project)"
                 />
+                <q-btn
+    flat
+    round
+    dense
+    icon="delete"
+    color="negative"
+    @click.stop="confirmRemoveProject(project)"
+    v-if="canEditExchange(activeExchange)"
+  />
               </q-card-actions>
             </q-card>
           </div>
@@ -173,34 +182,47 @@
     </q-dialog>
 
     <!-- Диалог добавления проектов -->
-    <q-dialog v-model="showAddProjectsDialog" persistent>
-      <q-card style="min-width: 600px">
-        <q-card-section>
-          <div class="text-h6">Добавить проекты в биржу</div>
-        </q-card-section>
+    <q-dialog v-model="showAddProjectsDialog" @update:model-value="val => !val && (selectedProjects = [])">
+  <q-card style="min-width: 600px">
+    <q-card-section>
+      <div class="text-h6">Добавить проекты в биржу</div>
+      <div class="text-caption text-grey">
+        Отображаются только проекты, не добавленные ни в одну биржу
+      </div>
+    </q-card-section>
 
-        <q-card-section>
-          <q-list bordered separator>
-            <q-item v-for="project in availableProjects" :key="project.id">
-              <q-item-section>
-                <q-item-label>{{ project.name }}</q-item-label>
-                <q-item-label caption>
-                  {{ project.customer }}
-                </q-item-label>
-              </q-item-section>
-              <q-item-section side>
-                <q-checkbox v-model="selectedProjects" :val="project.id" />
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-card-section>
+    <q-card-section>
+      <q-list bordered separator v-if="availableProjects.length">
+        <q-item v-for="project in availableProjects" :key="project.id">
+          <q-item-section>
+            <q-item-label>{{ project.name }}</q-item-label>
+            <q-item-label caption>
+              {{ project.customer }}
+            </q-item-label>
+          </q-item-section>
+          <q-item-section side>
+            <q-checkbox v-model="selectedProjects" :val="project.id" />
+          </q-item-section>
+        </q-item>
+      </q-list>
+      
+      <div v-else class="text-center q-pa-md">
+        <q-icon name="info" size="xl" color="grey" />
+        <div class="text-h6 q-mt-md">Нет доступных проектов для добавления</div>
+      </div>
+    </q-card-section>
 
-        <q-card-actions align="right">
-          <q-btn flat label="Отмена" color="primary" v-close-popup />
-          <q-btn label="Добавить" color="primary" @click="addProjectsToExchange" />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
+    <q-card-actions align="right">
+      <q-btn flat label="Отмена" color="primary" v-close-popup />
+      <q-btn 
+        label="Добавить" 
+        color="primary" 
+        @click="addProjectsToExchange"
+        :disable="selectedProjects.length === 0"
+      />
+    </q-card-actions>
+  </q-card>
+</q-dialog>
 
     <!-- AgileProject компонент -->
     <AgileProject ref="agileProject" />
@@ -219,8 +241,6 @@ import { useQuasar } from 'quasar';
 import { CreateExchangeDto, ExchangeDto, ProjectDto } from '../../../../backend/src/common/types';
 import AgileProject from 'src/pages/Exchange/AgileProject.vue';
 import AgileProjectButton from 'src/pages/Exchange/AgileProjectButton.vue';
-
-
 import ProjectDetailsDialog from 'src/pages/Project/ProjectDetailsDialog.vue';
 
 const exchangeStore = useExchangeStore();
@@ -271,14 +291,17 @@ const stopDateString = computed({
 
 const exchanges = computed(() => exchangeStore.exchanges);
 
+
+
 const availableProjects = computed(() => {
-  const projectsOnExchanges = new Set(
+  // Получаем все ID проектов, которые уже есть в любой бирже
+  const allExchangedProjectIds = new Set(
     exchangeStore.exchanges.flatMap(ex => ex.projects.map(p => p.id))
   );
   
+  // Фильтруем проекты, оставляя только те, которых нет ни в одной бирже
   return projectStore.projects.filter(p => 
-    !projectsOnExchanges.has(p.id) ||
-    (activeExchange.value?.projects.some(ep => ep.id === p.id))
+    !allExchangedProjectIds.has(p.id)
   );
 });
 
@@ -358,54 +381,84 @@ const onCreateSubmit = async () => {
   }
 };
 
-const addProjectsToExchange = async () => {
+const confirmRemoveProject = (project: ProjectDto) => {
   if (!activeExchange.value) return;
-  
-  try {
-    const projectsToAdd = selectedProjects.value.filter(projectId => {
-      const currentExchangeId = activeExchange.value?.id;
-      if (!currentExchangeId) return false;
-      
-      const isOnOtherExchange = exchangeStore.exchanges.some(ex => 
-        ex.id !== currentExchangeId && 
-        ex.projects.some(p => p.id === projectId)
-      );
-      
-      if (isOnOtherExchange) {
-        $q.notify({
-          type: 'warning',
-          message: 'Некоторые проекты уже на других биржах и не были добавлены',
-          timeout: 3000
-        });
-        return false;
-      }
-      return true;
-    });
 
-    if (projectsToAdd.length === 0) {
+  $q.dialog({
+    title: 'Подтверждение удаления',
+    message: `Вы уверены, что хотите удалить проект "${project.name}" из биржи?`,
+    cancel: true,
+    persistent: true
+  }).onOk(async () => {
+    try {
+      if (activeExchange.value) {
+        // Удаляем проект локально из activeExchange
+        const updatedProjects = activeExchange.value.projects.filter(p => p.id !== project.id);
+        const updatedExchange = {
+          ...activeExchange.value,
+          projects: updatedProjects
+        };
+
+        // Обновляем локальный стейт
+        activeExchange.value = updatedExchange;
+        exchangeStore.exchanges = exchangeStore.exchanges.map(ex =>
+          ex.id === updatedExchange.id ? updatedExchange : ex
+        );
+
+        // Отправляем изменения на сервер
+        await exchangeStore.removeProjectFromExchange(activeExchange.value.id, project.id);
+
+        $q.notify({
+          type: 'positive',
+          message: 'Проект успешно удален из биржи'
+        });
+      }
+    } catch (error) {
       $q.notify({
         type: 'negative',
-        message: 'Нет проектов для добавления',
+        message: 'Ошибка при удалении проекта из биржи'
       });
-      return;
     }
+  });
+};
 
-    await exchangeStore.updateExchange(activeExchange.value.id, {
+
+const addProjectsToExchange = async () => {
+  if (!activeExchange.value || selectedProjects.value.length === 0) return;
+  
+  try {
+    // Оптимизированное обновление - сразу добавляем проекты локально
+    const updatedExchange = {
+      ...activeExchange.value,
       projects: [
-        ...activeExchange.value.projects.map(p => p.id),
-        ...projectsToAdd
+        ...activeExchange.value.projects,
+        ...projectStore.projects.filter(p => selectedProjects.value.includes(p.id))
       ]
+    };
+    
+    // Обновляем состояние без лишних запросов
+    activeExchange.value = updatedExchange;
+    exchangeStore.exchanges = exchangeStore.exchanges.map(ex => 
+      ex.id === updatedExchange.id ? updatedExchange : ex
+    );
+    
+    // Отправляем изменения на сервер
+    await exchangeStore.updateExchange(activeExchange.value.id, {
+      projects: updatedExchange.projects.map(p => p.id)
     });
     
+    // Закрываем и очищаем
     showAddProjectsDialog.value = false;
+    selectedProjects.value = [];
+    
     $q.notify({
       type: 'positive',
-      message: 'Доступные проекты успешно добавлены в биржу',
+      message: 'Проекты успешно добавлены'
     });
-  } catch (error) {
+  } catch {
     $q.notify({
       type: 'negative',
-      message: 'Ошибка при добавлении проектов',
+      message: 'Ошибка при добавлении'
     });
   }
 };
