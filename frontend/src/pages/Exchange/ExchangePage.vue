@@ -145,7 +145,10 @@
     </div>
 
     <!-- Диалог создания биржи -->
-    <q-dialog v-model="showCreateDialog">
+    <q-dialog 
+  v-model="showCreateDialog"
+  @hide="resetCreateForm"
+>
       <q-card style="min-width: 400px">
         <q-card-section>
           <div class="text-h6">Создать новую биржу</div>
@@ -273,6 +276,14 @@ const openProjectDetails = (project: ProjectDto) => {
   projectDetailsDialog.value?.open(project);
 };
 
+const resetCreateForm = () => {
+  newExchange.value = {
+    name: '',
+    startExchange: new Date().toISOString().split('T')[0],
+    stopExchange: new Date().toISOString().split('T')[0]
+  };
+};
+
 const openAgileProject = (project: ProjectDto | undefined) => {
   if (!project) return;
   agileProject.value?.open(project);
@@ -296,12 +307,14 @@ const exchanges = computed(() => exchangeStore.exchanges);
 const availableProjects = computed(() => {
   // Получаем все ID проектов, которые уже есть в любой бирже
   const allExchangedProjectIds = new Set(
-    exchangeStore.exchanges.flatMap(ex => ex.projects.map(p => p.id))
+    exchangeStore.exchanges.flatMap(ex => 
+      ex.projects ? ex.projects.map(p => p.id) : []
+    )
   );
   
   // Фильтруем проекты, оставляя только те, которых нет ни в одной бирже
   return projectStore.projects.filter(p => 
-    !allExchangedProjectIds.has(p.id)
+    p && !allExchangedProjectIds.has(p.id)
   );
 });
 
@@ -339,13 +352,32 @@ const confirmDelete = (exchange: ExchangeDto) => {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-    await exchangeStore.deleteExchange(exchange.id);
-    $q.notify({
-      type: 'positive',
-      message: 'Биржа успешно удалена',
-    });
-    if (activeExchange.value?.id === exchange.id) {
-      activeExchange.value = null;
+    try {
+      // Удаляем биржу
+      await exchangeStore.deleteExchange(exchange.id);
+      
+      // Обновляем список бирж
+      await exchangeStore.fetchAllExchanges();
+      
+      // Если удалили активную биржу, сбрасываем активную
+      if (activeExchange.value?.id === exchange.id) {
+        activeExchange.value = null;
+        // Автоматически выбираем первую биржу из списка, если есть
+        if (exchangeStore.exchanges.length > 0) {
+          activeExchange.value = exchangeStore.exchanges[0];
+        }
+      }
+      
+      $q.notify({
+        type: 'positive',
+        message: 'Биржа успешно удалена',
+      });
+      
+    } catch (error) {
+      $q.notify({
+        type: 'negative',
+        message: 'Ошибка при удалении биржи',
+      });
     }
   });
 };
@@ -358,21 +390,29 @@ const onCreateSubmit = async () => {
       stopExchange: new Date(newExchange.value.stopExchange)
     });
     
+    // Закрываем диалог
     showCreateDialog.value = false;
-    $q.notify({
-      type: 'positive',
-      message: 'Биржа успешно создана',
-    });
     
+    // Сбрасываем форму
     newExchange.value = { 
       name: '', 
       startExchange: new Date().toISOString().split('T')[0],
       stopExchange: new Date().toISOString().split('T')[0]
     };
     
+    // Обновляем список бирж
+    await exchangeStore.fetchAllExchanges();
+    
+    // Устанавливаем новую биржу как активную
     if (newExchangeItem) {
       activeExchange.value = newExchangeItem;
     }
+    
+    $q.notify({
+      type: 'positive',
+      message: 'Биржа успешно создана',
+    });
+    
   } catch (error) {
     $q.notify({
       type: 'negative',
