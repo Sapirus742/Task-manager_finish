@@ -69,11 +69,11 @@
                 {{ getStatusLabel(idea.status) }}
               </q-chip>
               <q-btn
-    color="primary"
-    :label="expandedIdeas.includes(idea.id) ? 'Закрыть' : 'Открыть'"
-    @click.stop="toggleIdeaDetails(idea.id)"
-    class="open-btn"
-  />
+                color="primary"
+                :label="expandedIdeas.includes(idea.id) ? 'Закрыть' : 'Открыть'"
+                @click.stop="toggleIdeaDetails(idea.id)"
+                class="open-btn"
+              />
               <q-btn
                 v-if="canEditIdea(idea)"
                 icon="edit"
@@ -117,70 +117,65 @@
                     <strong>Необходимые ресурсы:</strong> {{ idea.resource }}
                   </div>
                   
-                  <div class="submit-section q-mt-md" v-if="idea.status === StatusIdea.draft && canSubmitIdea(idea)">
+                  <div class="action-buttons q-mt-md">
                     <q-btn 
+                      v-if="idea.status === StatusIdea.draft && canSubmitIdea(idea)"
                       label="Отправить на проверку" 
                       color="primary" 
                       @click="confirmSubmitIdea(idea)"
-                      class="q-mt-sm"
+                      class="q-mr-sm"
                     />
-                  </div>
-
-                  <div class="approve-section q-mt-md">
+                    <q-btn 
+                      v-if="canSendForRework(idea)"
+                      icon="edit" 
+                      label="Отправить на доработку"
+                      color="warning"
+                      @click="confirmSendForRework(idea)"
+                      :loading="isSendingForRework === idea.id"
+                      class="q-mr-sm"
+                    />
                     <q-btn 
                       v-if="canApproveIdea(idea)"
                       icon="thumb_up" 
                       label="Одобрить идею"
                       color="positive"
-                      class="q-mt-sm"
                       @click="confirmApproveIdea(idea)"
                       :loading="isApproving === idea.id"
+                      class="q-mr-sm"
                     />
-                    
-                    <q-banner 
-                      v-if="isApprovedByCurrentUser(idea)"
-                      class="bg-positive text-white q-mt-sm"
-                    >
-                      Вы уже одобрили эту идею
-                    </q-banner>
-
-                    <div v-if="mainStore.isAdmin()" class="text-subtitle2 q-mb-sm">
-                      <strong v-if="idea.approved && idea.approved.length > 0">Одобрили:</strong>
-                      <template v-for="userId in getUniqueApprovedUsers(idea)" :key="userId">
-                        <q-chip size="sm" color="primary" class="q-mx-xs">
-                          {{ getUserName(userId) }}
-                          <q-tooltip v-if="userId === mainStore.userId">Вы одобрили</q-tooltip>
-                        </q-chip>
-                        <q-chip 
-                          v-if="idea.status === StatusIdea.approved" 
-                          color="blue" 
-                          text-color="white"
-                        >
-                          Одобрений: {{ idea.approved?.length || 0 }}/3
-                        </q-chip>
-                      </template>
-                    </div>
-                  </div>
-                  <div class="endorse-section q-mt-md" v-if="canEndorseIdea(idea)">
                     <q-btn 
+                      v-if="canEndorseIdea(idea)"
                       icon="thumb_up" 
                       label="Утвердить идею"
                       color="positive"
-                      class="q-mt-sm"
                       @click="confirmEndorseIdea(idea)"
                       :loading="isEndorsing === idea.id"
                     />
                   </div>
-                  <div class="rework-section q-mt-md" v-if="canSendForRework(idea)">
-    <q-btn 
-      icon="edit" 
-      label="Отправить на доработку"
-      color="warning"
-      class="q-mt-sm"
-      @click="confirmSendForRework(idea)"
-      :loading="isSendingForRework === idea.id"
-    />
-  </div>
+
+                  <q-banner 
+                    v-if="isApprovedByCurrentUser(idea)"
+                    class="bg-positive text-white q-mt-sm"
+                  >
+                    Вы уже одобрили эту идею
+                  </q-banner>
+
+                  <div v-if="mainStore.isAdmin()" class="text-subtitle2 q-mb-sm">
+                    <strong v-if="idea.approved && idea.approved.length > 0">Одобрили:</strong>
+                    <template v-for="userId in getUniqueApprovedUsers(idea)" :key="userId">
+                      <q-chip size="sm" color="primary" class="q-mx-xs">
+                        {{ getUserName(userId) }}
+                        <q-tooltip v-if="userId === mainStore.userId">Вы одобрили</q-tooltip>
+                      </q-chip>
+                      <q-chip 
+                        v-if="idea.status === StatusIdea.approved" 
+                        color="blue" 
+                        text-color="white"
+                      >
+                        Одобрений: {{ idea.approved?.length || 0 }}/3
+                      </q-chip>
+                    </template>
+                  </div>
                 </q-card-section>
 
                 <q-card-section class="col-4 comment-container" v-if="canViewCommentsSection(idea)">
@@ -537,17 +532,23 @@ const toggleFilter = (filter: Filter) => {
 };
 
 const filteredIdeas = computed(() => {
-  const allowedStatuses = availableFilters.value
-    .filter(filter => filter.active)
-    .map(filter => filter.value);
+  let filtered = ideaStore.ideas;
   
-  const defaultStatuses = availableFilters.value.map(f => f.value);
+  // Применяем фильтр по статусу только если выбран не "Мои"
+  if (activeFilter.value !== 'my') {
+    const allowedStatuses = availableFilters.value
+      .filter(filter => filter.active)
+      .map(filter => filter.value);
+    
+    const defaultStatuses = availableFilters.value.map(f => f.value);
 
-  let filtered = ideaStore.ideas.filter(idea => {
-    return (allowedStatuses.length > 0 ? allowedStatuses : defaultStatuses)
-      .includes(idea.status);
-  });
+    filtered = filtered.filter(idea => {
+      return (allowedStatuses.length > 0 ? allowedStatuses : defaultStatuses)
+        .includes(idea.status);
+    });
+  }
 
+  // Фильтр "Мои" теперь показывает все идеи пользователя независимо от статуса
   if (activeFilter.value === 'my') {
     filtered = filtered.filter(idea => idea.initiator.id === mainStore.userId);
   }
@@ -1219,5 +1220,25 @@ const confirmEndorseIdea = (idea: IdeaDto) => {
     width: 100%;
     justify-content: space-between;
   }
+  .action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+/* Для мобильных устройств */
+@media (max-width: 600px) {
+  .action-buttons {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .action-buttons .q-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
 }
 </style>
