@@ -69,6 +69,7 @@ const loadProjects = async () => {
 
 const addProject = (newProject: ProjectDto) => {
   projects.value.unshift(newProject);
+  showCreateDialog.value = false; // Дублирующее закрытие для надёжности
 };
 
 const openProjectDetails = (project: ProjectDto) => {

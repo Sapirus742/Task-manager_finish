@@ -4,120 +4,147 @@
     @update:model-value="val => !val && closeDialog()"
   >
     <q-card class="create-project-dialog bg-grey-2 q-pa-md">
-      <q-card-section class="text-h6 text-primary">Создать новый проект</q-card-section>
+      <q-card-section>
+        <div class="dialog-title text-h6 text-primary">Создание нового проекта</div>
+      </q-card-section>
 
       <q-card-section>
         <q-form @submit="onSubmit" class="q-gutter-md">
-          <!-- Название проекта -->
-          <q-input
-            v-model="newProject.name"
-            label="Название проекта"
-            :rules="[(val) => !!val || 'Поле обязательно']"
-            outlined
-            dense
-          />
+          <div class="row q-col-gutter-md">
+            <!-- Первая колонка -->
+            <div class="col-md-6 col-12">
+              <!-- Название проекта -->
+              <q-input
+                v-model="newProject.name"
+                label="Название проекта"
+                :rules="[(val) => !!val || 'Поле обязательно']"
+                outlined
+                dense
+              />
 
-          <!-- Проблема -->
-          <q-input
-            v-model="newProject.problem"
-            label="Проблема"
-            :rules="[(val) => !!val || 'Поле обязательно']"
-            outlined
-            dense
-          />
+              <!-- Проблема -->
+              <q-input
+                v-model="newProject.problem"
+                label="Проблема"
+                type="textarea"
+                :rules="[(val) => !!val || 'Поле обязательно']"
+                outlined
+                dense
+                autogrow
+              />
 
-          <!-- Решение -->
-          <q-input
-            v-model="newProject.solution"
-            label="Решение"
-            :rules="[(val) => !!val || 'Поле обязательно']"
-            outlined
-            dense
-          />
+              <!-- Решение -->
+              <q-input
+                v-model="newProject.solution"
+                label="Решение"
+                type="textarea"
+                :rules="[(val) => !!val || 'Поле обязательно']"
+                outlined
+                dense
+                autogrow
+              />
+            </div>
 
-          <!-- Результат -->
-          <q-input
-            v-model="newProject.result"
-            label="Результат"
-            :rules="[(val) => !!val || 'Поле обязательно']"
-            outlined
-            dense
-          />
+            <!-- Вторая колонка -->
+            <div class="col-md-6 col-12">
+              <!-- Результат -->
+              <q-input
+                v-model="newProject.result"
+                label="Результат"
+                type="textarea"
+                :rules="[(val) => !!val || 'Поле обязательно']"
+                outlined
+                dense
+                autogrow
+              />
 
-          <!-- Ресурсы -->
-          <q-input
-            v-model="newProject.resource"
-            label="Ресурсы"
-            :rules="[(val) => !!val || 'Поле обязательно']"
-            outlined
-            dense
-          />
+              <!-- Ресурсы -->
+              <q-input
+                v-model="newProject.resource"
+                label="Ресурсы"
+                :rules="[(val) => !!val || 'Поле обязательно']"
+                outlined
+                dense
+              />
 
-          <!-- Стек технологий -->
-          <q-select
-            v-model="newProject.stack"
-            label="Стек технологий"
-            :options="competenceOptions"
-            multiple
-            use-chips
-            :rules="[(val) => val.length > 0 || 'Выберите хотя бы одну технологию']"
-            outlined
-            dense
-          />
+              <!-- Стек технологий -->
+              <q-select
+                v-model="newProject.stack"
+                label="Стек технологий"
+                :options="competenceOptions"
+                multiple
+                use-chips
+                :rules="[(val) => val.length > 0 || 'Выберите хотя бы одну технологию']"
+                outlined
+                dense
+              />
+            </div>
+          </div>
 
-          <!-- Статус проекта -->
-          <q-select
-            v-model="newProject.status"
-            label="Статус проекта"
-            :options="statusOptions"
-            :rules="[(val) => !!val || 'Поле обязательно']"
-            outlined
-            dense
-            map-options
-            emit-value
-          />
+          <div class="row q-col-gutter-md">
+            <div class="col-md-6 col-12">
+              <!-- Статус проекта -->
+              <q-select
+                v-model="newProject.status"
+                label="Статус проекта"
+                :options="statusOptions"
+                :rules="[(val) => !!val || 'Поле обязательно']"
+                outlined
+                dense
+                map-options
+                emit-value
+              />
 
-          <!-- Дата начала проекта -->
-          <q-input
-            v-model="startProjectString"
-            label="Дата начала проекта"
-            type="date"
-            :rules="[(val) => !!val || 'Поле обязательно']"
-            outlined
-            dense
-          />
+              <!-- Дата начала проекта -->
+              <q-input
+                v-model="startProjectString"
+                label="Дата начала проекта"
+                type="date"
+                :rules="[(val) => !!val || 'Поле обязательно']"
+                outlined
+                dense
+              />
+            </div>
 
-          <!-- Дата окончания проекта -->
-          <q-input
-            v-model="stopProjectString"
-            label="Дата окончания проекта"
-            type="date"
-            :rules="[(val) => !!val || 'Поле обязательно']"
-            outlined
-            dense
-          />
+            <div class="col-md-6 col-12">
+              <!-- Дата окончания проекта -->
+              <q-input
+                v-model="stopProjectString"
+                label="Дата окончания проекта"
+                type="date"
+                :rules="[(val) => !!val || 'Поле обязательно']"
+                outlined
+                dense
+              />
 
-          <!-- Максимальное количество участников -->
-          <q-input
-            v-model="newProject.maxUsers"
-            label="Максимальное количество участников"
-            type="number"
-            :rules="[
-              (val) => !!val || 'Поле обязательно',
-              (val) => val > 0 || 'Должно быть больше 0'
-            ]"
-            outlined
-            dense
-          />
+              <!-- Максимальное количество участников -->
+              <q-input
+                v-model="newProject.maxUsers"
+                label="Максимальное количество участников"
+                type="number"
+                :rules="[
+                  (val) => !!val || 'Поле обязательно',
+                  (val) => val > 0 || 'Должно быть больше 0'
+                ]"
+                outlined
+                dense
+              />
+            </div>
+          </div>
 
-          <!-- Заказчик -->
-          <q-input
-            v-model="newProject.customer"
-            label="Заказчик"
-            :rules="[(val) => !!val || 'Поле обязательно']"
-            outlined
-            dense
-          />
+          <!-- Заказчик (половина ширины) -->
+          <div class="row q-col-gutter-md">
+            <div class="col-md-6 col-12">
+              <q-input
+                v-model="newProject.customer"
+                label="Заказчик"
+                :rules="[(val) => !!val || 'Поле обязательно']"
+                outlined
+                dense
+              />
+            </div>
+            <div class="col-md-6 col-12"></div>
+          </div>
 
           <!-- Кнопки -->
           <q-card-actions align="right">
@@ -177,7 +204,6 @@ const stopProjectString = computed({
   },
 });
 
-// Опции для селектов
 const competenceOptions = Object.values(Competencies).flat();
 const statusOptions = [
   { label: 'Черновик', value: StatusProject.draft },
@@ -186,16 +212,32 @@ const statusOptions = [
   { label: 'Команда найдена', value: StatusProject.teamFound },
 ];
 
-// Методы управления диалогом
+const resetForm = () => {
+  newProject.value = {
+    name: '',
+    problem: '',
+    solution: '',
+    result: '',
+    resource: '',
+    stack: [],
+    status: StatusProject.searchTeam,
+    startProject: new Date(),
+    stopProject: new Date(),
+    maxUsers: '',
+    customer: '',
+    initiator: mainStore.userId,
+  };
+};
+
 const openDialog = () => {
   showDialog.value = true;
 };
 
 const closeDialog = () => {
+  resetForm();
   showDialog.value = false;
 };
 
-// Отправка формы
 const onSubmit = async () => {
   try {
     if (
@@ -235,7 +277,17 @@ defineExpose({
 
 <style scoped>
 .create-project-dialog {
-  width: 500px;
-  max-width: 90%;
+  width: 800px;
+  max-width: 90vw;
+}
+.dialog-title {
+  text-align: center;
+  width: 100%;
+}
+.q-field--with-textarea .q-field__control {
+  min-height: 100px;
+}
+.row + .row {
+  margin-top: 16px;
 }
 </style>
