@@ -90,18 +90,12 @@
     align: 'left' as const,
     field: (row: UserWithRoles) => row.roles.map(formatRole).join(', ')
   },
-  {
-    name: 'actions',
-    label: 'Действия',
-    align: 'center' as const,
-    field: ''
-  }
 ];
   
   const formatRole = (role: Role): string => {
     const roleNames = {
       [Role.admin]: 'Админ',
-      [Role.user]: 'Пользователь',
+      [Role.user]: 'Студент',
       [Role.customer]: 'Заказчик',
       [Role.expert]: 'Эксперт',
       [Role.directorate]: 'Дирекция'

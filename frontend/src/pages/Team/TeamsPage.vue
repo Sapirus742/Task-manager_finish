@@ -297,6 +297,19 @@
                         </div>
 
                         <div class="info-item">
+                          <q-icon name="flag" size="sm" class="q-mr-sm"/>
+                          <span class="text-weight-medium">Статус:</span>
+                          <q-chip
+                            :color="getStatusColor(selectedTeam.status)"
+                            text-color="white"
+                            size="md"
+                            class="q-ml-sm"
+                          >
+                            {{ selectedTeam.status }}
+                          </q-chip>
+                        </div>
+
+                        <div class="info-item">
                           <q-icon name="people" size="sm" class="q-mr-sm"/>
                           <span class="text-weight-medium">Участников:</span>
                           <span class="text-h6 text-primary q-ml-sm">{{ memberCount }}</span>

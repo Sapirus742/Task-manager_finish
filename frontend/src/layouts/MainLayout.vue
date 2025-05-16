@@ -102,7 +102,7 @@ const showProjectsButton = computed(() => {
 
 // Показывать кнопку "Админка" если роль: админ
 const showAdminButton = computed(() => {
-  const allowedRoles = ['admin'];
+  const allowedRoles = ['admin', 'directorate'];
   return roles.value.some(role => allowedRoles.includes(role));
 });
 
