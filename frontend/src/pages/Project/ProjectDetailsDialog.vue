@@ -236,96 +236,206 @@
   </q-dialog>
 
   <!-- Диалог просмотра команды -->
-  <q-dialog v-model="showTeamDetails">
-    <q-card v-if="selectedTeam" class="team-details-card">
-      <q-card-section>
-        <h2 class="team-heading">{{ selectedTeam.name }}</h2>
-
-        <div class="team-description q-mb-md" v-if="selectedTeam.description">
-          <strong>Описание:</strong>&nbsp;
-          <p>{{ selectedTeam.description }}</p>
-        </div>
-
-        <div v-if="getTeamCompetencies(selectedTeam).length > 0" class="q-mb-md">
-          <div class="text-subtitle2 q-mb-xs">Компетенции команды:</div>
-          <div class="competencies-container">
-            <q-chip
-              v-for="(competency, index) in getTeamCompetencies(selectedTeam)"
-              :key="index"
-              color="primary"
-              text-color="white"
-              size="sm"
-              class="q-mr-xs q-mb-xs"
-            >
-              {{ competency }}
-            </q-chip>
+  <q-dialog v-model="showTeamDetails" persistent>
+    <q-card class="team-details-card glossy-card" v-if="selectedTeam" style="max-width: 800px; width: 100%">
+        <q-card-section class="team-header bg-primary text-white">
+          <div class="row items-center justify-between">
+            <div class="text-h4 text-weight-bold">Профиль команды</div>
+            <q-btn 
+              icon="close" 
+              flat 
+              round 
+              dense 
+              v-close-popup 
+              class="close-btn"
+            />
           </div>
-        </div>
-        
-        <div class="team-owner q-mb-md" v-if="selectedTeam.user_owner"
-        @click="openUserProfile(selectedTeam.user_owner.id)">
-          <q-icon name="person" class="q-mr-sm" />
-          <strong>Создал: </strong>&nbsp;
-          <span>{{ selectedTeam.user_owner.firstname }} {{ selectedTeam.user_owner.lastname }}</span>
-        </div>
+        </q-card-section>
 
-        <div class="team-label q-mb-sm">
-          <q-icon name="people" class="q-mr-sm" />
-          <strong>Команда:</strong>
-        </div>
+        <q-card-section class="team-content q-pa-lg">
+          <div v-if="selectedTeam" class="single-column-layout">
+            <!-- Основная информация в красивом контейнере -->
+            <div class="info-container q-mb-md">
+              <div class="row q-col-gutter-md">
+                <!-- Блок с основной информацией -->
+                <div class="col-md-6 col-sm-12">
+                  <q-card class="info-card elevated-card" flat bordered>
+                    <q-card-section>
+                      <div class="text-h5 text-primary q-mb-md">Основная информация</div>
+                      
+                      <div class="info-grid q-gutter-y-md">
+                        <div class="info-item">
+                          <q-icon name="lock" size="sm" class="q-mr-sm"/>
+                          <span class="text-weight-medium">Приватность:</span>
+                          <q-chip
+                            :color="selectedTeam.privacy === PrivacyTeam.close ? 'deep-orange' : 'teal'"
+                            text-color="white"
+                            size="md"
+                            class="q-ml-sm"
+                          >
+                            {{ selectedTeam.privacy === PrivacyTeam.close ? 'Закрытая' : 'Открытая' }}
+                          </q-chip>
+                        </div>
 
-        <div class="members-container q-pa-sm bg-grey-2 rounded-borders">
-          <div class="member-item owner" v-if="selectedTeam.user_owner"
-          @click="openUserProfile(selectedTeam.user_owner.id)">
-              <div class="member-info">
-                <span class="member-name">
-                  {{ selectedTeam.user_owner?.firstname }} {{ selectedTeam.user_owner?.lastname }}
-                  <q-badge color="teal" class="q-ml-sm">Владелец</q-badge>
-                </span>
-                <span class="member-email" v-if="selectedTeam.user_owner?.email">
-                  <strong style="color: black">email: </strong> {{ selectedTeam.user_owner.email }}
-                </span>
+                        <div class="info-item">
+                          <q-icon name="flag" size="sm" class="q-mr-sm"/>
+                          <span class="text-weight-medium">Статус:</span>
+                          <q-chip
+                            :color="getTeamStatusColor(selectedTeam.status)"
+                            text-color="white"
+                            size="md"
+                            class="q-ml-sm"
+                          >
+                            {{ selectedTeam.status }}
+                          </q-chip>
+                        </div>
+
+                        <div class="info-item">
+                          <q-icon name="people" size="sm" class="q-mr-sm"/>
+                          <span class="text-weight-medium">Участников:</span>
+                          <span class="text-h6 text-primary q-ml-sm">{{ getUniqueMembersCount(selectedTeam) }}</span>
+                        </div>
+                      </div>
+                    </q-card-section>
+                  </q-card>
+                </div>
+
+                <!-- Блок с компетенциями -->
+                <div class="col-md-6 col-sm-12" v-if="getTeamCompetencies(selectedTeam).length > 0">
+                  <q-card class="competencies-card elevated-card" flat bordered>
+                    <q-card-section>
+                      <div class="text-h5 text-primary q-mb-md">Компетенции</div>
+                      <div class="competencies-container q-gutter-sm">
+                        <q-chip
+                          v-for="(competency, index) in getTeamCompetencies(selectedTeam)"
+                          :key="index"
+                          color="accent"
+                          text-color="white"
+                          size="md"
+                          class="shadow-1"
+                        >
+                          <q-avatar color="white" text-color="accent" size="sm" class="q-mr-sm">
+                            {{ competency[0] }}
+                          </q-avatar>
+                          {{ competency }}
+                        </q-chip>
+                      </div>
+                    </q-card-section>
+                  </q-card>
+                </div>
               </div>
             </div>
 
-          <div 
-            v-if="selectedTeam.user_leader && selectedTeam.user_leader.id !== selectedTeam.user_owner?.id"
-            class="member-item leader q-mb-xs"
-            @click="openUserProfile(selectedTeam.user_leader.id)"
-          >
-            <div class="member-info">
-              <span class="member-name">
-                {{ selectedTeam.user_leader.firstname }} {{ selectedTeam.user_leader.lastname }}
-                <q-badge color="primary" class="q-ml-sm">Тимлид</q-badge>
-              </span>
-              <span class="member-email" v-if="selectedTeam.user_leader.email">
-                <strong style="color: black">email: </strong> {{ selectedTeam.user_leader.email }}
-              </span>
-            </div>
-          </div>
+            <!-- Описание команды -->
+            <q-card class="description-card elevated-card q-mb-md" flat bordered>
+              <q-card-section>
+                <div class="text-h5 text-primary q-mb-sm">О команде</div>
+                <q-separator color="primary" class="q-mb-md"/>
+                <div class="team-description text-body1" :class="{ 'text-grey-6': !selectedTeam.description }">
+                  {{ selectedTeam.description || 'Команда пока не добавила описание' }}
+                </div>
+              </q-card-section>
+            </q-card>
 
-          <div 
-            v-for="member in getRegularMembers(selectedTeam)" 
-            :key="member.id" 
-            class="member-item q-mb-xs"
-            @click="openUserProfile(member.id)"
-          >
-            <div class="member-info">
-              <span class="member-name">
-                {{ member.firstname }} {{ member.lastname }}
-              </span>
-              <span class="member-email" v-if="member.email">
-                <strong style="color: black">email: </strong> {{ member.email }}
-              </span>
-            </div>
-          </div>
-        </div>
-      </q-card-section>
+            <!-- Участники команды -->
+            <q-card class="members-card elevated-card" flat bordered>
+              <q-card-section>
+                <div class="text-h5 text-primary">Участники</div>
+                <q-separator color="primary" class="q-mb-md"/>
 
-      <q-card-actions align="right">
-        <q-btn flat label="Закрыть" color="primary" v-close-popup />
-      </q-card-actions>
-    </q-card>
+                <div class="members-list q-gutter-y-md">
+                  <!-- Владелец -->
+                  <div v-if="selectedTeam.user_owner" class="member-item owner row items-center q-pa-sm rounded-borders"
+                      @click="openUserProfile(selectedTeam.user_owner.id)">
+                    <q-avatar size="lg" class="q-mr-md" color="teal" text-color="white">
+                      {{ selectedTeam.user_owner.firstname[0] }}{{ selectedTeam.user_owner.lastname[0] }}
+                    </q-avatar>
+                    <div class="member-info column">
+                      <div class="member-name text-h6">
+                        {{ selectedTeam.user_owner.firstname }} {{ selectedTeam.user_owner.lastname }}
+                        <q-badge color="teal" class="q-ml-sm">Владелец</q-badge>
+                        <q-badge v-if="isLeaderAlsoOwner(selectedTeam)" color="primary" class="q-ml-sm">Тимлид</q-badge>
+                      </div>
+                      <div class="member-contacts row q-gutter-x-md q-mt-xs">
+                        <div v-if="selectedTeam.user_owner.email" class="member-contact row items-center">
+                          <q-icon name="email" size="sm" class="q-mr-xs"/>
+                          <span>{{ selectedTeam.user_owner.email }}</span>
+                        </div>
+                        <div v-if="selectedTeam.user_owner.telephone" class="member-contact row items-center">
+                          <q-icon name="phone" size="sm" class="q-mr-xs"/>
+                          <span>{{ formatPhone(selectedTeam.user_owner.telephone) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Тимлид (если не владелец) -->
+                  <div v-if="selectedTeam.user_leader && !isLeaderAlsoOwner" 
+                      class="member-item leader row items-center q-pa-sm rounded-borders"
+                      @click="openUserProfile(selectedTeam.user_leader.id)">
+                    <q-avatar size="lg" class="q-mr-md" color="primary" text-color="white">
+                      {{ selectedTeam.user_leader.firstname[0] }}{{ selectedTeam.user_leader.lastname[0] }}
+                    </q-avatar>
+                    <div class="member-info column">
+                      <div class="member-name text-h6">
+                        {{ selectedTeam.user_leader.firstname }} {{ selectedTeam.user_leader.lastname }}
+                        <q-badge color="primary" class="q-ml-sm">Тимлид</q-badge>
+                      </div>
+                      <div class="member-contacts row q-gutter-x-md q-mt-xs">
+                        <div v-if="selectedTeam.user_leader.email" class="member-contact row items-center">
+                          <q-icon name="email" size="sm" class="q-mr-xs"/>
+                          <span>{{ selectedTeam.user_leader.email }}</span>
+                        </div>
+                        <div v-if="selectedTeam.user_leader.telephone" class="member-contact row items-center">
+                          <q-icon name="phone" size="sm" class="q-mr-xs"/>
+                          <span>{{ formatPhone(selectedTeam.user_leader.telephone) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Обычные участники -->
+                  <div v-for="user in getRegularMembers(selectedTeam)" 
+                      :key="user.id" 
+                      class="member-item row items-center q-pa-sm rounded-borders"
+                      @click.stop="openUserProfile(user.id)">
+                    <q-avatar size="lg" class="q-mr-md" color="grey-4" text-color="dark">
+                      {{ user.firstname[0] }}{{ user.lastname[0] }}
+                    </q-avatar>
+                    <div class="member-info column">
+                      <div class="member-name text-subtitle1">
+                        {{ user.firstname }} {{ user.lastname }}
+                      </div>
+                      <div class="member-contacts row q-gutter-x-md q-mt-xs">
+                        <div v-if="user.email" class="member-contact row items-center">
+                          <q-icon name="email" size="sm" class="q-mr-xs"/>
+                          <span>{{ user.email }}</span>
+                        </div>
+                        <div v-if="user.telephone" class="member-contact row items-center">
+                          <q-icon name="phone" size="sm" class="q-mr-xs"/>
+                          <span>{{ formatPhone(user.telephone) }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Пустое состояние -->
+                  <div v-if="selectedTeam.user.length === 0 && 
+                            (!selectedTeam.user_owner || !selectedTeam.user_leader)" 
+                      class="empty-state text-grey-6 text-center q-pa-lg">
+                    <q-icon name="people_outline" size="xl"/>
+                    <div class="text-h6 q-mt-sm">Нет участников</div>
+                  </div>
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
+        </q-card-section>
+
+        <q-card-actions align="right" class="q-pa-md bg-grey-1">        
+          <q-btn flat label="Закрыть" color="grey" v-close-popup icon="close"/>
+        </q-card-actions>
+      </q-card>
   </q-dialog>
   
   <teleport to="body">
@@ -340,7 +450,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue';
-import { StatusProject, StatusTeam } from '../../../../backend/src/common/types';
+import { StatusProject, StatusTeam,  PrivacyTeam } from '../../../../backend/src/common/types';
 import type { ProjectDto, TeamDto } from '../../../../backend/src/common/types';
 import { useTeamStore } from 'src/stores/team-store';
 import { useQuasar } from 'quasar';
@@ -387,6 +497,31 @@ const getStatusLabel = (status?: string) => {
   }
 };
 
+// Функция для цвета статуса команды
+const getTeamStatusColor = (status: StatusTeam) => {
+  switch (status) {
+    case StatusTeam.inProgress: return 'positive';
+    case StatusTeam.searchProject: return 'info';
+    case StatusTeam.joinProject: return 'warning';
+    case StatusTeam.delete: return 'negative';
+    default: return 'grey';
+  }
+};
+
+const isLeaderAlsoOwner = (team: TeamDto) => {
+  return team.user_owner?.id === team.user_leader?.id;
+};
+
+const formatPhone = (phone?: string): string => {
+  if (!phone) return '';
+  const cleaned = phone.replace(/\D/g, '');
+  const match = cleaned.match(/^(\d{1,3})(\d{3})(\d{3})(\d{2})(\d{2})$/);
+  if (match) {
+    return `+${match[1]} (${match[2]}) ${match[3]}-${match[4]}-${match[5]}`;
+  }
+  return phone;
+};
+
 const getTeamCompetencies = (team: TeamDto): string[] => {
   const competencies = new Set<string>();
   
@@ -405,6 +540,15 @@ const getTeamCompetencies = (team: TeamDto): string[] => {
   });
   
   return Array.from(competencies);
+};
+
+// Функция для подсчета участников
+const getUniqueMembersCount = (team: TeamDto): number => {
+  const members = new Set<number>();
+  if (team.user_owner?.id) members.add(team.user_owner.id);
+  if (team.user_leader?.id) members.add(team.user_leader.id);
+  team.user?.forEach(user => { if (user?.id) members.add(user.id); });
+  return members.size;
 };
 
 const pendingTeams = computed(() => {
