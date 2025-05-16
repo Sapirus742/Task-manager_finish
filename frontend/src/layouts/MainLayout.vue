@@ -14,11 +14,12 @@
             {{ `${firstname} ${lastname}` }}
           </span>
 
-          <!-- Роли -->
+          <!-- Роли 
           <span v-if="formattedRoles.length > 0">
             {{ formattedRoles.length > 1 ? ', ' : ' ' }}
             {{ formattedRoles.join(', ') }}
           </span>
+          -->
         </q-toolbar-title>
 
         <div class="q-mr-md">
