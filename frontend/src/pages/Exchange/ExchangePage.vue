@@ -112,14 +112,14 @@
                   @click="openAgileProject(project)"
                 />
                 <q-btn
-    flat
-    round
-    dense
-    icon="delete"
-    color="negative"
-    @click.stop="confirmRemoveProject(project)"
-    v-if="canEditExchange(activeExchange)"
-  />
+                  flat
+                  round
+                  dense
+                  icon="delete"
+                  color="negative"
+                  @click.stop="confirmRemoveProject(project)"
+                  v-if="canEditExchange(activeExchange)"
+                />
               </q-card-actions>
             </q-card>
           </div>
@@ -349,7 +349,7 @@ const confirmDelete = (exchange: ExchangeDto) => {
   $q.dialog({
     title: 'Подтверждение',
     message: `Вы уверены, что хотите удалить биржу "${exchange.name}"?`,
-    cancel: true,
+    cancel: {label: 'Отмена'},
     persistent: true,
   }).onOk(async () => {
     try {
@@ -427,7 +427,7 @@ const confirmRemoveProject = (project: ProjectDto) => {
   $q.dialog({
     title: 'Подтверждение удаления',
     message: `Вы уверены, что хотите удалить проект "${project.name}" из биржи?`,
-    cancel: true,
+    cancel: {label: 'Отмена'},
     persistent: true
   }).onOk(async () => {
     try {

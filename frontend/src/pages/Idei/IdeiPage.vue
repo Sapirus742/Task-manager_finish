@@ -686,7 +686,7 @@ const confirmDeleteIdea = (id: number) => {
   $q.dialog({
     title: 'Подтверждение',
     message: 'Вы уверены, что хотите удалить эту идею?',
-    cancel: true,
+    cancel: {label: 'Отмена'},
     persistent: true,
   }).onOk(async () => {
     try {
@@ -703,7 +703,7 @@ const confirmSubmitIdea = (idea: IdeaDto) => {
   $q.dialog({
     title: 'Подтверждение',
     message: 'Вы уверены, что хотите отправить идею на проверку? После отправки вы не сможете редактировать идею до рассмотрения.',
-    cancel: true,
+    cancel: {label: 'Отмена'},
     persistent: true,
   }).onOk(async () => {
     try {
@@ -781,7 +781,7 @@ const confirmDeleteComment = (id: number) => {
   $q.dialog({
     title: 'Подтверждение',
     message: 'Удалить комментарий?',
-    cancel: true,
+    cancel: {label: 'Отмена'},
     persistent: true
   }).onOk(async () => {
     try {
@@ -1008,7 +1008,7 @@ const confirmEndorseIdea = (idea: IdeaDto) => {
   $q.dialog({
     title: 'Подтверждение',
     message: 'Вы точно хотите утвердить эту идею?',
-    cancel: true,
+    cancel: {label: 'Отмена'},
     persistent: true,
   }).onOk(async () => {
     isEndorsing.value = idea.id;
