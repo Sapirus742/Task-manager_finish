@@ -161,7 +161,7 @@
             <!-- Количество участников -->
             <div class="col-md-2 col-sm-4 col-xs-6 team-members-count">
               <q-icon name="people" class="q-mr-xs" />
-              {{ team.user.length }}
+              {{ getUniqueMembersCount(team) }}
             </div>
             
             <!-- Приватность -->
@@ -516,7 +516,13 @@ import {
       update as updatePortfolio,
       getAll as getAllPortfolio, } from 'src/api/portfolio.api';
 import { UserCommandStatus } from '../../../../backend/src/common/types';
-import { TeamDto, PrivacyTeam, StatusProject, ProjectDto, StatusTeam} from '../../../../backend/src/common/types'; // Добавляем StatusProject
+import { 
+  TeamDto, 
+  PrivacyTeam,
+  StatusProject,
+  ProjectDto, 
+  StatusTeam, 
+  SecuredUser} from '../../../../backend/src/common/types'; // Добавляем StatusProject
 import { useQuasar } from 'quasar';
 import UserProfileOpen from 'src/pages/UserProfileOpen.vue';
 
@@ -613,40 +619,59 @@ const filteredTeams = computed(() => {
   return result;
 });
 
-// Функция для подсчета уникальных участников команды
+// Получаем уникальных участников команды (без дублирования)
+const getUniqueMembers = (team: TeamDto): SecuredUser[] => {
+  const members = new Map<number, SecuredUser>();
+  
+  // Добавляем владельца как участника, если он есть
+  if (team.user_owner) {
+    members.set(team.user_owner.id, team.user_owner);
+  }
+  
+  // Добавляем тимлида как участника, если он есть и это не владелец
+  if (team.user_leader && team.user_leader.id !== team.user_owner?.id) {
+    members.set(team.user_leader.id, team.user_leader);
+  }
+  
+  // Добавляем обычных участников, исключая дубли
+  if (team.user) {
+    team.user.forEach(user => {
+      if (user && !members.has(user.id)) {
+        members.set(user.id, user);
+      }
+    });
+  }
+  
+  return Array.from(members.values());
+};
+
+// Получаем количество уникальных участников
 const getUniqueMembersCount = (team: TeamDto | null): number => {
   if (!team) return 0;
-
-  const members = new Set<number>();
-
-  // Добавляем владельца, если есть
-  if (team.user_owner?.id) {
-    members.add(team.user_owner.id);
-  }
-
-  // Добавляем тимлида, если есть
-  if (team.user_leader?.id) {
-    members.add(team.user_leader.id);
-  }
-
-  // Добавляем обычных участников
-  team.user?.forEach(user => {
-    if (user?.id) {
-      members.add(user.id);
-    }
-  });
-
-  return members.size;
+  return getUniqueMembers(team).length;
 };
+
+// Получаем обычных участников (без владельца и тимлида)
+const regularMembers = computed(() => {
+  if (!selectedTeam.value) return [];
+  
+  const uniqueMembers = getUniqueMembers(selectedTeam.value);
+  const ownerId = selectedTeam.value.user_owner?.id;
+  const leaderId = selectedTeam.value.user_leader?.id;
+  
+  return uniqueMembers.filter(user => {
+    return user.id !== ownerId && user.id !== leaderId;
+  });
+});
+
+// Обновляем вычисляемое свойство для счетчика участников
+const memberCount = computed(() => {
+  return getUniqueMembersCount(selectedTeam.value);
+});
 
 // Вычисляемое свойство для проверки, что владелец - это тимлид
 const isLeaderAlsoOwner = computed(() => {
   return selectedTeam.value?.user_owner?.id === selectedTeam.value?.user_leader?.id;
-});
-
-// В шаблоне используем так:
-const memberCount = computed(() => {
-  return getUniqueMembersCount(selectedTeam.value);
 });
 
 const formatPhone = (phone?: string): string => {
@@ -734,16 +759,6 @@ const handleJoinTeamClick = (team: TeamDto | null) => {
   if (team.privacy === PrivacyTeam.close) {
     $q.notify({
       message: 'Эта команда закрыта для вступления. Обратитесь к владельцу команды.',
-      color: 'negative',
-      position: 'top'
-    });
-    return;
-  }
-
-  // Проверка на наличие другой команды
-  if (currentUser.team) {
-    $q.notify({
-      message: 'Вы уже состоите в другой команде. Покиньте текущую команду перед вступлением в новую.',
       color: 'negative',
       position: 'top'
     });
@@ -980,19 +995,6 @@ const completeLeaveTeam = async (teamId: number) => {
   }
   window.location.reload();
 };
-
-
-const regularMembers = computed(() => {
-  if (!selectedTeam.value?.user) return [];
-  
-  const ownerId = selectedTeam.value.user_owner?.id;
-  const leaderId = selectedTeam.value.user_leader?.id;
-  
-  return selectedTeam.value.user.filter(user => {
-    // Исключаем пользователя, если он владелец или тимлид
-    return user.id !== ownerId && user.id !== leaderId;
-  });
-});
 
 // Добавляем массив для хранения ID раскрытых команд
 const expandedTeams = ref<number[]>([]);
