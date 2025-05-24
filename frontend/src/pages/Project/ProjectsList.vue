@@ -21,7 +21,7 @@
 
           <div class="project-initiator">
             <q-icon name="person" class="q-mr-sm" />
-            <strong>Заказчик:&nbsp;</strong> {{ project.customer }}
+            <strong>Заказчик: &nbsp; </strong> {{ project.customer }}
           </div>
 
           <div class="project-status-info">

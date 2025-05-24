@@ -20,7 +20,7 @@
             <div class="initiator-section"
                  @click="project?.initiator?.id && openUserProfile(project.initiator.id)">
               <q-icon name="person" size="sm" class="q-mr-xs" />
-              <span class="text-weight-medium">Инициатор:</span>
+              <span class="text-weight-medium"> Инициатор:&nbsp;</span>
               <span>{{ project?.initiator?.firstname }} {{ project?.initiator?.lastname }}</span>
             </div>
 
