@@ -1,5 +1,5 @@
 import { api } from './axios';
-import { AgileDto, CreateAgileDto, CreateIdeaDto, IdeaDto, UpdateAgileDto, UpdateIdeaDto } from '../common/types';
+import { AgileDto, CreateAgileDto, UpdateAgileDto } from '../../../backend/src/common/types';
 
 export async function getAll(): Promise<AgileDto[]> {
   const response = await api.get('/agile');

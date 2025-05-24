@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import * as api from '../../../backend/src/api/agile.api';
+import * as api from '../api/agile.api';
 import type { AgileDto, CreateAgileDto, UpdateAgileDto } from '../../../backend/src/common/types';
 
 export const useAgileStore = defineStore('agile', () => {
