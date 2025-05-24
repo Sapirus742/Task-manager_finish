@@ -8,7 +8,6 @@ import { refresh } from './api/auth.api'
 import { useMainStore } from './stores/main-store';
 import { onMounted } from 'vue';
 import { api } from './api/axios';
-import { useQuasar } from 'quasar';
 
 defineOptions({
   name: 'App'
@@ -16,8 +15,6 @@ defineOptions({
 
 const router = useRouter();
 const mainStore = useMainStore();
-const $q = useQuasar();
-
 
 onMounted(async () => {
   const savedSession = await refresh();
@@ -33,16 +30,7 @@ onMounted(async () => {
 api.interceptors.response.use(function (response) {
   return response;
 }, function (error) {
-  if (error.response && error.response.status == 401) {
-    $q.notify({
-      type: 'negative',
-      position: 'bottom',
-      message: 'Ошибка авторизации',
-      icon: 'self_improvement',
-      timeout: 2000
-    });
-    router.push({ path: '/login' })
-  }
+  if (error.response && error.response.status == 401) {}
   return Promise.reject(error);
 })
 
