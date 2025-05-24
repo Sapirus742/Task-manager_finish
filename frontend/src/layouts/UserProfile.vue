@@ -291,6 +291,10 @@
                   <div class="q-mt-md">{{ ideasError }}</div>
                 </div>
 
+                <div v-else-if="!ideas.length" class="text-grey q-pa-md text-center">
+                  Нет данных об идеях
+                </div>
+
                 <q-table
                   v-else
                   :rows="ideas"
