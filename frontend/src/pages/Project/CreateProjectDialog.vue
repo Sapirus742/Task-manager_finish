@@ -79,72 +79,63 @@
                 dense
               />
             </div>
+            
           </div>
+<div class="row q-col-gutter-md">
+  <div class="col-md-6 col-12">
+    <!-- Дата начала проекта -->
+    <q-input
+      v-model="startProjectString"
+      label="Дата начала проекта"
+      type="date"
+      :rules="[(val) => !!val || 'Поле обязательно']"
+      outlined
+      dense
+    />
+  </div>
 
-          <div class="row q-col-gutter-md">
-            <div class="col-md-6 col-12">
-              <!-- Статус проекта -->
-              <q-select
-                v-model="newProject.status"
-                label="Статус проекта"
-                :options="statusOptions"
-                :rules="[(val) => !!val || 'Поле обязательно']"
-                outlined
-                dense
-                map-options
-                emit-value
-              />
+  <div class="col-md-6 col-12">
+    <!-- Дата окончания проекта -->
+    <q-input
+      v-model="stopProjectString"
+      label="Дата окончания проекта"
+      type="date"
+      :rules="[(val) => !!val || 'Поле обязательно']"
+      outlined
+      dense
+    />
+  </div>
+</div>
 
-              <!-- Дата начала проекта -->
-              <q-input
-                v-model="startProjectString"
-                label="Дата начала проекта"
-                type="date"
-                :rules="[(val) => !!val || 'Поле обязательно']"
-                outlined
-                dense
-              />
-            </div>
+<div class="row q-col-gutter-md" style="margin-top: 1rem;">
+  <div class="col-md-6 col-12">
+    <!-- Заказчика -->
+    <q-input
+      v-model="newProject.customer"
+      label="Заказчика"
+      outlined
+      dense
+    />
+  </div>
 
-            <div class="col-md-6 col-12">
-              <!-- Дата окончания проекта -->
-              <q-input
-                v-model="stopProjectString"
-                label="Дата окончания проекта"
-                type="date"
-                :rules="[(val) => !!val || 'Поле обязательно']"
-                outlined
-                dense
-              />
+  <div class="col-md-6 col-12">
+    <!-- Максимальное количество участников -->
+    <q-input
+      v-model="newProject.maxUsers"
+      label="Максимальное количество участников"
+      type="number"
+      :rules="[
+        (val) => !!val || 'Поле обязательно',
+        (val) => val > 0 || 'Должно быть больше 0'
+      ]"
+      outlined
+      dense
+    />
+  </div>
+</div>
+          
 
-              <!-- Максимальное количество участников -->
-              <q-input
-                v-model="newProject.maxUsers"
-                label="Максимальное количество участников"
-                type="number"
-                :rules="[
-                  (val) => !!val || 'Поле обязательно',
-                  (val) => val > 0 || 'Должно быть больше 0'
-                ]"
-                outlined
-                dense
-              />
-            </div>
-          </div>
-
-          <!-- Заказчик (половина ширины) -->
-          <div class="row q-col-gutter-md">
-            <div class="col-md-6 col-12">
-              <q-input
-                v-model="newProject.customer"
-                label="Заказчик"
-                :rules="[(val) => !!val || 'Поле обязательно']"
-                outlined
-                dense
-              />
-            </div>
-            <div class="col-md-6 col-12"></div>
-          </div>
+         
 
           <!-- Кнопки -->
           <q-card-actions align="right">
@@ -181,7 +172,7 @@ const newProject = ref<CreateProjectDto>({
   result: '',
   resource: '',
   stack: [],
-  status: StatusProject.searchTeam,
+  status: StatusProject.draft,
   startProject: new Date(),
   stopProject: new Date(),
   maxUsers: '',
@@ -205,12 +196,7 @@ const stopProjectString = computed({
 });
 
 const competenceOptions = Object.values(Competencies).flat();
-const statusOptions = [
-  { label: 'Черновик', value: StatusProject.draft },
-  { label: 'Поиск команды', value: StatusProject.searchTeam },
-  { label: 'Отбор команды', value: StatusProject.selectionTeam },
-  { label: 'Команда найдена', value: StatusProject.teamFound },
-];
+
 
 const resetForm = () => {
   newProject.value = {
@@ -220,7 +206,7 @@ const resetForm = () => {
     result: '',
     resource: '',
     stack: [],
-    status: StatusProject.searchTeam,
+    status: StatusProject.draft,
     startProject: new Date(),
     stopProject: new Date(),
     maxUsers: '',
