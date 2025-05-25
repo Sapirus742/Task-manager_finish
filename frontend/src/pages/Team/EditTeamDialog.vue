@@ -157,9 +157,10 @@
             <q-select
               v-model="editedTeam.project"
               label="Проект"
-              :options="filteredProjectOptions"
+              :options="groupedProjectOptions"
               outlined
               option-label="name"
+              option-value="value"
               emit-value
               map-options
               clearable
@@ -167,9 +168,20 @@
               @update:model-value="handleProjectChange"
               :display-value="editedTeam.project?.name || 'Не выбран'"
             >
-              <template v-slot:selected-item="scope">
-                <span v-if="scope.opt">{{ scope.opt.name }}</span>
-                <span v-else>Не выбран</span>
+              <template v-slot:option="scope">
+                <q-item v-bind="scope.itemProps">
+                  <q-item-section>
+                    <q-item-label 
+                      :class="{
+                        'text-weight-bold': scope.opt.header, 
+                        'text-grey': scope.opt.disabled,
+                        'q-pl-md': !scope.opt.header
+                      }"
+                    >
+                      {{ scope.opt.label }}
+                    </q-item-label>
+                  </q-item-section>
+                </q-item>
               </template>
               <q-tooltip 
                 v-if="!canEditProject || editedTeam.status === StatusTeam.delete"
@@ -215,23 +227,28 @@ import {
   getAll as getAllUsers, 
   get as getUser,
 } from 'src/api/users.api';
-import { 
-  getAll as getAllProjects, 
+import {
+  getAll as getAllEx,
+  } from 'src/api/exchange.api'
+import {
   update as updateProjectApi,
 } from 'src/api/project.api';
 import {useMainStore} from 'src/stores/main-store';
+import { useProjectStore } from 'src/stores/project-store';
 import { 
   getAll as getAllPortfolio,
   update as updatePortfolio,
   create as createPortfolio,
 } from 'src/api/portfolio.api';
-import { UserCommandStatus } from '../../../../backend/src/common/types';
+import { UserCommandStatus, ExchangeDto, ProjectDto } from '../../../../backend/src/common/types';
 
 const $q = useQuasar();
 const emit = defineEmits(['update']);
 const showDialog = ref(false);
 const loading = ref(false);
 const mainStore = useMainStore();
+const projectStore = useProjectStore();
+const allExchanges = ref<{id: number; name: string; projects: ProjectOption[]}[]>([]);
 
 const canEditFull = computed(() => {
   return mainStore.isAdmin() || editedTeam.value.user_owner === mainStore.userId;
@@ -356,12 +373,44 @@ const handleStatusChange = async (newStatus: StatusTeam) => {
   previousStatus.value = newStatus;
 };
 
-const filteredProjectOptions = computed(() => {
-  return allProjects.value.filter(project => 
-    project.status === StatusProject.searchTeam || 
-    project.status === StatusProject.selectionTeam ||
-    project.id === editedTeam.value.project?.id
-  );
+const groupedProjectOptions = computed(() => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result: any[] = [];
+  
+  allExchanges.value.forEach((exchange: {id: number; name: string; projects: ProjectOption[]}) => {
+    const validProjects = exchange.projects.filter((project: ProjectOption) => 
+      (project.status === StatusProject.searchTeam || 
+       project.status === StatusProject.selectionTeam) &&
+      (!projectStore.projects.some((p: ProjectDto) => 
+        p.id === project.id && 
+        p.teams && 
+        p.teams.length > 0 &&
+        p.teams.some((t: TeamDto) => t.id !== editedTeam.value.id)
+      )
+    ));
+
+    if (validProjects.length > 0) {
+      // Добавляем заголовок биржи (только название)
+      result.push({
+        label: exchange.name,
+        value: null,
+        disabled: true,
+        header: true
+      });
+      
+      // Добавляем проекты (только название и значение)
+      validProjects.forEach((project: ProjectOption) => {
+        result.push({
+          label: project.name,  // Только имя проекта
+          value: project,       // Весь объект проекта как значение
+          disabled: false,
+          header: false
+        });
+      });
+    }
+  });
+
+  return result;
 });
 
 const isUserInOtherTeam = (user: TeamMember): boolean => {
@@ -439,24 +488,34 @@ const loadUsers = async () => {
   }
 };
 
-const loadProjects = async () => {
+const loadProjectsFromExchanges = async () => {
   try {
-    const projects = await getAllProjects();
-    if (projects) {
-      allProjects.value = projects.map(project => ({
+    const exchanges = await getAllEx();
+    allExchanges.value = exchanges.map((exchange: ExchangeDto) => ({
+      id: exchange.id,
+      name: exchange.name,
+      projects: (exchange.projects || []).map((project: ProjectDto) => ({
         id: project.id,
         name: project.name,
         status: project.status
-      }));
-    }
+      }))
+    }));
+    
+    // Сохраняем плоский список проектов для других функций
+    allProjects.value = allExchanges.value.flatMap(exchange => exchange.projects);
+    
   } catch (error) {
-    console.error('Ошибка загрузки проектов:', error);
+    console.error('Ошибка загрузки проектов из бирж:', error);
     $q.notify({
-      message: 'Ошибка загрузки проектов',
+      message: 'Ошибка загрузки проектов из бирж',
       color: 'negative',
       position: 'top'
     });
   }
+};
+
+const loadProjects = async () => {
+  await loadProjectsFromExchanges();
 };
 
 const handleProjectChange = (selectedProject: ProjectOption | null) => {
