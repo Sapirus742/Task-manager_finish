@@ -146,7 +146,7 @@
                   </div>
 
                   <q-btn
-                    v-if="canApplyToProject"
+                    v-if="(canApplyToProject || mainStore.isAdmin() || mainStore.isDirectorate()) && PrSt"
                     label="Подать заявку на проект"
                     color="primary"
                     @click="applyToProject"
@@ -446,6 +446,46 @@
         </q-card-actions>
       </q-card>
   </q-dialog>
+
+  <q-dialog v-model="showTeamSelectionDialog" persistent>
+    <q-card style="min-width: 500px">
+      <q-card-section>
+        <div class="text-h6">Выберите команду для подачи заявки</div>
+      </q-card-section>
+
+      <q-card-section>
+        <q-list bordered separator>
+          <q-item 
+            v-for="team in userOwnedTeams" 
+            :key="team.id"
+            clickable
+            :disable="!isTeamAvailableForApplication(team)"
+            @click="selectTeamForApplication(team)"
+          >
+            <q-item-section>
+              <q-item-label>{{ team.name }}</q-item-label>
+              <q-item-label caption>
+                <span :class="getTeamStatusClass(team)">
+                  {{ getTeamStatusText(team) }}
+                </span>
+              </q-item-label>
+            </q-item-section>
+
+            <q-item-section side>
+              <q-icon 
+                :name="isTeamAvailableForApplication(team) ? 'check_circle' : 'block'" 
+                :color="isTeamAvailableForApplication(team) ? 'positive' : 'negative'"
+              />
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Отмена" color="negative" v-close-popup />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
   
   <teleport to="body">
     <UserProfileOpen 
@@ -478,6 +518,9 @@ const mainStore = useMainStore();
 
 const selectedUserId = ref<number | null>(null);
 const isProfileOpen = ref(false);
+
+const showTeamSelectionDialog = ref(false);
+const selectedTeamForApplication = ref<TeamDto | null>(null);
 
 const openUserProfile = (userId: number) => {
   selectedUserId.value = userId;
@@ -578,6 +621,119 @@ const openTeamDetailsDialog = (team: TeamDto) => {
   showTeamDetails.value = true;
 };
 
+const userOwnedTeams = computed(() => {
+  const currentUser = mainStore.getCurrentUser();
+  return currentUser.team_owner || [];
+});
+
+const isTeamAvailableForApplication = (team: TeamDto): boolean => {
+  // Команда доступна для подачи если:
+  // 1. Не привязана к другому проекту
+  // 2. Не находится на удалении
+  // 3. Имеет статус "Поиск проекта"
+  return (
+    !team.project && 
+    team.status !== StatusTeam.delete &&
+    team.status === StatusTeam.searchProject
+  );
+};
+
+const getTeamStatusText = (team: TeamDto): string => {
+  if (team.project) {
+    return `Уже привязана к проекту: ${team.project.name}`;
+  }
+  if (team.status === StatusTeam.delete) {
+    return 'На удалении';
+  }
+  if (team.status === StatusTeam.inProgress) {
+    return 'Уже работает над проектом';
+  }
+  if (team.status === StatusTeam.joinProject) {
+    return 'Уже подана на другой проект';
+  }
+  return 'Доступна для подачи';
+};
+
+const getTeamStatusClass = (team: TeamDto): string => {
+  if (!isTeamAvailableForApplication(team)) {
+    return 'text-negative';
+  }
+  return 'text-positive';
+};
+
+const selectTeamForApplication = (team: TeamDto) => {
+  if (!isTeamAvailableForApplication(team)) return;
+  
+  selectedTeamForApplication.value = team;
+  showTeamSelectionDialog.value = false;
+  confirmTeamApplication(team);
+};
+
+const confirmTeamApplication = async (team: TeamDto) => {
+  const confirmed = await new Promise<boolean>((resolve) => {
+    $q.dialog({
+      title: 'Подтверждение подачи заявки',
+      message: `Вы уверены, что хотите подать команду "${team.name}" на проект "${project.value?.name}"?`,
+      persistent: true,
+      ok: {
+        label: 'Подать заявку',
+        color: 'primary',
+        flat: true
+      },
+      cancel: {
+        label: 'Отмена',
+        color: 'negative',
+      }
+    }).onOk(() => resolve(true)).onCancel(() => resolve(false));
+  });
+
+  if (!confirmed) return;
+
+  try {
+    // Обновляем команду - привязываем к проекту и меняем статус
+    await updateTeam(team.id, {
+      project: project.value?.id,
+      status: StatusTeam.joinProject
+    });
+
+    // Обновляем проект - меняем статус на "Отбор команды"
+    if (project.value?.id) {
+      await updateProject(project.value.id, {
+        status: StatusProject.selectionTeam
+      });
+    }
+
+    $q.notify({
+      message: 'Заявка успешно подана!',
+      color: 'positive'
+    });
+
+    // Обновляем данные
+    if (project.value?.id) {
+      const updatedProject = await getProject(project.value.id);
+      if (updatedProject) {
+        project.value = updatedProject;
+      }
+    }
+
+    // Обновляем текущую команду
+    if (teamStore.fetchTeam) {
+      await teamStore.fetchTeam(team.id);
+    }
+
+  } catch (error) {
+    console.error('Ошибка подачи заявки:', error);
+    $q.notify({
+      message: 'Ошибка подачи заявки',
+      color: 'negative'
+    });
+  }
+};
+
+const PrSt = computed(() => {
+  return project.value?.status === StatusProject.searchTeam;
+});
+
 // Проверяем, может ли текущий пользователь подать заявку на проект
 const canApplyToProject = computed(() => {
   if (!project.value || project.value.status !== StatusProject.searchTeam) {
@@ -594,7 +750,7 @@ const canApplyToProject = computed(() => {
   // Проверяем, что команда ещё не подана на этот проект
   const isAlreadyApplied = project.value.teams?.some(t => t.id === currentUser.team?.id);
 
-  return isTeamLeader && !isAlreadyApplied;
+  return (isTeamLeader && !isAlreadyApplied);
 });
 
 // Метод для подачи заявки на проект
@@ -603,6 +759,14 @@ const applyToProject = async () => {
 
   try {
     const currentUser = mainStore.getCurrentUser();
+
+    // Проверяем, является ли пользователь владельцем команд
+    if (currentUser.team_owner && currentUser.team_owner.length > 0) {
+      // Показываем диалог выбора команды
+      showTeamSelectionDialog.value = true;
+      return;
+    }
+
     const currentTeam = currentUser.team;
     if (!currentTeam) {
       throw new Error('Команда не найдена');
