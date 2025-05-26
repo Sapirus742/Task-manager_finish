@@ -7,8 +7,8 @@ export enum Role {
 }
 
 export enum UserAccountStatus {
-  active = 'active',
-  pending = 'pending',
+  active = 'active', //пользователи без команды и в команде, остальные не юзеры
+  pending = 'pending', //пользователи подавшие заявку в команду, но не одобренные
   inactive = 'inactive',
 }
 

@@ -473,7 +473,7 @@
           <q-btn 
             v-if="selectedTeam && mainStore.canJoinTeam(selectedTeam)"
             flat
-            label="Вступить"
+            label="Подать заявку"
             color="positive"
             icon="person_add"
             @click="handleJoinTeamClick(selectedTeam)"
@@ -516,6 +516,7 @@ import {
       update as updatePortfolio,
       getAll as getAllPortfolio, } from 'src/api/portfolio.api';
 import { UserCommandStatus } from '../../../../backend/src/common/types';
+import { UserAccountStatus } from '../../../../backend/src/common/types';
 import { 
   TeamDto, 
   PrivacyTeam,
@@ -636,7 +637,7 @@ const getUniqueMembers = (team: TeamDto): SecuredUser[] => {
   // Добавляем обычных участников, исключая дубли
   if (team.user) {
     team.user.forEach(user => {
-      if (user && !members.has(user.id)) {
+      if (user && !members.has(user.id) && user.status !== UserAccountStatus.pending) {
         members.set(user.id, user);
       }
     });
@@ -660,7 +661,7 @@ const regularMembers = computed(() => {
   const leaderId = selectedTeam.value.user_leader?.id;
   
   return uniqueMembers.filter(user => {
-    return user.id !== ownerId && user.id !== leaderId;
+    return user.id !== ownerId && user.id !== leaderId && user.status !== UserAccountStatus.pending;
   });
 });
 
@@ -783,10 +784,10 @@ const handleJoinTeamClick = (team: TeamDto | null) => {
 const confirmJoinTeam = (team: TeamDto) => {
   $q.dialog({
     title: 'Подтверждение вступления',
-    message: `Вы уверены, что хотите вступить в команду "${team.name}"?`,
+    message: `Вы уверены, что хотите подать заявку на вступление в команду "${team.name}"?`,
     persistent: true,
     ok: {
-      label: 'Вступить',
+      label: 'Подать',
       color: 'positive',
       flat: true
     },
@@ -810,31 +811,23 @@ const handleJoinTeam = async (teamId: number) => {
       return;
     }
 
-    // 1. Обновляем пользователя, устанавливая team_id
-    await updateUser(currentUserId, { team: teamId });
+    // 1. Обновляем пользователя, устанавливая team_id и status юзера
+    await updateUser(currentUserId, { team: teamId, status: UserAccountStatus.pending });
     
-    // 2. Создаем запись в портфолио
-    await createPortfolio({
-      status: UserCommandStatus.inTeam,
-      team: teamId,
-      user: currentUserId,
-      entryDate: new Date(), // Передаем объект Date вместо строки
-    });
-    
-    // 3. Обновляем данные в хранилище
+    // 2. Обновляем данные в хранилище
     mainStore.updateTeamData(teamId);
     
     $q.notify({
-      message: 'Вы успешно вступили в команду',
+      message: 'Вы успешно подали заявку на вступление в команду',
       color: 'positive'
     });
     
     showTeamDetails.value = false;
     await loadTeams(); // Перезагружаем список команд
   } catch (error) {
-    console.error('Ошибка при вступлении в команду:', error);
+    console.error('Ошибка при подачи заявки на вступление в команду:', error);
     $q.notify({
-      message: 'Ошибка при вступлении в команду',
+      message: 'Ошибка при подачи заявки на вступление в команду',
       color: 'negative'
     });
   }
@@ -938,7 +931,7 @@ const handleLeaderLeave = async (team: TeamDto) => {
       }
     }).onOk(async () => {
       await completeLeaveTeam(team.id);
-      await updateTeams(team.id, {user_leader: null});
+      await updateTeams(team.id, {user_leader: null, status: StatusTeam.delete});
     });
   }
 };
@@ -966,14 +959,14 @@ const completeLeaveTeam = async (teamId: number) => {
       });
     } else {
       console.log('Обновление не удалось... или запись не найдена)');
-      /* Создаем новую запись об исключении (без записи о вступлении)
+      // Создаем новую запись об исключении (без записи о вступлении)
       await createPortfolio({
         status: UserCommandStatus.expelled,
         team: teamId,
         user: currentUserId,
         entryDate: new Date(), 
         exclusionDate: new Date(),
-      });*/
+      });
     }
 
     // 4. Обновляем данные

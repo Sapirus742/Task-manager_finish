@@ -54,6 +54,7 @@
 
     <!-- Передаем formattedRoles в UserProfile -->
     <UserProfile ref="userProfile" :roles="formattedRoles" />
+    <PendingRequestsDialog ref="pendingRequestsDialog" />
   </q-layout>
 </template>
 
@@ -64,6 +65,8 @@ import { storeToRefs } from 'pinia';
 import * as api from '../api/auth.api';
 import { useRouter } from 'vue-router';
 import UserProfile from './UserProfile.vue';
+import { useQuasar } from 'quasar';
+import PendingRequestsDialog from 'src/pages/PendingRequestsDialog.vue';
 
 defineOptions({
   name: 'MainLayout',
@@ -72,6 +75,34 @@ defineOptions({
 const mainStore = useMainStore();
 const router = useRouter();
 const userProfile = ref();
+const $q = useQuasar();
+const pendingRequestsDialog = ref<InstanceType<typeof PendingRequestsDialog>>();
+
+const checkPendingRequests = async () => {
+  if (mainStore.team_leader) {
+    const { hasRequests, teamName, pendingUsers } = await mainStore.hasPendingRequests();
+    console.log(hasRequests, teamName, pendingUsers, mainStore.team_leader?.id)
+    if (hasRequests) {
+      $q.notify({
+        message: `Имеются нерассмотренные заявки на вступление в команду "${teamName}"`,
+        color: 'info',
+        icon: 'people',
+        timeout: 0, // Уведомление не исчезает автоматически
+        actions: [
+          {
+            label: 'Просмотреть',
+            color: 'white',
+            handler: () => {
+              // Открываем модальное окно с заявками
+              pendingRequestsDialog.value?.open(pendingUsers, teamName, mainStore.team_leader?.id);
+            }
+          }
+        ]
+      });
+    }
+  }
+};
+checkPendingRequests();
 
 let { firstname, lastname, roles } = storeToRefs(mainStore);
 

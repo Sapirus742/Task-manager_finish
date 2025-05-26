@@ -17,6 +17,7 @@ import {
 import { useProfileStore } from './profile-store';
 import { useTeamStore } from './team-store';
 import { useIdeaStore } from './idea-store';
+import * as api from './/..//api/team.api'
 
 export const useMainStore = defineStore('main', () => {
   const state = reactive({
@@ -229,6 +230,46 @@ export const useMainStore = defineStore('main', () => {
     }
   };
 
+  const hasPendingRequests = async (): Promise<{
+    hasRequests: boolean;
+    teamName?: string;
+    pendingUsers?: SecuredUser[];
+  }> => {
+    try {
+      // Проверяем что пользователь является тимлидом
+      if (!state.team_leader || !state.team_leader.id) {
+        return { hasRequests: false };
+      }
+
+      // Получаем данные команды тимлида
+      const teamResponse = await api.get(state.team_leader.id);
+      if (!teamResponse ) {
+        console.log('Ошибка получения данных команды тимлида')
+        return {hasRequests : false};
+      }
+
+      const team = teamResponse;
+
+      // Фильтруем участников по статусу UserAccountStatus.pending
+      const pendingUsers = [
+        team.user_owner,
+        ...(team.user_leader ? [team.user_leader] : []),
+        ...team.user
+      ].filter(member => 
+        member && member.status === UserAccountStatus.pending
+      );
+
+      return {
+        hasRequests: pendingUsers.length > 0,
+        teamName: team.name,
+        pendingUsers
+      };
+    } catch (error) {
+      console.error('Ошипка сортировки по статусу pending:', error);
+      return { hasRequests: false };
+    }
+  };
+
   return {
     ...toRefs(state),
     initAppState,
@@ -249,5 +290,6 @@ export const useMainStore = defineStore('main', () => {
     canLeaveTeam,
     userHasTeam,
     updateIdeasData,
+    hasPendingRequests,
   };
 });

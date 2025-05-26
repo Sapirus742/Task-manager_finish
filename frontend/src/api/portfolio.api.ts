@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { api } from './axios';
 import { CreatePortfolioDto, PortfolioDto, UpdatePortfolioDto } from '../../../backend/src/common/types';
 
@@ -7,6 +8,18 @@ export async function getAll(): Promise<PortfolioDto[]> {
     return response.data;
   }
   return [];
+}
+
+interface ApiError extends Error {
+  response?: {
+    status?: number;
+    data?: any;
+  };
+  config?: {
+    url?: string;
+    method?: string;
+    data?: any;
+  };
 }
 
 export async function get(id: number): Promise<PortfolioDto | undefined> {
@@ -20,11 +33,26 @@ export async function get(id: number): Promise<PortfolioDto | undefined> {
 export async function create(
   newPortfolio: CreatePortfolioDto
 ): Promise<PortfolioDto | undefined> {
-  const response = await api.post('/portfolio', newPortfolio);
-  if (response.status == 201) {
-    return response.data;
+  console.log('[API] Отправка запроса на создание записи в портфолио:', newPortfolio) 
+  try {
+    const response = await api.post('/portfolio', newPortfolio);
+    console.log('[API] Ответ сервера:', { 
+        status: response.status, 
+        data: response.data 
+      });
+    if (response.status == 200) {
+      return response.data;
+    }
+    return;
+  } catch (err: unknown) {
+    const error = err as ApiError;
+    console.error('[API] Ошибка при создании:', {
+      message: error.message,
+      response: error.response,
+      config: error.config
+    });
+    throw err;
   }
-  return;
 }
 
 export async function update(

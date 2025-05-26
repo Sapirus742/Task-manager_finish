@@ -379,7 +379,7 @@
                   </div>
 
                   <!-- Тимлид (если не владелец) -->
-                  <div v-if="selectedTeam.user_leader && !isLeaderAlsoOwner" 
+                  <div v-if="selectedTeam.user_leader && !isLeaderAlsoOwner(selectedTeam)" 
                       class="member-item leader row items-center q-pa-sm rounded-borders"
                       @click="openUserProfile(selectedTeam.user_leader.id)">
                     <q-avatar size="lg" class="q-mr-md" color="primary" text-color="white">
@@ -459,7 +459,7 @@
 
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue';
-import { StatusProject, StatusTeam,  PrivacyTeam } from '../../../../backend/src/common/types';
+import { StatusProject, StatusTeam,  PrivacyTeam, UserAccountStatus } from '../../../../backend/src/common/types';
 import type { ProjectDto, TeamDto } from '../../../../backend/src/common/types';
 import { useTeamStore } from 'src/stores/team-store';
 import { useQuasar } from 'quasar';
@@ -517,8 +517,9 @@ const getTeamStatusColor = (status: StatusTeam) => {
   }
 };
 
-const isLeaderAlsoOwner = (team: TeamDto) => {
-  return team.user_owner?.id === team.user_leader?.id;
+const isLeaderAlsoOwner = (team: TeamDto): boolean => {
+  if (!team.user_leader || !team.user_owner) return false;
+  return team.user_leader.id === team.user_owner.id;
 };
 
 const formatPhone = (phone?: string): string => {
@@ -556,7 +557,7 @@ const getUniqueMembersCount = (team: TeamDto): number => {
   const members = new Set<number>();
   if (team.user_owner?.id) members.add(team.user_owner.id);
   if (team.user_leader?.id) members.add(team.user_leader.id);
-  team.user?.forEach(user => { if (user?.id) members.add(user.id); });
+  team.user?.forEach(user => { if (user?.id && user.status !== UserAccountStatus.pending) members.add(user.id); });
   return members.size;
 };
 
@@ -694,7 +695,7 @@ const approveTeam = async (team: TeamDto) => {
     
     if (project.value.maxUsers) {
       const maxUsers = parseInt(project.value.maxUsers);
-      const teamSize = team.user?.length || 0;
+      const teamSize = getUniqueMembersCount(team) || 0;
       
       if (!isNaN(maxUsers) && teamSize > maxUsers) {
         mismatchReasons.value.push(
@@ -761,7 +762,8 @@ const getRegularMembers = (team: TeamDto) => {
   return team.user.filter(member => {
     const isOwner = member.id === team.user_owner?.id;
     const isLeader = team.user_leader && member.id === team.user_leader.id;
-    return !isOwner && !isLeader;
+    const isPending = member.status === UserAccountStatus.pending;
+    return !isOwner && !isLeader && !isPending;
   });
 };
 
