@@ -144,6 +144,15 @@
                     <q-icon name="info" size="sm" />
                     <span>Нет заявок от команд</span>
                   </div>
+
+                  <q-btn
+                    v-if="canApplyToProject"
+                    label="Подать заявку на проект"
+                    color="primary"
+                    @click="applyToProject"
+                    class="q-ml-sm"
+                  />   
+
                 </template>
               </div>
             </q-tab-panel>
@@ -432,7 +441,7 @@
           </div>
         </q-card-section>
 
-        <q-card-actions align="right" class="q-pa-md bg-grey-1">        
+        <q-card-actions align="right" class="q-pa-md bg-grey-1"> 
           <q-btn flat label="Закрыть" color="grey" v-close-popup icon="close"/>
         </q-card-actions>
       </q-card>
@@ -455,8 +464,8 @@ import type { ProjectDto, TeamDto } from '../../../../backend/src/common/types';
 import { useTeamStore } from 'src/stores/team-store';
 import { useQuasar } from 'quasar';
 import { useMainStore } from 'src/stores/main-store';
-import { update as updateTeam } from 'src/api/team.api'; 
-import { update as updateProject, get as getProject } from 'src/api/project.api'; 
+import { update as updateTeam, get as getTeam} from 'src/api/team.api'; 
+import { update as updateProject, get as getProject} from 'src/api/project.api'; 
 import UserProfileOpen from 'src/pages/UserProfileOpen.vue';
 
 const $q = useQuasar();
@@ -560,13 +569,109 @@ const pendingTeams = computed(() => {
 });
 
 const canApproveTeam = computed(() => {
-  return mainStore.isCustomer() && 
-         project.value?.initiator.id === mainStore.userId;
+  return project.value?.initiator.id === mainStore.userId;
 });
 
 const openTeamDetailsDialog = (team: TeamDto) => {
   selectedTeam.value = team;
   showTeamDetails.value = true;
+};
+
+// Проверяем, может ли текущий пользователь подать заявку на проект
+const canApplyToProject = computed(() => {
+  if (!project.value || project.value.status !== StatusProject.searchTeam) {
+    return false;
+  }
+
+  const currentUser = mainStore.getCurrentUser();
+  if (!currentUser.team_leader?.id) return false;
+  if (!currentUser.team?.id) return false;
+  console.log(currentUser.team_leader.id )
+
+  // Проверяем, является ли пользователь лидером команды
+  const isTeamLeader = currentUser.team_leader.id === currentUser.team.id;
+  // Проверяем, что команда ещё не подана на этот проект
+  const isAlreadyApplied = project.value.teams?.some(t => t.id === currentUser.team?.id);
+
+  return isTeamLeader && !isAlreadyApplied;
+});
+
+// Метод для подачи заявки на проект
+const applyToProject = async () => {
+  if (!project.value) return;
+
+  try {
+    const currentUser = mainStore.getCurrentUser();
+    const currentTeam = currentUser.team;
+    if (!currentTeam) {
+      throw new Error('Команда не найдена');
+    }
+
+    // Получаем актуальные данные команды
+    const teamDetails = await getTeam(currentTeam.id);
+    if (!teamDetails) {
+      throw new Error('Не удалось загрузить данные команды');
+    }
+
+    // Проверяем, является ли пользователь лидером
+    if (teamDetails.user_leader?.id !== currentUser.id) {
+      throw new Error('Только лидер команды может подавать заявки');
+    }
+
+    // Показываем диалог подтверждения
+    const confirmed = await new Promise<boolean>((resolve) => {
+      $q.dialog({
+        title: 'Подтверждение подачи заявки',
+        message: `Вы уверены, что хотите подать команду "${currentTeam.name}" на проект "${project.value?.name}"?`,
+        persistent: true,
+        ok: {
+          label: 'Подать заявку',
+          color: 'primary',
+          flat: true
+        },
+        cancel: {
+          label: 'Отмена',
+          color: 'negative',
+        }
+      }).onOk(() => resolve(true)).onCancel(() => resolve(false));
+    });
+
+    if (!confirmed) return;
+
+    // Обновляем команду - привязываем к проекту и меняем статус
+    await updateTeam(currentTeam.id, {
+      project: project.value.id,
+      status: StatusTeam.joinProject
+    });
+
+    // Обновляем проект - меняем статус на "Отбор команды"
+    await updateProject(project.value.id, {
+      status: StatusProject.selectionTeam
+    });
+
+    $q.notify({
+      message: 'Заявка успешно подана!',
+      color: 'positive'
+    });
+
+    // Обновляем данные
+    const updatedProject = await getProject(project.value.id);
+    if (updatedProject) {
+      project.value = updatedProject;
+    }
+
+    // Обновляем текущую команду
+    if (teamStore.fetchTeam) {
+      await teamStore.fetchTeam(currentTeam.id);
+    }
+
+  } catch (error) {
+    console.error('Ошибка подачи заявки:', error);
+    $q.notify({
+      message: 'Ошибка подачи заявки',
+      color: 'negative'
+    });
+  }
 };
 
 const approveTeam = async (team: TeamDto) => {
@@ -593,7 +698,7 @@ const approveTeam = async (team: TeamDto) => {
       
       if (!isNaN(maxUsers) && teamSize > maxUsers) {
         mismatchReasons.value.push(
-          `В команде ${teamSize} участников, что превышает максимально допустимое количество (${maxUsers})`
+          `В команде ${teamSize} участника (-ов), что превышает максимально допустимое количество (${maxUsers})`
         );
       }
     }

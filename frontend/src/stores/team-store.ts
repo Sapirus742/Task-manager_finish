@@ -19,6 +19,7 @@ export const useTeamStore = defineStore('team', () => {
             isLoading.value = true;
             error.value = null;
             const data = await api.get(teamId);
+            console.log('TeamData:',data)
             currentTeam.value = data || null;
             return currentTeam.value;
         } catch (err) {
