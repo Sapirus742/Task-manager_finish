@@ -314,6 +314,19 @@
                           <span class="text-weight-medium">Участников:</span>
                           <span class="text-h6 text-primary q-ml-sm">{{ memberCount }}</span>
                         </div>
+
+                        <div class="info-item" v-if = "getPendingMembersCount(selectedTeam) > 0">
+                          <q-icon name="hourglass_empty" size="sm" class="q-mr-sm"/>
+                          <span class="text-weight-medium">Заявок на вступление:</span>
+                          <span class="text-h6 text-primary q-ml-sm">{{ pendingMembersCount }}</span>
+                          <q-btn
+                            v-if="mainStore.getCurrentUser().id === selectedTeam.user_leader?.id && getPendingMembersCount(selectedTeam) > 0"
+                            color= "cyan-5"
+                            label="Заявки"
+                            @click.stop="openPendingRequests(selectedTeam)"
+                            class="q-ml-sm"
+                          />
+                        </div>
                       </div>
                     </q-card-section>
                   </q-card>
@@ -462,7 +475,7 @@
           />
 
           <q-btn 
-            v-if="isCurrentUserMember(selectedTeam) && !isCurrentUserOwner(selectedTeam)"
+            v-if="isCurrentUserMember(selectedTeam) && !isCurrentUserOwner(selectedTeam) && !isPendingMember"
             flat
             label="Покинуть команду"
             color="orange"
@@ -493,6 +506,8 @@
     </q-dialog>
     <!-- Диалог создания команды -->
     <CreateTeamDialog ref="createTeamDialog" @create="addTeam" />
+    
+    <PendingRequestsDialog ref="pendingRequestsDialog" />
   </q-page>
   <EditTeamDialog ref="editTeamDialog" @update="updateTeam" />
   <teleport to="body">
@@ -526,6 +541,7 @@ import {
   SecuredUser} from '../../../../backend/src/common/types'; // Добавляем StatusProject
 import { useQuasar } from 'quasar';
 import UserProfileOpen from 'src/pages/UserProfileOpen.vue';
+import PendingRequestsDialog from '../PendingRequestsDialog.vue';
 
 // Хранилище
 const mainStore = useMainStore();
@@ -555,6 +571,8 @@ const selectedUserId = ref<number>(0);
 //const isProfileOpen = ref(false);
 
 const userProfileOpenRef = ref();
+
+const pendingRequestsDialog = ref<InstanceType<typeof PendingRequestsDialog>>();
 
 const openUserProfile = (userId: number) => {
   console.log('Opening profile for user:', userId);
@@ -619,6 +637,23 @@ const filteredTeams = computed(() => {
   
   return result;
 });
+
+// Получаем количество заявок для конкретной команды
+const getPendingMembersCount = (team: TeamDto): number => {
+  return team.user?.filter(u => u.status === UserAccountStatus.pending).length || 0;
+};
+
+// Количество заявок для выбранной команды (в диалоге)
+const pendingMembersCount = computed(() => {
+  if (!selectedTeam.value) return 0;
+  return getPendingMembersCount(selectedTeam.value);
+});
+
+// Метод для открытия диалога с заявками
+const openPendingRequests = (team: TeamDto) => {
+  const pendingUsers = team.user?.filter(u => u.status === UserAccountStatus.pending) || [];
+  pendingRequestsDialog.value?.open(pendingUsers, team.name, team.id);
+};
 
 // Получаем уникальных участников команды (без дублирования)
 const getUniqueMembers = (team: TeamDto): SecuredUser[] => {
@@ -844,6 +879,10 @@ const isCurrentUserMember = (team: TeamDto) => {
 // Проверяем, является ли текущий пользователь владельцем команды
 const isCurrentUserOwner = (team: TeamDto) => {
   return mainStore.getCurrentUser().id === team.user_owner?.id;
+};
+
+const isPendingMember = () => {
+  return mainStore.getCurrentUser().status == UserAccountStatus.pending;
 };
 
 // Подтверждение выхода из команды
