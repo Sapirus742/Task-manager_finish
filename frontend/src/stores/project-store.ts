@@ -2,7 +2,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import * as api from '../api/project.api';
-import { ProjectDto } from '../../../backend/src/common/types';
+import { ProjectDto, UpdateProjectDto } from '../../../backend/src/common/types';
 
 export const useProjectStore = defineStore('project', () => {
   const projects = ref<ProjectDto[]>([]);
@@ -17,9 +17,26 @@ export const useProjectStore = defineStore('project', () => {
     }
   };
 
+const updateProject = async (id: number, payload: UpdateProjectDto) => {
+    isLoading.value = true;
+    try {
+      const updatedProject = await api.update(id, payload);
+      if (updatedProject) {
+        const index = projects.value.findIndex(p => p.id === id);
+        if (index !== -1) {
+          projects.value[index] = updatedProject;
+        }
+        return updatedProject;
+      }
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   return {
     projects,
     isLoading,
     fetchAllProjects,
+    updateProject
   };
 });
