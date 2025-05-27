@@ -241,7 +241,7 @@ import { useExchangeStore } from 'src/stores/exchange-store';
 import { useProjectStore } from 'src/stores/project-store';
 import { useMainStore } from 'src/stores/main-store';
 import { useQuasar } from 'quasar';
-import { CreateExchangeDto, ExchangeDto, ProjectDto } from '../../../../backend/src/common/types';
+import { CreateExchangeDto, ExchangeDto, ProjectDto, StatusProject } from '../../../../backend/src/common/types';
 import AgileProject from 'src/pages/Exchange/AgileProject.vue';
 import AgileProjectButton from 'src/pages/Exchange/AgileProjectButton.vue';
 import ProjectDetailsDialog from 'src/pages/Project/ProjectDetailsDialog.vue';
@@ -467,12 +467,24 @@ const addProjectsToExchange = async () => {
   if (!activeExchange.value || selectedProjects.value.length === 0) return;
   
   try {
+    // Получаем выбранные проекты
+    const projectsToAdd = projectStore.projects.filter(p => 
+      selectedProjects.value.includes(p.id)
+    );
+    
+    // Обновляем статус каждого проекта на "Search for team"
+    await Promise.all(projectsToAdd.map(project => 
+      projectStore.updateProject(project.id, {
+        status: StatusProject.searchTeam
+      })
+    ));
+    
     // Оптимизированное обновление - сразу добавляем проекты локально
     const updatedExchange = {
       ...activeExchange.value,
       projects: [
         ...activeExchange.value.projects,
-        ...projectStore.projects.filter(p => selectedProjects.value.includes(p.id))
+        ...projectsToAdd
       ]
     };
     
@@ -495,10 +507,11 @@ const addProjectsToExchange = async () => {
       type: 'positive',
       message: 'Проекты успешно добавлены'
     });
-  } catch {
+  } catch (error) {
+    console.error('Ошибка при добавлении проектов:', error);
     $q.notify({
       type: 'negative',
-      message: 'Ошибка при добавлении'
+      message: 'Ошибка при добавлении проектов'
     });
   }
 };
