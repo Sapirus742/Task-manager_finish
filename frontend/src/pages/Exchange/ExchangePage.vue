@@ -104,23 +104,24 @@
                 </q-chip>
               </q-card-section>
 
-              <q-card-actions align="right">
-                <AgileProjectButton
-                  :project="project"
-                  :visible="true"
-                  :loading="agileButtonStates[project.id]?.loading ?? false"
-                  @click="openAgileProject(project)"
-                />
-                <q-btn
-                  flat
-                  round
-                  dense
-                  icon="delete"
-                  color="negative"
-                  @click.stop="confirmRemoveProject(project)"
-                  v-if="canEditExchange(activeExchange)"
-                />
-              </q-card-actions>
+              <q-card-actions align="right" class="absolute-bottom-right q-pa-md">
+  <AgileProjectButton
+    :project="project"
+    :visible="true"
+    :loading="agileButtonStates[project.id]?.loading ?? false"
+    @click="openAgileProject(project)"
+    class="q-mr-sm"
+  />
+  <q-btn
+    flat
+    round
+    dense
+    icon="delete"
+    color="negative"
+    @click.stop="confirmRemoveProject(project)"
+    v-if="canEditExchange(activeExchange)"
+  />
+</q-card-actions>
             </q-card>
           </div>
         </div>
@@ -521,11 +522,37 @@ const addProjectsToExchange = async () => {
 .project-card {
   height: 100%;
   transition: transform 0.2s;
+  position: relative; /* Добавляем относительное позиционирование */
+  padding-bottom: 50px; /* Оставляем место для кнопок */
 }
 
 .project-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Стили для кнопок в правом нижнем углу */
+.q-card__actions.absolute-bottom-right {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9); /* Полупрозрачный фон */
+  border-top-left-radius: 8px;
+  padding: 8px !important;
+}
+
+/* Дополнительные стили для кнопок */
+.q-btn {
+  margin-left: 4px;
+}
+
+.q-card__actions.absolute-bottom-right {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.project-card:hover .q-card__actions.absolute-bottom-right {
+  opacity: 1;
 }
 
 .text-h6 {
