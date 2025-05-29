@@ -214,4 +214,32 @@ const getTechClass = (tech: string) => {
     grid-template-columns: 1fr;
   }
 }
+/* Темная тема для списка проектов */
+.body--dark .projects-grid {
+  background-color:var(--bg-color);
+}
+
+.body--dark .project-card {
+  background-color: #121212 !important;
+  border-color: #333 !important;
+  color: #ffffff;
+}
+
+.body--dark .project-card:hover {
+  background-color: #1e1e1e !important;
+}
+
+.body--dark .project-heading,
+.body--dark .project-description,
+.body--dark .project-initiator {
+  color: #ffffff;
+}
+
+.body--dark .status-item {
+  color: #b0b0b0;
+}
+
+.body--dark .empty-state {
+  color: #b0b0b0;
+}
 </style>

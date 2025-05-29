@@ -40,9 +40,9 @@
         </q-table>
       </div>
     </q-page>
-  </template>
+</template>
   
-  <script setup lang="ts">
+<script setup lang="ts">
   import { ref, onMounted } from 'vue';
   import { useQuasar, QTableProps } from 'quasar';
   import { Role } from '../../../backend/src/common/types';
@@ -153,10 +153,14 @@
   onMounted(() => {
     loadUsers();
   });
-  </script>
+</script>
   
-  <style scoped>
+<style scoped>
   .q-table {
     min-height: 500px;
   }
-  </style>
+  .q-page
+  {
+    background-color:var(--bg-color);
+  }
+</style>

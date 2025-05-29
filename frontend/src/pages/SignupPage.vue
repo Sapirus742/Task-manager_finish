@@ -282,4 +282,77 @@ body {
   background-attachment: fixed;
   background: transparent !important; 
 }
+/* Темная тема */
+.body--dark .q-page {
+  background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+}
+
+.body--dark .my-card {
+  background: rgba(30, 30, 30, 0.9);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.body--dark .q-card__section,
+.body--dark .custom-font {
+  color: #e0e0e0;
+}
+
+.body--dark .q-field__label {
+  color: #b0bec5 !important;
+}
+
+.body--dark .q-field__native,
+.body--dark .q-field__input {
+  color: #ffffff !important;
+}
+
+/* Анимация градиента (общая) */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Кнопки (адаптивные под тему) */
+.q-btn--primary {
+  border-radius: 8px;
+}
+
+.body--light .q-btn--primary {
+  background: linear-gradient(135deg, #0088cc 0%, #00aaff 100%);
+  color: white;
+}
+
+.body--dark .q-btn--primary {
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  color: white;
+}
+
+.q-btn--secondary {
+  border-radius: 8px;
+}
+
+.body--light .q-btn--secondary {
+  color: #0066cc;
+}
+
+.body--dark .q-btn--secondary {
+  color: #81d4fa;
+}
+
+/* Поля ввода (адаптивные) */
+.q-field--outlined .q-field__control {
+  border-radius: 8px;
+}
+
+.body--light .q-field--outlined .q-field__control {
+  border-color: #0088cc;
+}
+
+.body--dark .q-field--outlined .q-field__control {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Важно: это гарантирует, что фон не перекроет стили Quasar */
 </style>

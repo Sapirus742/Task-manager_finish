@@ -233,4 +233,36 @@ const truncateSolution = (solution?: string) => {
     gap: 8px;
   }
 }
+/* Темная тема для карточки проекта */
+.body--dark .project-card {
+  background-color: #121212 !important;
+  border-color: #333 !important;
+  color: #ffffff;
+}
+
+.body--dark .project-card:hover {
+  background-color: #1e1e1e !important;
+  border-color: #444 !important;
+}
+
+.body--dark .project-title {
+  color: #ffffff;
+}
+
+.body--dark .project-description {
+  color: #b0b0b0;
+}
+
+.body--dark .meta-item {
+  color: #b0b0b0;
+}
+
+.body--dark .meta-item q-icon {
+  color: #757575;
+}
+
+.body--dark .date-range {
+  color: #9e9e9e;
+  border-top-color: #333;
+}
 </style>

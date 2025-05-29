@@ -42,6 +42,14 @@
           <q-btn flat label="Команды" @click="goToTeams" />
         </div>
 
+        <q-btn
+          :icon="isDark ? 'light_mode' : 'dark_mode'"
+          flat
+          dense
+          @click="toggleDarkMode"
+        />
+        <div></div>
+
         <div>
           <q-btn icon="logout" color="blue" dense unelevated round @click="onLogout" />
         </div>
@@ -76,6 +84,14 @@ const mainStore = useMainStore();
 const router = useRouter();
 const userProfile = ref();
 const $q = useQuasar();
+
+const isDark = ref($q.dark.isActive);
+const toggleDarkMode = () => {
+  $q.dark.toggle();
+  isDark.value = $q.dark.isActive;
+  localStorage.setItem('darkMode', String(isDark.value));
+};
+
 const pendingRequestsDialog = ref<InstanceType<typeof PendingRequestsDialog>>();
 
 const checkPendingRequests = async () => {

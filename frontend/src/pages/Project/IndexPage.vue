@@ -127,4 +127,21 @@ onMounted(() => {
     font-size: 48px;
   }
 }
+/* Темная тема для главной страницы проектов */
+.body--dark .projects-container {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.body--dark .project-title {
+  color: #ffffff;
+}
+
+.body--dark .header {
+  background-color:var(--bg-color);
+}
+.q-page
+  {
+    background-color:var(--bg-color);
+  }
 </style>

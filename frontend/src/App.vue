@@ -8,6 +8,7 @@ import { refresh } from './api/auth.api'
 import { useMainStore } from './stores/main-store';
 import { onMounted } from 'vue';
 import { api } from './api/axios';
+import { useQuasar } from 'quasar';
 
 defineOptions({
   name: 'App'
@@ -15,8 +16,14 @@ defineOptions({
 
 const router = useRouter();
 const mainStore = useMainStore();
+const $q = useQuasar();
+
 
 onMounted(async () => {
+  const savedMode = localStorage.getItem('darkMode');
+  if (savedMode) {
+    $q.dark.set(savedMode === 'true');
+  }
   const savedSession = await refresh();
 
   if (savedSession) {

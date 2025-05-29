@@ -61,3 +61,51 @@
    
   
   </script>
+
+ <style scoped>
+/* Добавить в конец файла */
+.body--dark {
+  /* Основные цвета */
+  --bg-color: #121212;
+  --text-color: #e0e0e0;
+  --card-bg: #1e1e1e;
+  --border-color: #333;
+  --hover-bg: #2a2a2a;
+  --active-bg: #333;
+  --disabled-bg: #252525;
+  --chip-bg: #333;
+  
+  /* Применение к странице */
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+.body--dark .q-bar {
+  background-color: var(--card-bg);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.body--dark .q-table {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+}
+
+.body--dark .q-table__top,
+.body--dark .q-table__bottom {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+}
+
+.body--dark .q-table thead th {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+}
+
+.body--dark .q-table tbody tr:hover {
+  background-color: var(--hover-bg);
+}
+
+.body--dark .q-table tbody td {
+  border-color: var(--border-color);
+}
+</style>

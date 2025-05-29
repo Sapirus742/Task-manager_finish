@@ -1265,4 +1265,439 @@ defineExpose({ open });
     padding: 12px;
   }
 }
+/* Темная тема для диалога проекта */
+.body--dark .project-details-card {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+.body--dark .project-header,
+.body--dark .project-title,
+.body--dark .project-meta {
+  color: #ffffff;
+}
+
+.body--dark .detail-block {
+  background-color: #1e1e1e;
+  border-color: #333;
+  color: #e0e0e0;
+}
+
+.body--dark .section-title {
+  color: #ffffff;
+}
+
+.body--dark .section-content {
+  color: #b0b0b0;
+}
+
+.body--dark .q-tabs {
+  color: #ffffff;
+}
+
+.body--dark .q-tab--active {
+  color: var(--q-primary);
+}
+
+.body--dark .team-list {
+  background-color: #1e1e1e;
+}
+
+.body--dark .pending-team-item {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+.body--dark .pending-team-item:hover {
+  background-color: #2a2a2a;
+}
+
+.body--dark .empty-state {
+  background-color: #1e1e1e;
+  color: #b0b0b0;
+}
+
+.body--dark .footer-actions {
+  background-color: #121212 !important;
+  border-top-color: #333 !important;
+}
+
+.body--dark .q-card__actions {
+  background-color: #121212 !important;
+}
+
+.body--dark .q-btn.flat {
+  color: #ffffff;
+}
+/* Темная тема с черными фонами и белым текстом */
+.body--dark {
+  /* Цветовая палитра */
+  --bg-color: #000000;               /* Чистый черный для основного фона */
+  --card-bg: #121212;                /* Темно-серый для карточек */
+  --darker-bg: #0a0a0a;              /* Еще темнее для акцентных элементов */
+  --border-color: #333333;           /* Границы элементов */
+  --text-color: #ffffff;             /* Основной белый текст */
+  --text-secondary: #e0e0e0;         /* Вторичный текст */
+  --text-muted: #b0b0b0;             /* Неактивный текст */
+  
+  /* Применение к странице */
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+/* Заголовки и подзаголовки */
+.body--dark .project-title,
+.body--dark .text-h4,
+.body--dark .text-h5,
+.body--dark .text-h6,
+.body--dark .text-subtitle1,
+.body--dark .text-subtitle2,
+.body--dark .filter-label {
+  color: #ffffff !important;         /* Явно белый цвет для всех заголовков */
+}
+
+/* Карточки команд */
+.body--dark .team-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+.body--dark .team-card:hover {
+  background-color: #1a1a1a;
+}
+
+/* Диалог профиля команды */
+.body--dark .team-details-card {
+  background-color: var(--bg-color);
+}
+
+.body--dark .team-header {
+  background-color: #121212 !important; /* Темный фон для хедера диалога */
+}
+
+.body--dark .info-card,
+.body--dark .competencies-card,
+.body--dark .description-card,
+.body--dark .members-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+/* Элементы форм */
+.body--dark .q-field--outlined .q-field__control {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.body--dark .q-field--outlined .q-field__control:hover {
+  border-color: #444;
+}
+
+/* Кнопки и переключатели */
+.body--dark .q-btn-toggle {
+  background-color: var(--card-bg);
+}
+
+.body--dark .q-btn.flat {
+  color: var(--text-color);
+}
+
+/* Списки */
+.body--dark .member-item {
+  background-color: var(--card-bg);
+}
+
+.body--dark .member-item:hover {
+  background-color: #1e1e1e;
+}
+
+/* Чипы */
+.body--dark .q-chip {
+  background-color: #333;
+  color: white;
+}
+
+/* Состояния */
+.body--dark .team-card.status-delete {
+  background-color: #1a1a1a;
+  color: #aaa;
+}
+
+.body--dark .team-card.status-delete:hover {
+  background-color: #222;
+}
+
+/* Пустое состояние */
+.body--dark .empty-state {
+  color: var(--text-secondary);
+}
+
+/* Особые элементы */
+.body--dark .team-description-section {
+  background-color: var(--darker-bg);
+  border-top: 1px solid var(--border-color);
+}
+
+.body--dark .q-separator {
+  background-color: var(--border-color);
+}
+
+/* Аватарки */
+.body--dark .q-avatar {
+  color: white !important;
+}
+
+/* Пагинация */
+.body--dark .q-pagination__content .q-btn {
+  color: var(--text-color);
+}
+
+.body--dark .q-pagination__content .q-btn.active {
+  background-color: #333;
+}
+.body--dark .team-details-card .q-card__actions {
+  background-color: #121212 !important; /* Темный фон вместо белого */
+  border-top: 1px solid #333 !important; /* Граница сверху */
+}
+
+.body--dark .team-details-card .q-btn {
+  color: #ffffff !important; /* Белый текст кнопок */
+}
+
+.body--dark .team-details-card .q-btn.flat {
+  background-color: transparent !important;
+}
+
+.body--dark .team-details-card .q-btn.flat:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Дополнительно: стили для текста в диалоге */
+.body--dark .team-details-card .text-primary {
+  color: #4fc3f7 !important; /* Голубой вместо стандартного primary */
+}
+
+.body--dark .team-details-card .text-body1,
+.body--dark .team-details-card .text-body2 {
+  color: #e0e0e0 !important; /* Светло-серый для основного текста */
+}
+.body--dark .project-details-card,
+.body--dark .team-details-card {
+  background-color: #121212;
+  color: #ffffff;
+}
+
+.body--dark .project-header,
+.body--dark .team-header {
+  background-color: #1e1e1e !important;
+  color: #ffffff;
+}
+
+.body--dark .detail-block {
+  background-color: #1e1e1e;
+  border-color: #333;
+  color: #ffffff;
+}
+
+.body--dark .section-title {
+  color: #ffffff;
+}
+
+.body--dark .section-content {
+  color: #b0b0b0;
+}
+
+.body--dark .team-list {
+  background-color: #1e1e1e;
+}
+
+.body--dark .pending-team-item {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+.body--dark .pending-team-item:hover {
+  background-color: #2a2a2a;
+}
+
+.body--dark .empty-state {
+  background-color: #1e1e1e;
+  color: #b0b0b0;
+}
+
+.body--dark .footer-actions {
+  background-color: #121212 !important;
+  border-top-color: #333 !important;
+}
+
+.body--dark .q-card__actions {
+  background-color: #121212 !important;
+}
+
+.body--dark .q-btn.flat {
+  color: #ffffff;
+}
+
+.body--dark .q-btn.flat:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Стили для вкладок */
+.body--dark .q-tabs {
+  color: #ffffff;
+}
+
+.body--dark .q-tab--active {
+  color: var(--q-primary);
+}
+
+/* Стили для чипов */
+.body--dark .q-chip {
+  background-color: #333;
+  color: white;
+}
+
+/* Стили для участников команды */
+.body--dark .member-item {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+.body--dark .member-item:hover {
+  background-color: #2a2a2a;
+}
+
+.body--dark .member-item.owner {
+  background-color: rgba(0, 150, 136, 0.1);
+  border-left: 3px solid #009688;
+}
+
+.body--dark .member-item.leader {
+  background-color: rgba(25, 118, 210, 0.1);
+  border-left: 3px solid #1976d2;
+}
+
+.body--dark .member-email {
+  color: #b0b0b0;
+}
+
+/* Стили для аватарок */
+.body--dark .q-avatar {
+  color: white !important;
+}
+/* Диалог профиля команды */
+.body--dark .team-details-card {
+  background-color: var(--bg-color);
+}
+
+.body--dark .team-header {
+  background-color: #121212 !important; /* Темный фон для хедера диалога */
+}
+
+.body--dark .info-card,
+.body--dark .competencies-card,
+.body--dark .description-card,
+.body--dark .members-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+/* Элементы форм */
+.body--dark .q-field--outlined .q-field__control {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.body--dark .q-field--outlined .q-field__control:hover {
+  border-color: #444;
+}
+
+/* Кнопки и переключатели */
+.body--dark .q-btn-toggle {
+  background-color: var(--card-bg);
+}
+
+.body--dark .q-btn.flat {
+  color: var(--text-color);
+}
+
+/* Списки */
+.body--dark .member-item {
+  background-color: var(--card-bg);
+}
+
+.body--dark .member-item:hover {
+  background-color: #1e1e1e;
+}
+
+/* Чипы */
+.body--dark .q-chip {
+  background-color: #333;
+  color: white;
+}
+
+/* Состояния */
+.body--dark .team-card.status-delete {
+  background-color: #1a1a1a;
+  color: #aaa;
+}
+
+.body--dark .team-card.status-delete:hover {
+  background-color: #222;
+}
+
+/* Пустое состояние */
+.body--dark .empty-state {
+  color: var(--text-secondary);
+}
+
+/* Особые элементы */
+.body--dark .team-description-section {
+  background-color: var(--darker-bg);
+  border-top: 1px solid var(--border-color);
+}
+
+.body--dark .q-separator {
+  background-color: var(--border-color);
+}
+
+/* Аватарки */
+.body--dark .q-avatar {
+  color: white !important;
+}
+
+/* Пагинация */
+.body--dark .q-pagination__content .q-btn {
+  color: var(--text-color);
+}
+
+.body--dark .q-pagination__content .q-btn.active {
+  background-color: #333;
+}
+.body--dark .team-details-card .q-card__actions {
+  background-color: #121212 !important; /* Темный фон вместо белого */
+  border-top: 1px solid #333 !important; /* Граница сверху */
+}
+
+.body--dark .team-details-card .q-btn {
+  color: #ffffff !important; /* Белый текст кнопок */
+}
+
+.body--dark .team-details-card .q-btn.flat {
+  background-color: transparent !important;
+}
+
+.body--dark .team-details-card .q-btn.flat:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Дополнительно: стили для текста в диалоге */
+.body--dark .team-details-card .text-primary {
+  color: #4fc3f7 !important; /* Голубой вместо стандартного primary */
+}
+
+.body--dark .team-details-card .text-body1,
+.body--dark .team-details-card .text-body2 {
+  color: #e0e0e0 !important; /* Светло-серый для основного текста */
+}
 </style>

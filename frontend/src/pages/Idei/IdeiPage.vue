@@ -1241,4 +1241,80 @@ const confirmEndorseIdea = (idea: IdeaDto) => {
   }
 }
 }
+.body--dark {
+  /* Основные цвета */
+  --bg-color: #121212;
+  --text-color: #e0e0e0;
+  --card-bg: #1e1e1e;
+  --border-color: #333;
+  --hover-bg: #2a2a2a;
+  --active-bg: #333;
+  --disabled-bg: #252525;
+  --chip-bg: #333;
+  
+  /* Применение к странице */
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+.body--dark .project-title,
+.body--dark .text-h6,
+.body--dark .text-subtitle2 {
+  color: var(--text-color) !important;
+}
+
+.body--dark .idea-card {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.body--dark .idea-card:hover {
+  background-color: var(--hover-bg);
+}
+
+.body--dark .idea-details-section,
+.body--dark .comment-section {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+}
+
+.body--dark .q-separator {
+  background-color: var(--border-color);
+}
+
+.body--dark .comment-item {
+  background-color: var(--darker-bg);
+}
+
+.body--dark .empty-state {
+  color: var(--text-secondary);
+}
+
+.body--dark .q-dialog__inner .q-card {
+  background-color: var(--card-bg);
+  color: var(--text-color);
+}
+
+.body--dark .q-field--outlined .q-field__control {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.body--dark .q-field--outlined .q-field__control:hover {
+  border-color: #555;
+}
+
+.body--dark .q-field__label {
+  color: var(--text-color);
+}
+
+.body--dark .q-field__native,
+.body--dark .q-field__input {
+  color: var(--text-color);
+}
+.q-page
+  {
+    background-color:var(--bg-color);
+  }
 </style>

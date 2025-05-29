@@ -1916,4 +1916,919 @@ const updateTeam = async (updatedTeam: TeamDto) => {
     width: 100%;
   }
 }
+/* Базовые переменные для светлой темы */
+:root {
+  --bg-color: #ffffff;
+  --text-color: #121212;
+  --card-bg: #f5f5f5;
+  --border-color: #e0e0e0;
+  --hover-bg: #eeeeee;
+  --active-bg: #e0e0e0;
+  --disabled-bg: #f5f5f5;
+  --chip-bg: #e0e0e0;
+}
+
+/* Основные стили, использующие переменные */
+.projects-container {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+.team-card {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+/* Общие стили для адаптивности */
+.sorting-header .row {
+  min-width: 100%;
+  overflow-x: auto; /* Добавляем горизонтальный скролл при необходимости */
+}
+
+/* Стили для текста с обрезанием */
+.text-ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.competencies-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.team-description {
+  white-space: pre-line;
+  line-height: 1.6;
+  padding: 8px 0;
+}
+
+.team-description-section {
+  padding: 16px;
+  background-color: #f9f9f9;
+}
+
+.text-subtitle2 {
+  font-weight: 500;
+  color: #555;
+}
+
+.sorting {
+  background-color: #f5f5f5;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.sort-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rotate-90 {
+  transform: rotate(270deg);
+  transition: transform 0.2s ease;
+}
+
+.rotate-270 {
+  transform: rotate(90deg);
+  transition: transform 0.2s ease;
+}
+
+/* Стили для диалога выбора нового тимлида */
+.q-dialog__inner--radio .q-radio__label {
+  padding: 8px;
+  font-size: 1rem;
+}
+
+/* Подсветка выбранного участника */
+.q-item--active {
+  background-color: rgba(25, 118, 210, 0.1);
+}
+
+.join-btn {
+  margin-left: 8px;
+  pointer-events: auto;
+  opacity: 1 !important; /* Обеспечиваем постоянную видимость */
+}
+.q-btn--disabled.join-btn {
+  opacity: 0.7 !important;
+}
+
+.team-owner,
+.member-item {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.team-owner:hover,
+.member-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.member-item.leader {
+  background-color: rgba(113, 176, 240, 0.05); /* Легкий голубой фон для тимлида */
+}
+
+.member-item.owner {
+  background-color: rgba(107, 238, 225, 0.05); /* Легкий зеленый фон для владельца */
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: #666;
+}
+
+.empty-state .q-icon {
+  margin-bottom: 10px;
+}
+
+.projects-container {
+  width: 80%;
+  margin: 10px auto 0;
+}
+
+.owner-label::after {
+  content: " ";
+  white-space: pre;
+}
+
+.header-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.project-title {
+  font-size: 50px; /* Уменьшенный размер */
+  font-weight: 60;
+  margin: 0;
+  color: #333;
+  padding-top: 25px;
+}
+
+.create-btn {
+  align-self: flex-start; /* Выравнивание кнопки по левому краю */
+  width: auto;
+  padding: px 16px;
+}
+
+.projects-container {
+  width: 100%;
+  max-width: 1500px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.search-and-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.search-box {
+  max-width: 500px;
+  margin-bottom: 20px;
+}
+
+.search-input {
+  width: 100%;
+}
+
+.filter-label {
+  font-size: 1.1rem; /* Увеличиваем размер шрифта */
+  font-weight: 600;  /* Делаем шрифт полужирным */
+  color: #333;       /* Темно-серый цвет для лучшей читаемости */
+  margin-bottom: 8px; /* Увеличиваем отступ снизу */
+}
+
+.filters {
+  display: flex;
+  gap: 16px; /* Отступ между фильтрами */
+  flex-wrap: wrap;
+}
+
+.filters .q-btn-toggle {
+  min-width: 300px; /* Минимальная ширина переключателей */
+  border-radius: 18px;
+}
+
+.filter {
+  display: flex;
+  gap: 16px; /* Отступ между фильтрами */
+  flex-wrap: wrap;
+}
+
+.filter .q-btn-toggle {
+  min-width: 300px; /* Минимальная ширина переключателей */
+  width: 800px;
+  border-radius: 18px;
+  margin-bottom: 30px;
+}
+
+.teams-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.team-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.team-number {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.sort-indicator {
+  margin-left: 4px;
+  font-size: 0.8em;
+}
+
+.active-sort {
+  font-weight: bold;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.team-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.team-card-content {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  min-width: 100%;
+  cursor: pointer; /* Добавляем указатель при наведении */
+}
+
+.team-card-content > * {
+  pointer-events: auto;
+}
+
+.team-actions > * {
+  pointer-events: auto !important;
+}
+
+.open-btn, .join-btn {
+  pointer-events: auto;
+}
+
+/* Общие стили для ячеек с данными */
+.team-members-count,
+.privacy-chip-container,
+.status-chip-container {
+  display: flex;
+  justify-content: center; /* Центрирование по горизонтали */
+  align-items: center; /* Центрирование по вертикали */
+  height: 100%; /* Занимает всю высоту строки */
+}
+
+/* Название команды - занимает свою колонку */
+.team-name {
+  flex: 3;
+  font-size: 1.1rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 8px;
+}
+
+/* Основные изменения для кнопок действий */
+.team-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* Стили для кнопок в карточке */
+.team-actions .q-btn {
+  min-width: auto;
+  padding: 0 8px;
+}
+
+.sort-btn {
+  padding: 0 4px;
+  min-width: auto;
+}
+
+/* Количество участников - своя колонка */
+.team-members-count {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Стили для чипов */
+.privacy-chip, .status-chip {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Чипы приватности и статуса - свои колонки */
+.privacy-chip,
+.status-chip {
+  margin: 0 auto; /* Автоматические отступы для центрирования */
+  display: flex;
+  justify-content: center;
+}
+
+.privacy-chip-container,
+.status-chip-container {
+  flex: 2;
+}
+
+/* Добавляем отступ для кнопки "Открыть" чтобы она не срабатывала при клике на карточку */
+.open-btn {
+  margin-left: 8px;
+  pointer-events: auto; /* Разрешаем события мыши для кнопки */
+}
+
+/* Запрещаем события мыши для остальных элементов при клике */
+.team-card-content > *:not(.open-btn) {
+  pointer-events: none;
+}
+
+/* Разрешаем события для всей карточки */
+.team-card-content {
+  pointer-events: auto;
+}
+
+.single-team-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+}
+
+.team-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.team-description-section {
+  padding: 16px;
+  background-color: #f9f9f9;
+  border-radius: 0 0 8px 8px;
+}
+
+/* Увеличение размера иконки */
+.q-icon--large {
+  font-size: 24px; /* Размер иконки */
+}
+
+/* Стили для диалога с деталями команды */
+.team-details-card {
+  width: 90%;
+  max-width: 1000px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  background-color: #e9e9e9;
+}
+
+.team-header {
+  padding: 16px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  
+  .close-btn {
+    color: white;
+  }
+}
+
+.team-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.team-layout {
+  display: flex;
+  gap: 20px;
+  flex: 1; /* Растягиваем layout на всю доступную высоту */
+  min-height: 0; /* Важно для корректного скролла */
+  align-items: stretch;
+}
+
+.left-column {
+  width: 300px;
+  flex-shrink: 0;
+}
+
+.right-column {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Карточки с одинаковой высотой */
+.info-card, .section-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.section-card .q-card__section, 
+.info-card .q-card__section {
+  flex: 1; /* Растягиваем секции карточек */
+}
+
+.avatar-section {  
+  .team-name {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+  
+  .team-status {
+    display: flex;
+    justify-content: center;
+  }
+}
+
+.info-card {
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.info-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.info-label {
+  font-weight: 500;
+  width: 100px;
+  color: #555;
+  font-size: 13px;
+}
+
+.info-value {
+  flex: 1;
+  padding: 0 8px;
+  font-size: 13px;
+}
+
+.section-card {
+  flex: 0 0 auto;
+}
+
+.team-status strong {
+  margin-right: 4px;
+}
+
+.user-info {
+  margin-left: 4px;
+}
+
+.team-owner {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.team-heading {
+  font-size: 24px;
+  margin-top: 0;
+  margin-bottom: 8px;
+}
+
+.team-description {
+  margin: 8px 0;
+}
+
+.team-members {
+  margin: 8px 0;
+}
+
+.member-list {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 8px;
+}
+
+.member-item {
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  background: white;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  
+  &.owner {
+    background-color: rgba(107, 238, 225, 0.1);
+    border-left: 3px solid teal;
+  }
+  
+  &.leader {
+    background-color: rgba(113, 176, 240, 0.1);
+    border-left: 3px solid var(--q-primary);
+  }
+}
+
+
+.member-info {
+  .member-name {
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  
+  .member-email, .member-phone {
+    font-size: 12px;
+    color: #666;
+  }
+}
+
+.members-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.member-name {
+  font-weight: 500;
+}
+
+.member-item.owner {
+  padding-left: 20px;
+  border-radius: 4px;
+}
+
+.member-email {
+  color: #666;
+  font-size: 0.9em;
+  margin-top: 2px;
+}
+
+.team-status {
+  display: flex;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.team-details-card .q-btn.negative {
+  margin-right: auto; /* Размещаем слева */
+}
+
+/* Стиль для команд на удалении */
+.team-card.status-delete {
+  opacity: 0.6;
+  background-color: #f5f5f5;
+  color: #726f6f;
+}
+
+/* При наведении возвращаем обычный вид */
+.team-card.status-delete:hover {
+  opacity: 1;
+  background-color: white;
+  color: inherit;
+}
+
+/* Делаем кнопки менее заметными для команд на удалении */
+.team-card.status-delete .q-btn {
+  opacity: 0.6;
+}
+
+/* При наведении возвращаем обычный вид кнопкам */
+.team-card.status-delete:hover .q-btn {
+  opacity: 1;
+}
+
+/* Адаптивные стили для мобильных устройств */
+@media (max-width: 800px) {
+  .team-card-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .sort-btn span {
+    display: none;
+  }
+
+  .sort-btn .q-icon {
+    margin: 0;
+  }
+
+  .team-name, .team-members-count, 
+  .privacy-chip-container, .status-chip-container {
+    flex: 1 1 50%;
+    margin-bottom: 8px;
+  }
+  
+  .team-actions {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+  
+  .team-members-count {
+    margin-right: 0;
+  }
+  .team-layout {
+    flex-direction: column;
+  }
+  
+  .left-column {
+    width: 100%;
+  }
+  
+  .right-column {
+    width: 100%;
+  }
+}
+.body--dark {
+  /* Основные цвета */
+  --bg-color: #121212;
+  --text-color: #e0e0e0;
+  --card-bg: #1e1e1e;
+  --border-color: #333;
+  --hover-bg: #2a2a2a;
+  --active-bg: #333;
+  --disabled-bg: #252525;
+  --chip-bg: #333;
+  
+  /* Переопределяем стили для темной темы */
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+
+/* Стили для карточек в темной теме */
+.body--dark .team-card {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.body--dark .team-card:hover {
+  background-color: var(--hover-bg);
+}
+
+.body--dark .team-description-section {
+  background-color: var(--card-bg);
+}
+
+/* Стили для диалога в темной теме */
+.body--dark .team-details-card {
+  background-color: var(--card-bg);
+}
+
+.body--dark .info-card,
+.body--dark .competencies-card,
+.body--dark .description-card,
+.body--dark .members-card {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+/* Стили для текста */
+.body--dark .text-subtitle2 {
+  color: #aaa;
+}
+
+/* Стили для чипов */
+.body--dark .q-chip {
+  background-color: var(--chip-bg);
+}
+
+/* Стили для списка участников */
+.body--dark .member-item {
+  background-color: var(--card-bg);
+}
+
+.body--dark .member-item:hover {
+  background-color: var(--hover-bg);
+}
+
+/* Стили для кнопок */
+.body--dark .q-btn.flat {
+  color: var(--text-color);
+}
+
+/* Стили для пустого состояния */
+.body--dark .empty-state {
+  color: #aaa;
+}
+
+/* Стили для статуса "на удалении" */
+.body--dark .team-card.status-delete {
+  background-color: #2a2a2a;
+  color: #aaa;
+}
+
+.body--dark .team-card.status-delete:hover {
+  background-color: #333;
+  color: var(--text-color);
+}
+
+/* Стили для поиска и фильтров */
+.body--dark .q-field--outlined .q-field__control {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.body--dark .q-field--outlined .q-field__control:hover {
+  border-color: #555;
+}
+
+.body--dark .q-btn-toggle {
+  background-color: var(--card-bg);
+}
+
+/* Стили для пагинации */
+.body--dark .q-pagination__content .q-btn {
+  color: var(--text-color);
+}
+
+.body--dark .q-pagination__content .q-btn.active {
+  background-color: var(--active-bg);
+}
+
+/* Стили для disabled элементов */
+.body--dark .q-btn--disabled {
+  background-color: var(--disabled-bg) !important;
+  color: #666 !important;
+}
+/* Темная тема с черными фонами и белым текстом */
+.body--dark {
+  /* Цветовая палитра */
+  --bg-color: #000000;               /* Чистый черный для основного фона */
+  --card-bg: #121212;                /* Темно-серый для карточек */
+  --darker-bg: #0a0a0a;              /* Еще темнее для акцентных элементов */
+  --border-color: #333333;           /* Границы элементов */
+  --text-color: #ffffff;             /* Основной белый текст */
+  --text-secondary: #e0e0e0;         /* Вторичный текст */
+  --text-muted: #b0b0b0;             /* Неактивный текст */
+  
+  /* Применение к странице */
+  background-color: var(--bg-color);
+  color: var(--text-color);
+}
+.q-page
+  {
+    background-color:var(--bg-color);
+  }
+/* Заголовки и подзаголовки */
+.body--dark .project-title,
+.body--dark .text-h4,
+.body--dark .text-h5,
+.body--dark .text-h6,
+.body--dark .text-subtitle1,
+.body--dark .text-subtitle2,
+.body--dark .filter-label {
+  color: #ffffff !important;         /* Явно белый цвет для всех заголовков */
+}
+
+/* Карточки команд */
+.body--dark .team-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+.body--dark .team-card:hover {
+  background-color: #1a1a1a;
+}
+
+/* Диалог профиля команды */
+.body--dark .team-details-card {
+  background-color: var(--bg-color);
+}
+
+.body--dark .team-header {
+  background-color: #121212 !important; /* Темный фон для хедера диалога */
+}
+
+.body--dark .info-card,
+.body--dark .competencies-card,
+.body--dark .description-card,
+.body--dark .members-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+}
+
+/* Элементы форм */
+.body--dark .q-field--outlined .q-field__control {
+  background-color: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.body--dark .q-field--outlined .q-field__control:hover {
+  border-color: #444;
+}
+
+/* Кнопки и переключатели */
+.body--dark .q-btn-toggle {
+  background-color: var(--card-bg);
+}
+
+.body--dark .q-btn.flat {
+  color: var(--text-color);
+}
+
+/* Списки */
+.body--dark .member-item {
+  background-color: var(--card-bg);
+}
+
+.body--dark .member-item:hover {
+  background-color: #1e1e1e;
+}
+
+/* Чипы */
+.body--dark .q-chip {
+  background-color: #333;
+  color: white;
+}
+
+/* Состояния */
+.body--dark .team-card.status-delete {
+  background-color: #1a1a1a;
+  color: #aaa;
+}
+
+.body--dark .team-card.status-delete:hover {
+  background-color: #222;
+}
+
+/* Пустое состояние */
+.body--dark .empty-state {
+  color: var(--text-secondary);
+}
+
+/* Особые элементы */
+.body--dark .team-description-section {
+  background-color: var(--darker-bg);
+  border-top: 1px solid var(--border-color);
+}
+
+.body--dark .q-separator {
+  background-color: var(--border-color);
+}
+
+/* Аватарки */
+.body--dark .q-avatar {
+  color: white !important;
+}
+
+/* Пагинация */
+.body--dark .q-pagination__content .q-btn {
+  color: var(--text-color);
+}
+
+.body--dark .q-pagination__content .q-btn.active {
+  background-color: #333;
+}
+.body--dark .team-details-card .q-card__actions {
+  background-color: #121212 !important; /* Темный фон вместо белого */
+  border-top: 1px solid #333 !important; /* Граница сверху */
+}
+
+.body--dark .team-details-card .q-btn {
+  color: #ffffff !important; /* Белый текст кнопок */
+}
+
+.body--dark .team-details-card .q-btn.flat {
+  background-color: transparent !important;
+}
+
+.body--dark .team-details-card .q-btn.flat:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Дополнительно: стили для текста в диалоге */
+.body--dark .team-details-card .text-primary {
+  color: #4fc3f7 !important; /* Голубой вместо стандартного primary */
+}
+
+.body--dark .team-details-card .text-body1,
+.body--dark .team-details-card .text-body2 {
+  color: #e0e0e0 !important; /* Светло-серый для основного текста */
+}
 </style>

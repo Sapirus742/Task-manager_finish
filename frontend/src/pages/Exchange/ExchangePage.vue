@@ -563,4 +563,136 @@ const addProjectsToExchange = async () => {
 .text-h6:hover {
   color: var(--q-primary);
 }
+/* Темная тема */
+.q-page
+  {
+    background-color:var(--bg-color);
+  }
+
+.body--dark .q-drawer {
+  background-color: #1e1e1e !important;
+  border-right: 1px solid #333 !important;
+}
+
+.body--dark .q-item {
+  color: #ffffff;
+}
+
+.body--dark .q-item--active {
+  background-color: #333;
+  color: var(--q-primary);
+}
+
+.body--dark .q-item-label {
+  color: #ffffff;
+}
+
+.body--dark .q-item-label--caption {
+  color: #b0b0b0;
+}
+
+.body--dark .project-card {
+  background-color: #1e1e1e;
+  border: 1px solid #333;
+}
+
+.body--dark .project-card:hover {
+  box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+}
+
+.body--dark .text-caption {
+  color: #b0b0b0 !important;
+}
+
+.body--dark .text-h6:hover {
+  color: #4fc3f7 !important;
+}
+
+.body--dark .q-card__actions {
+  background-color: #1e1e1e;
+  border-top: 1px solid #333;
+}
+
+.body--dark .q-dialog__inner .q-card {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+.body--dark .q-dialog__inner .q-input {
+  color: #ffffff;
+}
+
+.body--dark .q-dialog__inner .q-field__label {
+  color: #b0b0b0;
+}
+
+.body--dark .q-dialog__inner .q-field__native {
+  color: #ffffff;
+}
+
+.body--dark .q-list--bordered {
+  border-color: #333;
+}
+
+.body--dark .q-item__section--side .q-btn {
+  color: #ffffff;
+}
+
+.body--dark .q-separator {
+  background-color: #333;
+}
+
+/* Стили для пустых состояний */
+.body--dark .text-center .q-icon {
+  color: #b0b0b0 !important;
+}
+
+.body--dark .text-center .text-h6 {
+  color: #ffffff !important;
+}
+
+/* Стили для чипов */
+.body--dark .q-chip {
+  color:rgb(46, 46, 46);
+}
+
+/* Стили для кнопок */
+.body--dark .q-btn {
+  color: #ffffff;
+}
+
+.body--dark .q-btn--flat:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Стили для полей ввода */
+.body--dark .q-field--outlined .q-field__control {
+  background-color: #1e1e1e;
+  border-color: #333;
+}
+
+.body--dark .q-field--outlined .q-field__control:hover {
+  border-color: #555;
+}
+
+/* Стили для чекбоксов */
+.body--dark .q-checkbox__inner {
+  color: #ffffff;
+}
+
+/* Стили для заголовков */
+.body--dark .text-h4 {
+  color: #ffffff;
+}
+
+/* Стили для уведомлений */
+.body--dark .q-notification {
+  background-color: #1e1e1e;
+  color: #ffffff;
+  border: 1px solid #333;
+}
+.body--dark.q-drawer
+{
+  background-color:black;
+}
 </style>

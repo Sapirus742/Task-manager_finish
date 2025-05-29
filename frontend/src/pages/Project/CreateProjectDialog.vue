@@ -79,63 +79,60 @@
                 dense
               />
             </div>
-            
           </div>
-<div class="row q-col-gutter-md">
-  <div class="col-md-6 col-12">
-    <!-- Дата начала проекта -->
-    <q-input
-      v-model="startProjectString"
-      label="Дата начала проекта"
-      type="date"
-      :rules="[(val) => !!val || 'Поле обязательно']"
-      outlined
-      dense
-    />
-  </div>
 
-  <div class="col-md-6 col-12">
-    <!-- Дата окончания проекта -->
-    <q-input
-      v-model="stopProjectString"
-      label="Дата окончания проекта"
-      type="date"
-      :rules="[(val) => !!val || 'Поле обязательно']"
-      outlined
-      dense
-    />
-  </div>
-</div>
+          <div class="row q-col-gutter-md">
+            <div class="col-md-6 col-12">
+              <!-- Дата начала проекта -->
+              <q-input
+                v-model="startProjectString"
+                label="Дата начала проекта"
+                type="date"
+                :rules="[(val) => !!val || 'Поле обязательно']"
+                outlined
+                dense
+              />
+            </div>
 
-<div class="row q-col-gutter-md" style="margin-top: 1rem;">
-  <div class="col-md-6 col-12">
-    <!-- Заказчика -->
-    <q-input
-      v-model="newProject.customer"
-      label="Заказчика"
-      outlined
-      dense
-    />
-  </div>
+            <div class="col-md-6 col-12">
+              <!-- Дата окончания проекта -->
+              <q-input
+                v-model="stopProjectString"
+                label="Дата окончания проекта"
+                type="date"
+                :rules="[(val) => !!val || 'Поле обязательно']"
+                outlined
+                dense
+              />
+            </div>
+          </div>
 
-  <div class="col-md-6 col-12">
-    <!-- Максимальное количество участников -->
-    <q-input
-      v-model="newProject.maxUsers"
-      label="Максимальное количество участников"
-      type="number"
-      :rules="[
-        (val) => !!val || 'Поле обязательно',
-        (val) => val > 0 || 'Должно быть больше 0'
-      ]"
-      outlined
-      dense
-    />
-  </div>
-</div>
-          
+          <div class="row q-col-gutter-md" style="margin-top: 1rem;">
+            <div class="col-md-6 col-12">
+              <!-- Заказчика -->
+              <q-input
+                v-model="newProject.customer"
+                label="Заказчика"
+                outlined
+                dense
+              />
+            </div>
 
-         
+            <div class="col-md-6 col-12">
+              <!-- Максимальное количество участников -->
+              <q-input
+                v-model="newProject.maxUsers"
+                label="Максимальное количество участников"
+                type="number"
+                :rules="[
+                  (val) => !!val || 'Поле обязательно',
+                  (val) => val > 0 || 'Должно быть больше 0'
+                ]"
+                outlined
+                dense
+              />
+            </div>
+          </div>
 
           <!-- Кнопки -->
           <q-card-actions align="right">
@@ -276,4 +273,36 @@ defineExpose({
 .row + .row {
   margin-top: 16px;
 }
+.body--dark .create-project-dialog {
+  background-color: #1e1e1e;
+  color: #e0e0e0;
+}
+
+.body--dark .dialog-title {
+  color: #e0e0e0 !important;
+}
+
+.body--dark .q-field--outlined .q-field__control {
+  background-color: #1e1e1e;
+  border-color: #333;
+  color: #e0e0e0;
+}
+
+.body--dark .q-field__label {
+  color: #e0e0e0;
+}
+
+.body--dark .q-field__native,
+.body--dark .q-field__input {
+  color: #e0e0e0;
+}
+
+.body--dark .q-chip {
+  background-color: #333000;
+  color: #e0e0e0;
+}
+.q-page
+  {
+    background-color:var(--bg-color);
+  }
 </style>
