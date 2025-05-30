@@ -641,7 +641,7 @@ defineExpose({ open });
 .avatar-section {
   text-align: center;
   padding: 16px;
-  background: white;
+  background: var(--card-bg);
   border-radius: 8px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   
@@ -725,5 +725,88 @@ defineExpose({ open });
   .info-label {
     width: 80px;
   }
+}
+/* Темная тема */
+.body--dark .profile-card {
+  background-color:rgb(0, 0, 0);
+  color: #ffffff;
+}
+
+.body--dark .profile-header {
+  background-color: #1e1e1e !important;
+}
+
+.body--dark .profile-content {
+  background-color:rgb(0, 0, 0);
+}
+
+.body--dark .info-card,
+.body--dark .section-card {
+  background-color: #1e1e1e;
+  border-color: #333;
+}
+
+.body--dark .info-label {
+  color: #b0b0b0;
+}
+
+.body--dark .info-value {
+  color: #ffffff;
+}
+
+.body--dark .user-email {
+  color: #b0b0b0;
+}
+
+.body--dark .edit-btn {
+  color: #4fc3f7 !important;
+}
+
+.body--dark .portfolio-table {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+.body--dark .q-table__grid-content .q-card {
+  background-color: #1e1e1e;
+  color: #ffffff;
+}
+
+.body--dark .q-chip {
+  color: #ffffff;
+}
+
+.body--dark .text-grey {
+  color: #b0b0b0 !important;
+}
+
+.body--dark .q-tabs {
+  color: #ffffff;
+}
+
+.body--dark .q-tab--active {
+  color: var(--q-primary);
+}
+
+.body--dark .q-card__actions {
+  background-color: #121212 !important;
+  border-top: 1px solid #333 !important;
+}
+
+.body--dark .q-btn.flat {
+  color: #ffffff;
+}
+
+.body--dark .q-btn.flat:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.body--dark .competence-panel {
+  background-color: #1e1e1e;
+}
+.body--dark.left-column {
+  width: 300px;
+  flex-shrink: 0;
+  background-color: #1e1e1e;
 }
 </style>

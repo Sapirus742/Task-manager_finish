@@ -128,7 +128,7 @@ onMounted(() => {
   }
 }
 /* Темная тема для главной страницы проектов */
-.body--dark .projects-container {
+.body--dark.projects-container {
   background-color: #000000;
   color: #ffffff;
 }

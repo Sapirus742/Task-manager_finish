@@ -28,7 +28,7 @@
         />
       </q-card-section>
 
-      <q-card-section class="q-pt-none text-center">
+      <q-card-section  class="q-pt-none text-center" color="white">
         <a href="#" class="text-caption" @click.prevent="onForgotPassword">
           Забыли пароль?
         </a>
@@ -82,6 +82,7 @@ const onLogin = async () => {
   if (response) {
     mainStore.initAppState(response);
     router.push({ path: '/' });
+    setTimeout(() => window.location.reload(), 10);
   } else {
     $q.notify({
       message: 'Войти не удалось',
@@ -279,7 +280,8 @@ body {
 .body--dark .q-field--outlined .q-field__control {
   border-color: rgba(255, 255, 255, 0.2);
 }
-
-/* Важно: это гарантирует, что фон не перекроет стили Quasar */
-
+.text-caption
+{
+  color:var(--aa-color);
+}
 </style>

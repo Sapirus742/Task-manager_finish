@@ -3,9 +3,9 @@
     <!-- Боковая панель бирж -->
     <q-drawer
       v-model="leftDrawerOpen"
+      color=white
       bordered
       :width="300"
-      class="bg-grey-2"
     >
       <q-scroll-area class="fit">
         <q-list padding>

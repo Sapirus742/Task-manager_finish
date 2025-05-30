@@ -340,7 +340,7 @@
               <q-card-section>
                 <div class="text-h5 text-primary q-mb-sm">О команде</div>
                 <q-separator color="primary" class="q-mb-md"/>
-                <div class="team-description text-body1" :class="{ 'text-grey-6': !selectedTeam.description }">
+                <div class="team-description" :class="{ 'text-grey-6': !selectedTeam.description }">
                   {{ selectedTeam.description || 'Команда пока не добавила описание' }}
                 </div>
               </q-card-section>
@@ -1015,6 +1015,7 @@ defineExpose({ open });
 
 .project-header {
   margin-bottom: 16px;
+  color:var("--bg-color");
 }
 
 .project-title-wrapper {
@@ -1181,7 +1182,8 @@ defineExpose({ open });
 
 .team-description {
   padding: 8px;
-  background-color: #f9f9f9;
+  background-color:var(--card-bg);
+  color:var(--text-color);
   border-radius: 4px;
 }
 
@@ -1267,7 +1269,7 @@ defineExpose({ open });
 }
 /* Темная тема для диалога проекта */
 .body--dark .project-details-card {
-  background-color: #121212;
+  background-color:rgb(255, 255, 255);
   color: #ffffff;
 }
 
@@ -1699,5 +1701,82 @@ defineExpose({ open });
 .body--dark .team-details-card .text-body1,
 .body--dark .team-details-card .text-body2 {
   color: #e0e0e0 !important; /* Светло-серый для основного текста */
+}
+/* Общие стили для скролла (работают в обеих темах) */
+.panels-container,
+.members-list,
+.team-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* Для браузеров на WebKit (Chrome, Safari) */
+.panels-container::-webkit-scrollbar,
+.members-list::-webkit-scrollbar,
+.team-list::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.panels-container::-webkit-scrollbar-track,
+.members-list::-webkit-scrollbar-track,
+.team-list::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 4px;
+}
+
+.panels-container::-webkit-scrollbar-thumb,
+.members-list::-webkit-scrollbar-thumb,
+.team-list::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+.panels-container::-webkit-scrollbar-thumb:hover,
+.members-list::-webkit-scrollbar-thumb:hover,
+.team-list::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Светлая тема */
+.body--light {
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #c1c1c1;
+  --scrollbar-thumb-hover: #a8a8a8;
+}
+
+/* Темная тема */
+.body--dark {
+  --scrollbar-track: #2a2a2a;
+  --scrollbar-thumb: #555555;
+  --scrollbar-thumb-hover: #6e6e6e;
+}
+
+/* Дополнительные стили для темной темы */
+.body--dark .panels-container,
+.body--dark .members-list,
+.body--dark .team-list {
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* Стили для диалогов в темной теме */
+.body--dark .project-details-card,
+.body--dark .team-details-card {
+  --scrollbar-track: #1e1e1e;
+  --scrollbar-thumb: #444444;
+  --scrollbar-thumb-hover: #5a5a5a;
+}
+
+/* Улучшенные стили для скролла в карточках */
+.body--dark .q-card-section {
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+.body--dark .q-card-section::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+
+.body--dark .q-card-section::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
 }
 </style>

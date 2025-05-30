@@ -4,7 +4,7 @@
       <q-card-section class="row items-center q-pb-none">
         <div class="text-h6">{{ project?.name }} - Agile доска</div>
         <q-space />
-        <q-btn icon="close" flat round dense v-close-popup />
+        <q-btn icon="close"  flat round dense v-close-popup />
       </q-card-section>
 
       <q-card-section class="q-pt-none full-height">
@@ -482,5 +482,14 @@ defineExpose({ open });
 /* Подсветка колонки при перетаскивании */
 .q-card[dragover] {
   background-color: rgba(0, 0, 0, 0.05);
+}
+.q-btn
+{
+  color:black;
+  background:white;
+}
+.text-subtitle1
+{
+  color:black!important;
 }
 </style>

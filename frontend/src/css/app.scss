@@ -5,6 +5,7 @@
   --card-bg: #f5f5f5;
   --border-color: #e0e0e0;
   --primary-color: #1976d2;
+  --aa-color: #054e96;
   --primary-text: #ffffff;
 }
 
@@ -16,4 +17,56 @@
   --border-color: #333333;
   --primary-color: #1976d2; // Можно оставить тот же или сделать светлее (#64b5f6)
   --primary-text: #ffffff;
+  --aa-color: #ffffff;
+}
+/* Глобальные стили для скроллбаров */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  
+  /* Светлая тема по умолчанию */
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #c1c1c1;
+  --scrollbar-thumb-hover: #a8a8a8;
+}
+
+/* Для WebKit-браузеров (Chrome, Safari) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Темная тема */
+.body--dark {
+  --scrollbar-track: #2a2a2a;
+  --scrollbar-thumb: #555555;
+  --scrollbar-thumb-hover: #6e6e6e;
+}
+
+/* Плавные переходы */
+html,
+body,
+* {
+  scrollbar-color: inherit;
+  transition: scrollbar-color 0.3s ease;
+}
+
+::-webkit-scrollbar,
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-thumb {
+  transition: background-color 0.3s ease;
 }
