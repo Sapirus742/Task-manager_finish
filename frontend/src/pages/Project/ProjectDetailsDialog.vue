@@ -1491,7 +1491,7 @@ defineExpose({ open });
 
 .body--dark .project-header,
 .body--dark .team-header {
-  background-color: #1e1e1e !important;
+  background-color: #121212 !important;
   color: #ffffff;
 }
 
