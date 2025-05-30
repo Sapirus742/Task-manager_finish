@@ -219,6 +219,11 @@ const getTechClass = (tech: string) => {
   background-color:var(--bg-color);
 }
 
+.body--dark .projects-container {
+  background-color: #121212!important;
+  color: #e0e0e0;
+}
+
 .body--dark .project-card {
   background-color: #121212 !important;
   border-color: #333 !important;

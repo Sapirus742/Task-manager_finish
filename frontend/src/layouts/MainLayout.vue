@@ -46,6 +46,7 @@
           :icon="isDark ? 'light_mode' : 'dark_mode'"
           flat
           dense
+          class="q-mx-sm"
           @click="toggleDarkMode"
         />
         <div></div>

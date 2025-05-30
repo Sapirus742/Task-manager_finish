@@ -263,46 +263,105 @@ defineExpose({
   width: 800px;
   max-width: 90vw;
 }
+
 .dialog-title {
   text-align: center;
   width: 100%;
 }
+
 .q-field--with-textarea .q-field__control {
   min-height: 100px;
 }
+
 .row + .row {
   margin-top: 16px;
 }
+
+/* Тёмная тема */
 .body--dark .create-project-dialog {
-  background-color: #1e1e1e;
+  background-color: #121212 !important;
   color: #e0e0e0;
 }
 
 .body--dark .dialog-title {
-  color: #e0e0e0 !important;
+  color: #ffffff !important;
+}
+
+.body--dark .q-field--outlined {
+  --field-border: #333 !important;
 }
 
 .body--dark .q-field--outlined .q-field__control {
-  background-color: #1e1e1e;
-  border-color: #333;
+  background-color: #1e1e1e !important;
+  border-color: var(--field-border);
   color: #e0e0e0;
 }
 
 .body--dark .q-field__label {
-  color: #e0e0e0;
+  color: #b0b0b0 !important;
 }
 
 .body--dark .q-field__native,
 .body--dark .q-field__input {
-  color: #e0e0e0;
+  color: #e0e0e0 !important;
 }
 
 .body--dark .q-chip {
-  background-color: #333000;
-  color: #e0e0e0;
+  background-color: #333 !important;
+  color: white !important;
 }
-.q-page
-  {
-    background-color:var(--bg-color);
-  }
+
+/* Стили для выпадающих списков */
+.body--dark .q-menu {
+  background-color: #1e1e1e !important;
+  border: 1px solid #333 !important;
+}
+
+.body--dark .q-item {
+  color: #e0e0e0 !important;
+}
+
+.body--dark .q-item:hover {
+  background-color: #333 !important;
+}
+
+/* Кнопки */
+.body--dark .q-btn.flat {
+  color: #e0e0e0 !important;
+}
+
+.body--dark .q-btn.flat:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Особые стили для date picker */
+.body--dark .q-date {
+  background-color: #1e1e1e !important;
+  border: 1px solid #333 !important;
+}
+
+.body--dark .q-date__header {
+  background-color: #252525 !important;
+}
+
+.body--dark .q-date__content {
+  background-color: #1e1e1e !important;
+}
+
+/* Фикс для разделителей */
+.body--dark .q-separator {
+  background-color: #333 !important;
+}
+
+/* Усиленные !important для переопределения Quasar стилей */
+.body--dark .q-card {
+  background-color: #121212 !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #333 !important;
+}
+
+/* Анимация перехода между темами */
+.q-card {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
 </style>
