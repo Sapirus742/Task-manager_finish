@@ -151,6 +151,14 @@
                       @click="confirmEndorseIdea(idea)"
                       :loading="isEndorsing === idea.id"
                     />
+                    <q-btn 
+  v-if="canCreateProjectFromIdea(idea)"
+  icon="add" 
+  label="Создать проект" 
+  color="primary"
+  @click.stop="openCreateProjectDialog(idea)"
+  class="q-mr-sm"
+/>
                   </div>
 
                   <q-banner 
@@ -423,17 +431,19 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+
 import { useMainStore } from 'src/stores/main-store';
 import { useIdeaStore } from 'src/stores/idea-store';
 import { useCommentStore } from 'src/stores/comment-store';
-import { StatusIdea, type IdeaDto, type CommentDto, type UpdateIdeaDto } from '../../../../backend/src/common/types';
+import { StatusIdea, type IdeaDto, type CommentDto, type UpdateIdeaDto, CreateProjectDto, StatusProject } from '../../../../backend/src/common/types';
 import { useQuasar } from 'quasar';
+import CreateProjectDialog from 'components/CreateProjectDialog.vue';
 
 const $q = useQuasar();
 const mainStore = useMainStore();
 const ideaStore = useIdeaStore();
 const commentStore = useCommentStore();
-
+const createProjectDialogRef = ref<InstanceType<typeof CreateProjectDialog> | null>(null)
 interface Filter {
   label: string;
   value: StatusIdea | 'my' | null;
@@ -619,6 +629,29 @@ const toggleIdeaDetails = async (ideaId: number) => {
   }
 };
 
+const openCreateProjectDialog = (idea: IdeaDto) => {
+  createProjectDialogRef.value?.openDialog();
+  
+  // Заполняем форму данными из идеи
+  const projectFromIdea: CreateProjectDto = {
+    name: idea.name,
+    problem: idea.problem,
+    solution: idea.solution,
+    result: idea.result,
+    resource: idea.resource,
+    stack: idea.stack,
+    status: StatusProject.draft,
+    startProject: new Date(),
+    stopProject: new Date(new Date().setMonth(new Date().getMonth() + 3)), // +3 месяца по умолчанию
+    maxUsers: '5', // Значение по умолчанию
+    customer: '', // Оставляем пустым для заполнения
+    initiator: mainStore.userId,
+  };
+  
+  createProjectDialogRef.value?.setProjectData(projectFromIdea);
+};
+
+
 const formatDate = (dateString: string) => {
   return new Date(dateString).toLocaleDateString('ru-RU', {
     year: 'numeric',
@@ -740,6 +773,14 @@ const openEditCommentDialog = (comment: CommentDto) => {
   };
   isEditingComment.value = true;
   showCommentDialog.value = true;
+};
+
+const canCreateProjectFromIdea = (idea: IdeaDto) => {
+  return idea.status === StatusIdea.published && 
+         (mainStore.isAdmin() || 
+          mainStore.isDirectorate() || 
+          mainStore.isExpert() || 
+          mainStore.isCustomer());
 };
 
 const handleSaveComment = async () => {
@@ -1201,6 +1242,10 @@ const confirmEndorseIdea = (idea: IdeaDto) => {
 
 .empty-state .q-icon {
   margin-bottom: 10px;
+}
+
+.create-project-btn {
+  margin-left: 8px;
 }
 
 .endorse-section {
