@@ -261,7 +261,6 @@
                     :key="index"
                     color="accent" 
                     text-color="white"
-                    icon="code"
                     size="md"
                   >
                     {{ comp }}

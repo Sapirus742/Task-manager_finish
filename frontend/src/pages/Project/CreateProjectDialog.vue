@@ -109,10 +109,10 @@
 
           <div class="row q-col-gutter-md" style="margin-top: 1rem;">
             <div class="col-md-6 col-12">
-              <!-- Заказчика -->
+              <!-- Заказчик -->
               <q-input
                 v-model="newProject.customer"
-                label="Заказчика"
+                label="Заказчик"
                 outlined
                 dense
               />

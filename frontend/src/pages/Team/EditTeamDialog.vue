@@ -66,58 +66,6 @@
             </q-select>
           </div>
 
-          <!-- Участники команды -->
-          <q-select
-            v-model="editedTeam.members"
-            label="Участники команды"
-            multiple
-            use-chips
-            :options="filteredMembers"
-            option-label="fullName"
-            emit-value
-            map-options
-            outlined 
-            class="members-select" 
-            @update:model-value="handleMemberSelection"
-            use-input
-            input-debounce="300"
-            @filter="filterMembers"
-            clearable
-          >
-            <template v-slot:no-option>
-              <q-item>
-                <q-item-section class="text-grey">
-                  Пользователи не найдены
-                </q-item-section>
-              </q-item>
-            </template>
-
-            <template v-slot:option="scope">
-              <q-item v-bind="scope.itemProps">
-                <q-item-section avatar v-if="isUserInOtherTeam(scope.opt)">
-                  <q-icon 
-                    name="block" 
-                    :color="editedTeam.members.some(m => m.id === scope.opt.id) ? 'positive' : 'negative'"
-                  />
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>{{ scope.opt.fullName }}</q-item-label>
-                  <q-item-label caption>
-                    {{ scope.opt.email }}
-                    <span v-if="isUserInOtherTeam(scope.opt)" class="text-negative">
-                      <template v-if="editedTeam.members.some(m => m.id === scope.opt.id)">
-                        (Уже в этой команде)
-                      </template>
-                      <template v-else>
-                        (Уже в другой команде)
-                      </template>
-                    </span>
-                  </q-item-label>
-                </q-item-section>
-              </q-item>
-            </template>
-          </q-select>
-
           <!-- Тимлид -->
           <div class="relative-position tooltip-wrapper">
             <q-select
@@ -202,6 +150,77 @@
             </q-select>
           </div>
 
+          <!-- Участники команды -->
+          <q-btn 
+            label="Управление участниками команды" 
+            color="primary" 
+            @click="openMemberDialog"
+            class="q-mt-md q-mb-md"
+          />
+
+          <q-dialog v-model="showMemberDialog" persistent>
+            <q-card class="member-management-dialog">
+              <q-card-section>
+                <div class="text-h6">Управление участниками команды</div>
+              </q-card-section>
+
+              <q-card-section>
+                <!-- Поиск пользователей -->
+                <q-input
+                  v-model="searchQuery"
+                  label="Поиск пользователей"
+                  outlined
+                  clearable
+                  class="q-mb-md"
+                >
+                  <template v-slot:append>
+                    <q-icon name="search" />
+                  </template>
+                </q-input>
+
+                <!-- Список пользователей -->
+                <q-list bordered separator class="scroll" style="max-height: 400px;">
+                  <q-item 
+                    v-for="user in filteredAllUsers"
+                    :key="user.id"
+                    clickable
+                    :disable="shouldDisableUser(user)"
+                    @click="toggleTeamMember(user)"
+                  >
+                    <q-item-section avatar>
+                      <q-icon 
+                        :name="isCurrentMember(user) ? 'person' : 'block'"
+                        :color="getUserIconColor(user)"
+                      />
+                    </q-item-section>
+                    
+                    <q-item-section>
+                      <q-item-label>{{ user.fullName }}</q-item-label>
+                      <q-item-label caption>
+                        {{ user.email }}
+                        <span v-if="showUnavailableWarning(user)" class="text-negative">
+                          {{ getUserUnavailableReason(user) }}
+                        </span>
+                      </q-item-label>
+                    </q-item-section>
+
+                    <q-item-section side>
+                      <q-icon 
+                        name="check_circle" 
+                        color="positive"
+                        v-if="isCurrentMember(user)"
+                      />
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </q-card-section>
+
+              <q-card-actions align="right">
+                <q-btn flat label="Готово" color="primary" v-close-popup />
+              </q-card-actions>
+            </q-card>
+          </q-dialog>
+
           <q-card-actions align="right">
             <q-btn flat label="Отмена" color="negative" v-close-popup />
             <q-btn type="submit" label="Сохранить" color="primary" :loading="loading" />
@@ -213,7 +232,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { 
   PrivacyTeam, 
@@ -249,6 +268,9 @@ const loading = ref(false);
 const mainStore = useMainStore();
 const projectStore = useProjectStore();
 const allExchanges = ref<{id: number; name: string; projects: ProjectOption[]}[]>([]);
+const showMemberDialog = ref(false);
+const searchQuery = ref('');
+const tempMembers = ref<TeamMember[]>([]);
 
 const canEditFull = computed(() => {
   return mainStore.isAdmin() || editedTeam.value.user_owner === mainStore.userId;
@@ -297,20 +319,111 @@ const previousStatus = ref<StatusTeam | null>(null);
 
 const allUsers = ref<TeamMember[]>([]);
 const allProjects = ref<ProjectOption[]>([]);
-const filteredMembers = ref(allUsers.value);
 
-const filterMembers = (val: string, update: (fn: () => void) => void) => {
-  update(() => {
-    if (val === '') {
-      filteredMembers.value = allUsers.value;
-    } else {
-      const needle = val.toLowerCase();
-      filteredMembers.value = allUsers.value.filter(
-        user => user.fullName.toLowerCase().includes(needle)
-      );
-    }
-  });
+// Открытие диалога управления участниками
+const openMemberDialog = () => {
+  tempMembers.value = [...editedTeam.value.members];
+  showMemberDialog.value = true;
 };
+
+// Фильтрация пользователей для поиска
+const filteredAllUsers = computed(() => {
+  const query = searchQuery.value?.toLowerCase() || '';
+  return allUsers.value.filter(user => 
+    user.fullName.toLowerCase().includes(query) ||
+    user.email?.toLowerCase().includes(query)
+  );
+});
+
+// Проверка, что пользователь уже в команде
+const isCurrentMember = (user: TeamMember) => {
+  return tempMembers.value.some(m => m.id === user.id);
+};
+
+// Проверка, что пользователь в другой команде
+const isInOtherTeam = (user: TeamMember) => {
+  return user.inTeam && !isCurrentMember(user);
+};
+
+// Проверка, что пользователь недоступен для добавления
+const shouldDisableUser = (user: TeamMember) => {
+  return isInOtherTeam(user);
+};
+
+// Показывать ли предупреждение о недоступности
+const showUnavailableWarning = (user: TeamMember) => {
+  return isInOtherTeam(user);
+};
+
+// Получение причины недоступности пользователя
+const getUserUnavailableReason = (user: TeamMember) => {
+  if (isInOtherTeam(user)) {
+    return 'Уже в другой команде';
+  }
+  return '';
+};
+
+// Проверка, что пользователь недоступен для добавления
+const isUserUnavailable = (user: TeamMember) => {
+  return user.inTeam && !isCurrentMember(user);
+};
+
+// Получение цвета иконки пользователя
+const getUserIconColor = (user: TeamMember) => {
+  if (isCurrentMember(user)) return 'positive';
+  if (isUserUnavailable(user)) return 'negative';
+  return 'primary';
+};
+
+// Добавление/удаление пользователя из временного списка
+const toggleTeamMember = async (user: TeamMember) => {
+  if (isInOtherTeam(user)) return;
+
+  // Проверка для лидера
+  if (editedTeam.value.leader?.id === user.id && isCurrentMember(user)) {
+    try {
+      const confirmed = await new Promise<boolean>((resolve) => {
+        $q.dialog({
+          title: 'Подтверждение',
+          message: 'Вы собираетесь удалить себя из команды. После этого вы перестанете быть лидером. Продолжить?',
+          persistent: true,
+          ok: {
+            label: 'Да',
+            color: 'negative', 
+            flat: true
+          },
+          cancel: {
+            label: 'Отмена',
+            color: 'primary',
+          }
+        }).onOk(() => resolve(true)).onCancel(() => resolve(false));
+      });
+
+      if (!confirmed) return;
+    } catch {
+      return;
+    }
+  }
+
+  if (isCurrentMember(user)) {
+    tempMembers.value = tempMembers.value.filter(m => m.id !== user.id);
+  } else {
+    tempMembers.value = [...tempMembers.value, user];
+  }
+};
+
+// Сохранение изменений при закрытии диалога
+watch(showMemberDialog, (newVal) => {
+  if (!newVal) {
+    editedTeam.value.members = [...tempMembers.value];
+    
+    // Обновляем лидера, если он был удален из команды
+    if (editedTeam.value.leader && 
+        !tempMembers.value.some(m => m.id === editedTeam.value.leader?.id)) {
+      editedTeam.value.leader = null;
+    }
+  }
+});
 
 const privacyOptions = [
   { label: 'Открытая', value: PrivacyTeam.open },
@@ -412,51 +525,6 @@ const groupedProjectOptions = computed(() => {
 
   return result;
 });
-
-const isUserInOtherTeam = (user: TeamMember): boolean => {
-  // Возвращаем true, если пользователь в другой команде ИЛИ если он уже в текущей команде
-  return user.inTeam || editedTeam.value.members.some(m => m.id === user.id);
-};
-
-const handleMemberSelection = async (newMembers: TeamMember[]) => {
-  // Находим пользователей, которые уже в команде
-  const alreadyInTeam = newMembers.filter(newMember => 
-    editedTeam.value.members.some(m => m.id === newMember.id)
-  );
-
-  // Если пытаемся добавить тех, кто уже в команде - просто игнорируем
-  if (alreadyInTeam.length > 0) {
-    return;
-  }
-
-  // Остальная логика проверки пользователей в других командах
-  const invalidMembers = newMembers.filter(member => 
-    member.inTeam && !editedTeam.value.members.some(m => m.id === member.id)
-  );
-
-  if (invalidMembers.length > 0) {
-    // Откатываем выбор
-    editedTeam.value.members = newMembers.filter(member => 
-      !invalidMembers.some(u => u.id === member.id)
-    );
-    
-    // Показываем сообщение об ошибке
-    $q.notify({
-      message: `Пользователь ${invalidMembers[0].fullName} уже состоит в команде`,
-      color: 'negative',
-      position: 'top',
-      timeout: 3000
-    });
-    return;
-  }
-
-  // Обновляем список лидеров
-  if (editedTeam.value.leader && 
-      !newMembers.some(m => m.id === editedTeam.value.leader?.id)) {
-    editedTeam.value.leader = null;
-  }
-};
-
 
 const loadUsers = async () => {
   try {
