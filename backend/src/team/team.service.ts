@@ -36,7 +36,7 @@ private readonly logger = new Logger(TeamService.name);
     description: string,        
     privacy: PrivacyTeam,    
     status: StatusTeam,
-    user_leader: number,
+    user_leader: number | undefined,
     user: number[],
     project: number | null,
     user_owner: number,

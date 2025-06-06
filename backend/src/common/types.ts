@@ -341,7 +341,7 @@ export interface CreateTeamDto {
   description: string,        
   privacy: PrivacyTeam,    
   status: StatusTeam,
-  user_leader: number,
+  user_leader: number | undefined,
   user: number[],
   project: number | null,
   user_owner: number,
