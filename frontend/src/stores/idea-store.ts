@@ -171,7 +171,23 @@ export const useIdeaStore = defineStore('idea', () => {
     }
   };
   
-  
+  const implementIdea = async (id: number): Promise<IdeaDto> => {
+    state.isLoading = true;
+    state.error = null;
+    try {
+      const implementedIdea = await ideaApi.implementIdea(id);
+      const index = state.ideas.findIndex(i => i.id === id);
+      if (index !== -1) {
+        state.ideas[index] = implementedIdea;
+      }
+      return implementedIdea;
+    } catch (error) {
+      state.error = error instanceof Error ? error.message : 'Не удалось изменить статус идеи';
+      throw error;
+    } finally {
+      state.isLoading = false;
+    }
+  };
 
   return {
     ...toRefs(state),
@@ -181,6 +197,7 @@ export const useIdeaStore = defineStore('idea', () => {
     updateIdea,
     deleteIdea,
     endorseIdea,
+    implementIdea,
     approveIdea,
   };
 });

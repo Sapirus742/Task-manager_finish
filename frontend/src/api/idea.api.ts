@@ -54,6 +54,14 @@ export async function update(
   return;
 }
 
+export async function implementIdea(id: number): Promise<IdeaDto> {
+  const response = await api.patch(`/idea/${id}/implement`);
+  if (response.status === 200) {
+    return response.data;
+  }
+  throw new Error('Failed to implement idea');
+}
+
 export async function remove(id: number): Promise<void> {
   await api.delete('/idea/' + id);
 }

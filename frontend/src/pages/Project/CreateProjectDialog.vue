@@ -112,7 +112,7 @@
               <!-- Заказчика -->
               <q-input
                 v-model="newProject.customer"
-                label="Заказчика"
+                label="Заказчик"
                 outlined
                 dense
               />
@@ -153,7 +153,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Competencies, CreateProjectDto, StatusProject } from '../../../../backend/src/common/types';
+import { Competencies, CreateProjectDto, IdeaDto, StatusProject } from '../../../../backend/src/common/types';
 import { create } from 'src/api/project.api';
 import { useMainStore } from 'src/stores/main-store';
 
@@ -221,6 +221,19 @@ const closeDialog = () => {
   showDialog.value = false;
 };
 
+const openDialogWithIdeaData = (idea: IdeaDto) => {
+  newProject.value = {
+    ...newProject.value,
+    name: idea.name,
+    problem: idea.problem,
+    solution: idea.solution,
+    result: idea.result,
+    resource: idea.resource,
+    stack: idea.stack || [],
+  };
+  openDialog();
+};
+
 const onSubmit = async () => {
   try {
     if (
@@ -255,6 +268,7 @@ const onSubmit = async () => {
 defineExpose({
   openDialog,
   closeDialog,
+   openDialogWithIdeaData,
 });
 </script>
 

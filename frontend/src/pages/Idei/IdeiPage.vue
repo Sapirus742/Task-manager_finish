@@ -154,9 +154,9 @@
                     <q-btn 
   v-if="canCreateProjectFromIdea(idea)"
   icon="add" 
-  label="Создать проект" 
+  label="Создать проект из идеи" 
   color="primary"
-  @click.stop="openCreateProjectDialog(idea)"
+  @click="createProjectFromIdea(idea)"
   class="q-mr-sm"
 />
                   </div>
@@ -426,24 +426,28 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+      <CreateProjectDialog 
+    ref="createProjectDialog"
+    @create="handleProjectCreated"
+  />
   </q-page>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
-
+import CreateProjectDialog from '../Project/CreateProjectDialog.vue';
 import { useMainStore } from 'src/stores/main-store';
 import { useIdeaStore } from 'src/stores/idea-store';
 import { useCommentStore } from 'src/stores/comment-store';
-import { StatusIdea, type IdeaDto, type CommentDto, type UpdateIdeaDto, CreateProjectDto, StatusProject } from '../../../../backend/src/common/types';
+import { StatusIdea, type IdeaDto, type CommentDto, type UpdateIdeaDto, ProjectDto} from '../../../../backend/src/common/types';
 import { useQuasar } from 'quasar';
-import CreateProjectDialog from 'components/CreateProjectDialog.vue';
+
 
 const $q = useQuasar();
 const mainStore = useMainStore();
 const ideaStore = useIdeaStore();
 const commentStore = useCommentStore();
-const createProjectDialogRef = ref<InstanceType<typeof CreateProjectDialog> | null>(null)
+
 interface Filter {
   label: string;
   value: StatusIdea | 'my' | null;
@@ -486,6 +490,40 @@ const showCommentDialog = ref(false);
 const isEditingComment = ref(false);
 const isApproving = ref<number | null>(null);
 const isEndorsing = ref<number | null>(null);
+
+const createProjectDialog = ref();
+
+const createProjectFromIdea = (idea: IdeaDto) => {
+  createProjectDialog.value.openDialogWithIdeaData(idea);
+};
+
+const handleProjectCreated = async (newProject: ProjectDto) => {
+  try {
+    // Находим ID текущей открытой идеи (последней в expandedIdeas)
+    const currentIdeaId = expandedIdeas.value[expandedIdeas.value.length - 1];
+    
+    if (currentIdeaId) {
+      // Используем существующий метод updateIdea для изменения статуса
+      await ideaStore.updateIdea(currentIdeaId, {
+        status: StatusIdea.implemented
+      });
+      
+      // Обновляем список идей
+      await ideaStore.fetchIdeas();
+    }
+    console.log('Создан проект:', newProject); // Пример использования
+  
+    $q.notify({
+      type: 'positive',
+      message: 'Проект успешно создан из идеи! Статус идеи изменен на "Реализована"'
+    });
+  } catch (error) {
+    $q.notify({
+      type: 'negative',
+      message: 'Проект создан, но не удалось изменить статус идеи'
+    });
+  }
+};
 
 const newIdea = ref<NewIdeaForm>({
   name: '',
@@ -629,27 +667,6 @@ const toggleIdeaDetails = async (ideaId: number) => {
   }
 };
 
-const openCreateProjectDialog = (idea: IdeaDto) => {
-  createProjectDialogRef.value?.openDialog();
-  
-  // Заполняем форму данными из идеи
-  const projectFromIdea: CreateProjectDto = {
-    name: idea.name,
-    problem: idea.problem,
-    solution: idea.solution,
-    result: idea.result,
-    resource: idea.resource,
-    stack: idea.stack,
-    status: StatusProject.draft,
-    startProject: new Date(),
-    stopProject: new Date(new Date().setMonth(new Date().getMonth() + 3)), // +3 месяца по умолчанию
-    maxUsers: '5', // Значение по умолчанию
-    customer: '', // Оставляем пустым для заполнения
-    initiator: mainStore.userId,
-  };
-  
-  createProjectDialogRef.value?.setProjectData(projectFromIdea);
-};
 
 
 const formatDate = (dateString: string) => {
@@ -779,7 +796,6 @@ const canCreateProjectFromIdea = (idea: IdeaDto) => {
   return idea.status === StatusIdea.published && 
          (mainStore.isAdmin() || 
           mainStore.isDirectorate() || 
-          mainStore.isExpert() || 
           mainStore.isCustomer());
 };
 
