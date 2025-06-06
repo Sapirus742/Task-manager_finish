@@ -1,13 +1,28 @@
 <template>
   <q-dialog 
-  v-model="showDialog"
-  @update:model-value="val => !val && closeDialog()"
->
+    v-model="showDialog"
+    @update:model-value="val => !val && closeDialog()"
+  >
     <q-card class="project-details-card">
       <q-card-section>
         <div class="project-header">
           <div class="project-title-wrapper">
-            <h2 class="text-h5 text-weight-bold q-mb-sm project-title">{{ project?.name }}</h2>
+            <h2 
+              v-if="editingField !== 'name'"
+              class="text-h5 text-weight-bold q-mb-sm project-title editable"
+              @click="canEdit && startEditing('name', project?.name || '')"
+            >
+              {{ project?.name }}
+            </h2>
+            <q-input
+              v-else
+              v-model="tempValue"
+              class="editing-field"
+              outlined
+              dense
+              @blur="stopEditing"
+              @keyup.enter="stopEditing"
+            />
             <q-badge 
               :color="getStatusColor(project?.status)" 
               class="status-badge"
@@ -26,7 +41,35 @@
 
             <div class="date-section">
               <q-icon name="event" size="sm" class="q-mr-xs" />
-              <span>{{ formatDate(project?.startProject) }} — {{ formatDate(project?.stopProject) }}</span>
+              <span v-if="editingField !== 'startProject' && editingField !== 'stopProject'">
+                <span 
+                  class="editable"
+                  @click="canEdit && startEditing('startProject', formatDate(project?.startProject))"
+                >
+                  {{ formatDate(project?.startProject) }}
+                </span>
+                —
+                <span 
+                  class="editable"
+                  @click="canEdit && startEditing('stopProject', formatDate(project?.stopProject))"
+                >
+                  {{ formatDate(project?.stopProject) }}
+                </span>
+              </span>
+              <div v-else class="row q-gutter-sm">
+                <q-date 
+                  v-if="editingField === 'startProject'"
+                  v-model="tempValue"
+                  mask="YYYY-MM-DD"
+                  @update:model-value="stopEditing"
+                />
+                <q-date 
+                  v-if="editingField === 'stopProject'"
+                  v-model="tempValue"
+                  mask="YYYY-MM-DD"
+                  @update:model-value="stopEditing"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -53,17 +96,62 @@
               <div class="description-section">
                 <div class="detail-block">
                   <h3 class="section-title">Проблема</h3>
-                  <p class="section-content">{{ project?.problem || 'Не указана' }}</p>
+                  <div
+                    v-if="editingField !== 'problem'"
+                    class="section-content editable"
+                    @click="canEdit && startEditing('problem', project?.problem || '')"
+                    v-html="project?.problem || 'Не указана'"
+                  ></div>
+                  <q-input
+                    v-else
+                    v-model="tempValue"
+                    type="textarea"
+                    autogrow
+                    outlined
+                    dense
+                    @blur="stopEditing"
+                    @keyup.enter="stopEditing"
+                  />
                 </div>
                 
                 <div class="detail-block">
                   <h3 class="section-title">Решение</h3>
-                  <p class="section-content">{{ project?.solution || 'Не указано' }}</p>
+                  <div
+                    v-if="editingField !== 'solution'"
+                    class="section-content editable"
+                    @click="canEdit && startEditing('solution', project?.solution || '')"
+                    v-html="project?.solution || 'Не указано'"
+                  ></div>
+                  <q-input
+                    v-else
+                    v-model="tempValue"
+                    type="textarea"
+                    autogrow
+                    outlined
+                    dense
+                    @blur="stopEditing"
+                    @keyup.enter="stopEditing"
+                  />
                 </div>
                 
                 <div class="detail-block">
                   <h3 class="section-title">Ожидаемый результат</h3>
-                  <p class="section-content">{{ project?.result || 'Не указан' }}</p>
+                  <div
+                    v-if="editingField !== 'result'"
+                    class="section-content editable"
+                    @click="canEdit && startEditing('result', project?.result || '')"
+                    v-html="project?.result || 'Не указан'"
+                  ></div>
+                  <q-input
+                    v-else
+                    v-model="tempValue"
+                    type="textarea"
+                    autogrow
+                    outlined
+                    dense
+                    @blur="stopEditing"
+                    @keyup.enter="stopEditing"
+                  />
                 </div>
               </div>
             </q-tab-panel>
@@ -152,7 +240,6 @@
                     @click="applyToProject"
                     class="q-ml-sm"
                   />   
-
                 </template>
               </div>
             </q-tab-panel>
@@ -181,17 +268,60 @@
                 
                 <div class="detail-block">
                   <h3 class="section-title">Ресурсы</h3>
-                  <p class="section-content">{{ project?.resource || 'Не указаны' }}</p>
+                  <div
+                    v-if="editingField !== 'resource'"
+                    class="section-content editable"
+                    @click="canEdit && startEditing('resource', project?.resource || '')"
+                    v-html="project?.resource || 'Не указаны'"
+                  ></div>
+                  <q-input
+                    v-else
+                    v-model="tempValue"
+                    type="textarea"
+                    autogrow
+                    outlined
+                    dense
+                    @blur="stopEditing"
+                    @keyup.enter="stopEditing"
+                  />
                 </div>
                 
                 <div class="detail-block">
                   <h3 class="section-title">Заказчик</h3>
-                  <p class="section-content">{{ project?.customer || 'Не указан' }}</p>
+                  <div
+                    v-if="editingField !== 'customer'"
+                    class="section-content editable"
+                    @click="canEdit && startEditing('customer', project?.customer || '')"
+                    v-html="project?.customer || 'Не указан'"
+                  ></div>
+                  <q-input
+                    v-else
+                    v-model="tempValue"
+                    type="textarea"
+                    outlined
+                    dense
+                    @blur="stopEditing"
+                    @keyup.enter="stopEditing"
+                  />
                 </div>
                 
                 <div class="detail-block">
                   <h3 class="section-title">Участники</h3>
-                  <p class="section-content">{{ project?.maxUsers || 'Не указано' }}</p>
+                  <div
+                    v-if="editingField !== 'maxUsers'"
+                    class="section-content editable"
+                    @click="canEdit && startEditing('maxUsers', project?.maxUsers || '')"
+                    v-html="project?.maxUsers || 'Не указано'"
+                  ></div>
+                  <q-input
+                    v-else
+                    v-model="tempValue"
+                    type="number"
+                    outlined
+                    dense
+                    @blur="stopEditing"
+                    @keyup.enter="stopEditing"
+                  />
                 </div>
               </div>
             </q-tab-panel>
@@ -500,7 +630,7 @@
 <script setup lang="ts">
 import { ref, computed, nextTick } from 'vue';
 import { StatusProject, StatusTeam,  PrivacyTeam, UserAccountStatus } from '../../../../backend/src/common/types';
-import type { ProjectDto, TeamDto } from '../../../../backend/src/common/types';
+import type { ProjectDto, TeamDto, UpdateProjectDto } from '../../../../backend/src/common/types';
 import { useTeamStore } from 'src/stores/team-store';
 import { useQuasar } from 'quasar';
 import { useMainStore } from 'src/stores/main-store';
@@ -515,6 +645,59 @@ const tab = ref('description');
 const maxHeight = ref(0);
 const teamStore = useTeamStore();
 const mainStore = useMainStore();
+
+// Редактирование "на лету"
+
+const tempValue = ref<string>('');
+
+const canEdit = computed(() => {
+  if (!project.value || !mainStore.userId) return false;
+  return project.value.initiator.id === mainStore.userId || 
+         mainStore.isAdmin() || 
+         mainStore.isDirectorate();
+});
+
+type EditableProjectFields = keyof UpdateProjectDto;
+const editingField = ref<EditableProjectFields | null>(null);
+
+const startEditing = (field: EditableProjectFields, value: string) => {
+  if (!canEdit.value) return;
+  editingField.value = field;
+  tempValue.value = value;
+};
+
+const stopEditing = async () => {
+  if (!editingField.value || !project.value) return;
+
+  try {
+    const updateData: Partial<UpdateProjectDto> = {}; // Use Partial to make all fields optional
+    
+    // Special handling for date fields
+    if (editingField.value === 'startProject' || editingField.value === 'stopProject') {
+      updateData[editingField.value] = new Date(tempValue.value);
+    } else {
+      // For other fields, we need to ensure the type matches
+      const field = editingField.value as Exclude<EditableProjectFields, 'startProject' | 'stopProject'>;
+      (updateData as Record<string, string | number>)[field] = tempValue.value;
+    }
+
+    if (project.value.id) {
+      const updatedProject = await updateProject(project.value.id, updateData);
+      if (updatedProject) {
+        project.value = updatedProject;
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка при обновлении проекта:', error);
+    $q.notify({
+      message: 'Ошибка при сохранении изменений',
+      color: 'negative'
+    });
+  } finally {
+    editingField.value = null;
+    tempValue.value = '';
+  }
+};
 
 const selectedUserId = ref<number | null>(null);
 const isProfileOpen = ref(false);
@@ -549,7 +732,6 @@ const getStatusLabel = (status?: string) => {
   }
 };
 
-// Функция для цвета статуса команды
 const getTeamStatusColor = (status: StatusTeam) => {
   switch (status) {
     case StatusTeam.inProgress: return 'positive';
@@ -595,7 +777,6 @@ const getTeamCompetencies = (team: TeamDto): string[] => {
   return Array.from(competencies);
 };
 
-// Функция для подсчета участников
 const getUniqueMembersCount = (team: TeamDto): number => {
   const members = new Set<number>();
   if (team.user_owner?.id) members.add(team.user_owner.id);
@@ -627,10 +808,6 @@ const userOwnedTeams = computed(() => {
 });
 
 const isTeamAvailableForApplication = (team: TeamDto): boolean => {
-  // Команда доступна для подачи если:
-  // 1. Не привязана к другому проекту
-  // 2. Не находится на удалении
-  // 3. Имеет статус "Поиск проекта"
   return (
     !team.project && 
     team.status !== StatusTeam.delete &&
@@ -690,13 +867,11 @@ const confirmTeamApplication = async (team: TeamDto) => {
   if (!confirmed) return;
 
   try {
-    // Обновляем команду - привязываем к проекту и меняем статус
     await updateTeam(team.id, {
       project: project.value?.id,
       status: StatusTeam.joinProject
     });
 
-    // Обновляем проект - меняем статус на "Отбор команды"
     if (project.value?.id) {
       await updateProject(project.value.id, {
         status: StatusProject.selectionTeam
@@ -708,7 +883,6 @@ const confirmTeamApplication = async (team: TeamDto) => {
       color: 'positive'
     });
 
-    // Обновляем данные
     if (project.value?.id) {
       const updatedProject = await getProject(project.value.id);
       if (updatedProject) {
@@ -716,7 +890,6 @@ const confirmTeamApplication = async (team: TeamDto) => {
       }
     }
 
-    // Обновляем текущую команду
     if (teamStore.fetchTeam) {
       await teamStore.fetchTeam(team.id);
     }
@@ -734,7 +907,6 @@ const PrSt = computed(() => {
   return project.value?.status === StatusProject.searchTeam;
 });
 
-// Проверяем, может ли текущий пользователь подать заявку на проект
 const canApplyToProject = computed(() => {
   if (!project.value || project.value.status !== StatusProject.searchTeam) {
     return false;
@@ -745,24 +917,19 @@ const canApplyToProject = computed(() => {
   if (!currentUser.team?.id) return false;
   console.log(currentUser.team_leader.id )
 
-  // Проверяем, является ли пользователь лидером команды
   const isTeamLeader = currentUser.team_leader.id === currentUser.team.id;
-  // Проверяем, что команда ещё не подана на этот проект
   const isAlreadyApplied = project.value.teams?.some(t => t.id === currentUser.team?.id);
 
   return (isTeamLeader && !isAlreadyApplied);
 });
 
-// Метод для подачи заявки на проект
 const applyToProject = async () => {
   if (!project.value) return;
 
   try {
     const currentUser = mainStore.getCurrentUser();
 
-    // Проверяем, является ли пользователь владельцем команд
     if (currentUser.team_owner && currentUser.team_owner.length > 0) {
-      // Показываем диалог выбора команды
       showTeamSelectionDialog.value = true;
       return;
     }
@@ -772,18 +939,15 @@ const applyToProject = async () => {
       throw new Error('Команда не найдена');
     }
 
-    // Получаем актуальные данные команды
     const teamDetails = await getTeam(currentTeam.id);
     if (!teamDetails) {
       throw new Error('Не удалось загрузить данные команды');
     }
 
-    // Проверяем, является ли пользователь лидером
     if (teamDetails.user_leader?.id !== currentUser.id) {
       throw new Error('Только лидер команды может подавать заявки');
     }
 
-    // Показываем диалог подтверждения
     const confirmed = await new Promise<boolean>((resolve) => {
       $q.dialog({
         title: 'Подтверждение подачи заявки',
@@ -803,13 +967,11 @@ const applyToProject = async () => {
 
     if (!confirmed) return;
 
-    // Обновляем команду - привязываем к проекту и меняем статус
     await updateTeam(currentTeam.id, {
       project: project.value.id,
       status: StatusTeam.joinProject
     });
 
-    // Обновляем проект - меняем статус на "Отбор команды"
     await updateProject(project.value.id, {
       status: StatusProject.selectionTeam
     });
@@ -819,13 +981,11 @@ const applyToProject = async () => {
       color: 'positive'
     });
 
-    // Обновляем данные
     const updatedProject = await getProject(project.value.id);
     if (updatedProject) {
       project.value = updatedProject;
     }
 
-    // Обновляем текущую команду
     if (teamStore.fetchTeam) {
       await teamStore.fetchTeam(currentTeam.id);
     }
@@ -1252,6 +1412,27 @@ defineExpose({ open });
   gap: 8px;
 }
 
+/* Inline editing styles */
+.editable {
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.editable:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.editing-field {
+  margin-top: 8px;
+}
+
+/* For dark theme */
+.body--dark .editable:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
 @media (max-width: 600px) {
   .project-meta {
     flex-direction: column;
@@ -1267,222 +1448,8 @@ defineExpose({ open });
     padding: 12px;
   }
 }
-/* Темная тема для диалога проекта */
-.body--dark .project-details-card {
-  background-color:rgb(255, 255, 255);
-  color: #ffffff;
-}
 
-.body--dark .project-header,
-.body--dark .project-title,
-.body--dark .project-meta {
-  color: #ffffff;
-}
-
-.body--dark .detail-block {
-  background-color: #1e1e1e;
-  border-color: #333;
-  color: #e0e0e0;
-}
-
-.body--dark .section-title {
-  color: #ffffff;
-}
-
-.body--dark .section-content {
-  color: #b0b0b0;
-}
-
-.body--dark .q-tabs {
-  color: #ffffff;
-}
-
-.body--dark .q-tab--active {
-  color: var(--q-primary);
-}
-
-.body--dark .team-list {
-  background-color: #1e1e1e;
-}
-
-.body--dark .pending-team-item {
-  background-color: #1e1e1e;
-  color: #ffffff;
-}
-
-.body--dark .pending-team-item:hover {
-  background-color: #2a2a2a;
-}
-
-.body--dark .empty-state {
-  background-color: #1e1e1e;
-  color: #b0b0b0;
-}
-
-.body--dark .footer-actions {
-  background-color: #121212 !important;
-  border-top-color: #333 !important;
-}
-
-.body--dark .q-card__actions {
-  background-color: #121212 !important;
-}
-
-.body--dark .q-btn.flat {
-  color: #ffffff;
-}
-/* Темная тема с черными фонами и белым текстом */
-.body--dark {
-  /* Цветовая палитра */
-  --bg-color: #000000;               /* Чистый черный для основного фона */
-  --card-bg: #121212;                /* Темно-серый для карточек */
-  --darker-bg: #0a0a0a;              /* Еще темнее для акцентных элементов */
-  --border-color: #333333;           /* Границы элементов */
-  --text-color: #ffffff;             /* Основной белый текст */
-  --text-secondary: #e0e0e0;         /* Вторичный текст */
-  --text-muted: #b0b0b0;             /* Неактивный текст */
-  
-  /* Применение к странице */
-  background-color: var(--bg-color);
-  color: var(--text-color);
-}
-
-/* Заголовки и подзаголовки */
-.body--dark .project-title,
-.body--dark .text-h4,
-.body--dark .text-h5,
-.body--dark .text-h6,
-.body--dark .text-subtitle1,
-.body--dark .text-subtitle2,
-.body--dark .filter-label {
-  color: #ffffff !important;         /* Явно белый цвет для всех заголовков */
-}
-
-/* Карточки команд */
-.body--dark .team-card {
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-}
-
-.body--dark .team-card:hover {
-  background-color: #1a1a1a;
-}
-
-/* Диалог профиля команды */
-.body--dark .team-details-card {
-  background-color: var(--bg-color);
-}
-
-.body--dark .team-header {
-  background-color: #121212 !important; /* Темный фон для хедера диалога */
-}
-
-.body--dark .info-card,
-.body--dark .competencies-card,
-.body--dark .description-card,
-.body--dark .members-card {
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-}
-
-/* Элементы форм */
-.body--dark .q-field--outlined .q-field__control {
-  background-color: var(--card-bg);
-  border-color: var(--border-color);
-}
-
-.body--dark .q-field--outlined .q-field__control:hover {
-  border-color: #444;
-}
-
-/* Кнопки и переключатели */
-.body--dark .q-btn-toggle {
-  background-color: var(--card-bg);
-}
-
-.body--dark .q-btn.flat {
-  color: var(--text-color);
-}
-
-/* Списки */
-.body--dark .member-item {
-  background-color: var(--card-bg);
-}
-
-.body--dark .member-item:hover {
-  background-color: #1e1e1e;
-}
-
-/* Чипы */
-.body--dark .q-chip {
-  background-color: #333;
-  color: white;
-}
-
-/* Состояния */
-.body--dark .team-card.status-delete {
-  background-color: #1a1a1a;
-  color: #aaa;
-}
-
-.body--dark .team-card.status-delete:hover {
-  background-color: #222;
-}
-
-/* Пустое состояние */
-.body--dark .empty-state {
-  color: var(--text-secondary);
-}
-
-/* Особые элементы */
-.body--dark .team-description-section {
-  background-color: var(--darker-bg);
-  border-top: 1px solid var(--border-color);
-}
-
-.body--dark .q-separator {
-  background-color: var(--border-color);
-}
-
-/* Аватарки */
-.body--dark .q-avatar {
-  color: white !important;
-}
-
-/* Пагинация */
-.body--dark .q-pagination__content .q-btn {
-  color: var(--text-color);
-}
-
-.body--dark .q-pagination__content .q-btn.active {
-  background-color: #333;
-}
-.body--dark .team-details-card .q-card__actions {
-  background-color: #121212 !important; /* Темный фон вместо белого */
-  border-top: 1px solid #333 !important; /* Граница сверху */
-}
-
-.body--dark .team-details-card .q-btn {
-  color: #ffffff !important; /* Белый текст кнопок */
-}
-
-.body--dark .team-details-card .q-btn.flat {
-  background-color: transparent !important;
-}
-
-.body--dark .team-details-card .q-btn.flat:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-/* Дополнительно: стили для текста в диалоге */
-.body--dark .team-details-card .text-primary {
-  color: #4fc3f7 !important; /* Голубой вместо стандартного primary */
-}
-
-.body--dark .team-details-card .text-body1,
-.body--dark .team-details-card .text-body2 {
-  color: #e0e0e0 !important; /* Светло-серый для основного текста */
-}
+/* Dark theme styles */
 .body--dark .project-details-card,
 .body--dark .team-details-card {
   background-color: #121212;
@@ -1544,7 +1511,6 @@ defineExpose({ open });
   background-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Стили для вкладок */
 .body--dark .q-tabs {
   color: #ffffff;
 }
@@ -1553,13 +1519,11 @@ defineExpose({ open });
   color: var(--q-primary);
 }
 
-/* Стили для чипов */
 .body--dark .q-chip {
   background-color: #333;
   color: white;
 }
 
-/* Стили для участников команды */
 .body--dark .member-item {
   background-color: #1e1e1e;
   color: #ffffff;
@@ -1583,126 +1547,11 @@ defineExpose({ open });
   color: #b0b0b0;
 }
 
-/* Стили для аватарок */
-.body--dark .q-avatar {
-  color: white !important;
-}
-/* Диалог профиля команды */
-.body--dark .team-details-card {
-  background-color: var(--bg-color);
-}
-
-.body--dark .team-header {
-  background-color: #121212 !important; /* Темный фон для хедера диалога */
-}
-
-.body--dark .info-card,
-.body--dark .competencies-card,
-.body--dark .description-card,
-.body--dark .members-card {
-  background-color: var(--card-bg);
-  border: 1px solid var(--border-color);
-}
-
-/* Элементы форм */
-.body--dark .q-field--outlined .q-field__control {
-  background-color: var(--card-bg);
-  border-color: var(--border-color);
-}
-
-.body--dark .q-field--outlined .q-field__control:hover {
-  border-color: #444;
-}
-
-/* Кнопки и переключатели */
-.body--dark .q-btn-toggle {
-  background-color: var(--card-bg);
-}
-
-.body--dark .q-btn.flat {
-  color: var(--text-color);
-}
-
-/* Списки */
-.body--dark .member-item {
-  background-color: var(--card-bg);
-}
-
-.body--dark .member-item:hover {
-  background-color: #1e1e1e;
-}
-
-/* Чипы */
-.body--dark .q-chip {
-  background-color: #333;
-  color: white;
-}
-
-/* Состояния */
-.body--dark .team-card.status-delete {
-  background-color: #1a1a1a;
-  color: #aaa;
-}
-
-.body--dark .team-card.status-delete:hover {
-  background-color: #222;
-}
-
-/* Пустое состояние */
-.body--dark .empty-state {
-  color: var(--text-secondary);
-}
-
-/* Особые элементы */
-.body--dark .team-description-section {
-  background-color: var(--darker-bg);
-  border-top: 1px solid var(--border-color);
-}
-
-.body--dark .q-separator {
-  background-color: var(--border-color);
-}
-
-/* Аватарки */
 .body--dark .q-avatar {
   color: white !important;
 }
 
-/* Пагинация */
-.body--dark .q-pagination__content .q-btn {
-  color: var(--text-color);
-}
-
-.body--dark .q-pagination__content .q-btn.active {
-  background-color: #333;
-}
-.body--dark .team-details-card .q-card__actions {
-  background-color: #121212 !important; /* Темный фон вместо белого */
-  border-top: 1px solid #333 !important; /* Граница сверху */
-}
-
-.body--dark .team-details-card .q-btn {
-  color: #ffffff !important; /* Белый текст кнопок */
-}
-
-.body--dark .team-details-card .q-btn.flat {
-  background-color: transparent !important;
-}
-
-.body--dark .team-details-card .q-btn.flat:hover {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-}
-
-/* Дополнительно: стили для текста в диалоге */
-.body--dark .team-details-card .text-primary {
-  color: #4fc3f7 !important; /* Голубой вместо стандартного primary */
-}
-
-.body--dark .team-details-card .text-body1,
-.body--dark .team-details-card .text-body2 {
-  color: #e0e0e0 !important; /* Светло-серый для основного текста */
-}
-/* Общие стили для скролла (работают в обеих темах) */
+/* Scrollbar styles */
 .panels-container,
 .members-list,
 .team-list {
@@ -1710,7 +1559,6 @@ defineExpose({ open });
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-/* Для браузеров на WebKit (Chrome, Safari) */
 .panels-container::-webkit-scrollbar,
 .members-list::-webkit-scrollbar,
 .team-list::-webkit-scrollbar {
@@ -1738,28 +1586,24 @@ defineExpose({ open });
   background: var(--scrollbar-thumb-hover);
 }
 
-/* Светлая тема */
 .body--light {
   --scrollbar-track: #f1f1f1;
   --scrollbar-thumb: #c1c1c1;
   --scrollbar-thumb-hover: #a8a8a8;
 }
 
-/* Темная тема */
 .body--dark {
   --scrollbar-track: #2a2a2a;
   --scrollbar-thumb: #555555;
   --scrollbar-thumb-hover: #6e6e6e;
 }
 
-/* Дополнительные стили для темной темы */
 .body--dark .panels-container,
 .body--dark .members-list,
 .body--dark .team-list {
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
 
-/* Стили для диалогов в темной теме */
 .body--dark .project-details-card,
 .body--dark .team-details-card {
   --scrollbar-track: #1e1e1e;
@@ -1767,7 +1611,6 @@ defineExpose({ open });
   --scrollbar-thumb-hover: #5a5a5a;
 }
 
-/* Улучшенные стили для скролла в карточках */
 .body--dark .q-card-section {
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }
