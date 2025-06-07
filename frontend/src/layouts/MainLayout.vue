@@ -52,7 +52,7 @@
         <div></div>
 
         <div>
-          <q-btn icon="logout" color="blue" dense unelevated round @click="onLogout" />
+          <q-btn icon="logout" color="var(--primary-color)" dense unelevated round @click="onLogout" />
         </div>
       </q-toolbar>
     </q-header>
@@ -204,6 +204,11 @@ const openUserProfile = () => {
 }
 
 .clickable-name:hover {
-  color: #1d0101; /* Цвет при наведении */
+  color:rgb(0, 204, 255); /* Цвет при наведении */
+}
+.q-header,
+.q-btn
+{
+  background-color:var(--primary-color);
 }
 </style>
